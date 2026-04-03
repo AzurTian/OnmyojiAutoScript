@@ -823,7 +823,20 @@ class BaseTask(GlobalGameAssets, CostumeBase):
                 continue
 
     def push_notify(self, content='', title=None, level=3):
-        logger.info(f'Push notify: {content}')
+        """Push notification via configured notifier.
+
+        Args:
+            content: Notification body text
+            title: Notification title (defaults to current task name)
+            level: Severity level (1=critical, 2=warning, 3=info)
+        """
+        if title is None:
+            title = 'Notification'
+        logger.info(f'Push notify: [{title}] {content}')
+        try:
+            self.config.notifier.push(title=title, content=content)
+        except Exception as e:
+            logger.warning(f'Push notify failed: {e}')
 
     def save_image(self, task_name=None, content=None, wait_time=2, image_type=False, push_flag=False, level=3):
         logger.info(f'Save image: {task_name}')

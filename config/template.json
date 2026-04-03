@@ -21,7 +21,7 @@
       "save_error": true,
       "screenshot_length": 1,
       "notify_enable": false,
-      "notify_config": "provider: null"
+      "notify_config": "provider: feishu_webhook\nwebhook_url: https://open.feishu.cn/open-apis/bot/v2/hook/your-token\ncard_color: blue"
     },
     "optimization": {
       "screenshot_interval": 0.3,
