@@ -1,0 +1,92 @@
+[
+  {
+    "itemName": "ksitigarbha",
+    "imageName": "res_ksitigarbha.png",
+    "roiFront": "6,380,31,33",
+    "roiBack": "0,278,485,314",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "进去地藏像"
+  },
+  {
+    "itemName": "activity",
+    "imageName": "res_activity.png",
+    "roiFront": "604,68,67,33",
+    "roiBack": "604,68,67,33",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "地藏像界面"
+  },
+  {
+    "itemName": "activity_notice",
+    "imageName": "res_activity_notice.png",
+    "roiFront": "1093,480,42,75",
+    "roiBack": "1093,480,42,75",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "进入通知"
+  },
+  {
+    "itemName": "activity_notice_in",
+    "imageName": "res_activity_notice_in.png",
+    "roiFront": "600,65,74,38",
+    "roiBack": "600,65,74,38",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "检测是否处于通知页"
+  },
+  {
+    "itemName": "notice_god",
+    "imageName": "res_notice_god.png",
+    "roiFront": "665,521,59,41",
+    "roiBack": "226,133,678,459",
+    "method": "Template matching",
+    "threshold": 0.9,
+    "description": "进入大神福利中心"
+  },
+  {
+    "itemName": "notice_god_in",
+    "imageName": "res_notice_god_in.png",
+    "roiFront": "488,98,53,56",
+    "roiBack": "480,89,256,70",
+    "method": "Template matching",
+    "threshold": 0.7,
+    "description": "检查是否在大神福利界面"
+  },
+  {
+    "itemName": "god_reward",
+    "imageName": "res_god_reward.png",
+    "roiFront": "650,209,99,42",
+    "roiBack": "638,184,119,405",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "领取奖励按钮"
+  },
+  {
+    "itemName": "get_reward",
+    "imageName": "res_get_reward.png",
+    "roiFront": "945,454,30,33",
+    "roiBack": "931,410,89,98",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "获取奖励成功,点击返回"
+  },
+  {
+    "itemName": "god_exit",
+    "imageName": "res_god_exit.png",
+    "roiFront": "1055,190,44,36",
+    "roiBack": "1055,190,44,36",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "退出福利中心"
+  },
+  {
+    "itemName": "activity_exit",
+    "imageName": "res_activity_exit.png",
+    "roiFront": "1124,71,45,41",
+    "roiBack": "1124,71,45,41",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "退出地藏像界面"
+  }
+]

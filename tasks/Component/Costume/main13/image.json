@@ -97,5 +97,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"
+  },
+  {
+    "itemName": "ksitigarbha_13",
+    "imageName": "main13_ksitigarbha_13.png",
+    "roiFront": "46,346,29,28",
+    "roiBack": "0,281,490,307",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "地藏像"
   }
 ]

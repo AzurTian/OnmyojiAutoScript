@@ -15,6 +15,7 @@
    - main_goto_summon_xxx:  这张图片是用来点击 ”召唤“
    - main_goto_town_xxx:   町中知道吧
    - pet_house_xxx:  进入宠物屋
+   - ksitigarbha_xxx:  地藏像的图片
 
 3. 执行`./dev_tools/assets_extract.py`这个将会更新`./tasks/Component/Costume/assets.py` 你不需要手动修改这个文件
 

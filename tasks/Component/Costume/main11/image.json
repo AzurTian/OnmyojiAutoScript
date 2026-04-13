@@ -43,5 +43,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "宠物室"
+  },
+  {
+    "itemName": "ksitigarbha_11",
+    "imageName": "main11_ksitigarbha_11.png",
+    "roiFront": "104,363,29,28",
+    "roiBack": "0,281,490,307",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "地藏像"
   }
 ]

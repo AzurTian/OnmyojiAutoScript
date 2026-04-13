@@ -8,6 +8,7 @@ import sys
 import time
 import json
 import random
+from sympy.codegen.ast import continue_
 
 # 直接运行本脚本时，需要先将项目根目录加入 Python 路径
 if __name__ == '__main__' and 'tasks' not in sys.modules:
@@ -16,7 +17,9 @@ if __name__ == '__main__' and 'tasks' not in sys.modules:
 import requests
 import urllib3
 
-from tasks.base_task import BaseTask
+from tasks.GameUi.game_ui import GameUi
+from tasks.GameUi.page import page_main
+from tasks.AutoCheckinBigGod.assets import AutoCheckinBigGodAssets
 from module.logger import logger
 from module.exception import TaskEnd
 
@@ -44,7 +47,12 @@ GL_CLIENTTYPE = "50"
 _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
 
 
-class ScriptTask(BaseTask):
+class ScriptTask(GameUi, AutoCheckinBigGodAssets):
+
+    MAX_STEP_RETRY = 6
+    MAX_FIND_SWIPE = 6
+    MAX_REWARD_CLICK = 12
+    STEP_WAIT = 8
 
     def run(self):
         self.gl_uid = ""
@@ -182,8 +190,86 @@ class ScriptTask(BaseTask):
             try:
                 self.device.app_start()
                 logger.info('已返回阴阳师前台')
+                self._claim_reward_in_game()
+            except TaskEnd:
+                pass
             except Exception as e:
                 logger.warning(f'返回阴阳师失败: {e}')
+
+    def _claim_reward_in_game(self):
+        logger.info('开始游戏内二次领取流程...')
+        self.ui_get_current_page()
+        self.ui_goto(page_main)
+        self._enter_notice_god_center()
+        self._exit_in_game_reward_page()
+        return True
+
+    def _enter_notice_god_center(self):
+        # 进入地藏界面
+        retry_count = 0
+        while 1:
+            self.screenshot()
+            if self.appear(self.I_KSITIGARBHA):
+                break
+            self.swipe(self.S_KSITIGARBHA_FIND)
+            time.sleep(0.6)
+            self.screenshot()
+            if self.appear(self.I_KSITIGARBHA):
+                break
+            retry_count += 1
+            if retry_count >= 6:
+                logger.error("滑动多次仍未找到地藏像，退出任务")
+                self._exit_in_game_reward_page()
+                raise TaskEnd('AutoCheckinBigGod')
+
+        while 1:
+            self.screenshot()
+            if self.appear(self.I_ACTIVITY_NOTICE_IN):
+                break
+            if self.appear_then_click(self.I_KSITIGARBHA, interval=1):
+                continue
+            if self.appear_then_click(self.I_ACTIVITY_NOTICE, interval=1):
+                continue
+
+        while 1:
+            self.screenshot()
+            if self.appear(self.I_NOTICE_GOD,interval=1):
+                break
+            if self.swipe(self.S_GOD_FIND,interval=1):
+                continue
+
+        while 1:
+            self.screenshot()
+            if self.appear(self.I_NOTICE_GOD_IN):
+                break
+            if self.appear_then_click(self.I_NOTICE_GOD, interval=1):
+                continue
+
+        empty_round = 0
+        while empty_round < 5:
+            self.screenshot()
+            if self.appear_then_click(self.I_GOD_REWARD, interval=1):
+                empty_round = 0
+                continue
+            if self.appear_then_click(self.I_GET_REWARD, interval=1):
+                empty_round = 0
+                continue
+            empty_round += 1
+
+    def _exit_in_game_reward_page(self):
+        while 1:
+            self.screenshot()
+            if self.appear(GameUi.I_CHECK_MAIN):
+                break
+            if self.appear_then_click(self.I_GOD_EXIT, interval=1):
+                continue
+            if self.appear_then_click(self.I_ACTIVITY_EXIT, interval=1):
+                continue
+            # 识别不到庭院，进入图鉴尝试复位
+            if self.appear_then_click(GameUi.I_MAIN_GOTO_COLLECTION, interval=1):
+                continue
+            if self.appear_then_click(GameUi.I_BACK_Y, interval=1):
+                continue
 
     # ======================== ADB 操作 ========================
 
