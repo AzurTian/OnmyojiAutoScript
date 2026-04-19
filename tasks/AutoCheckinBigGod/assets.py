@@ -13,8 +13,6 @@ class AutoCheckinBigGodAssets:
 	# Image Rule Assets
 	# 进去地藏像 
 	I_KSITIGARBHA = RuleImage(roi_front=(6,380,31,33), roi_back=(0,278,485,314), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_ksitigarbha.png")
-	# 地藏像界面 
-	I_ACTIVITY = RuleImage(roi_front=(604,68,67,33), roi_back=(604,68,67,33), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_activity.png")
 	# 进入通知 
 	I_ACTIVITY_NOTICE = RuleImage(roi_front=(1093,480,42,75), roi_back=(1093,480,42,75), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_activity_notice.png")
 	# 检测是否处于通知页 
@@ -26,7 +24,7 @@ class AutoCheckinBigGodAssets:
 	# 领取奖励按钮 
 	I_GOD_REWARD = RuleImage(roi_front=(650,209,99,42), roi_back=(638,184,119,405), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_god_reward.png")
 	# 获取奖励成功,点击返回 
-	I_GET_REWARD = RuleImage(roi_front=(945,454,30,33), roi_back=(931,410,89,98), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_get_reward.png")
+	I_GET_REWARD = RuleImage(roi_front=(476,211,29,60), roi_back=(468,181,89,98), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_get_reward.png")
 	# 退出福利中心 
 	I_GOD_EXIT = RuleImage(roi_front=(1055,190,44,36), roi_back=(1055,190,44,36), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_god_exit.png")
 	# 退出地藏像界面 
@@ -37,6 +35,6 @@ class AutoCheckinBigGodAssets:
 	# 向下滑动找到大神福利 
 	S_GOD_FIND = RuleSwipe(roi_front=(558,441,145,152), roi_back=(553,118,155,164), mode="default", name="god_find")
 	# description 
-	S_KSITIGARBHA_FIND = RuleSwipe(roi_front=(696,199,110,111), roi_back=(901,197,116,110), mode="default", name="ksitigarbha_find")
+	S_KSITIGARBHA_FIND = RuleSwipe(roi_front=(696,199,110,111), roi_back=(901,197,116,110), mode="vector", name="ksitigarbha_find")
 
 

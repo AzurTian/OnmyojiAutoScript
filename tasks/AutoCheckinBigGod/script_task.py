@@ -223,14 +223,9 @@ class ScriptTask(GameUi, AutoCheckinBigGodAssets):
                 self._exit_in_game_reward_page()
                 raise TaskEnd('AutoCheckinBigGod')
         # 进入通知界面
-        while 1:
-            self.screenshot()
-            if self.appear(self.I_ACTIVITY_NOTICE_IN):
-                break
-            if self.appear_then_click(self.I_KSITIGARBHA, interval=1):
-                continue
-            if self.appear_then_click(self.I_ACTIVITY_NOTICE, interval=1):
-                continue
+        self.ui_clicks(clicks=[self.I_KSITIGARBHA, self.I_ACTIVITY_NOTICE],
+            stop=self.I_ACTIVITY_NOTICE_IN,interval=1)
+
         # 寻找大神福利界面
         while 1:
             self.screenshot()
@@ -238,34 +233,20 @@ class ScriptTask(GameUi, AutoCheckinBigGodAssets):
                 break
             if self.swipe(self.S_GOD_FIND,interval=1):
                 continue
+
         # 进入大神福利界面
+        self.ui_click(self.I_NOTICE_GOD, self.I_NOTICE_GOD_IN, interval=1)
+
         while 1:
             self.screenshot()
-            if self.appear(self.I_NOTICE_GOD_IN):
+            if not self.appear(self.I_GOD_REWARD):
+                logger.warning('没有可领取奖励，或已领取完成')
                 break
-            if self.appear_then_click(self.I_NOTICE_GOD, interval=1):
+            if self.appear(self.I_GOD_REWARD):
+                self.ui_click(self.I_GOD_REWARD, self.I_GET_REWARD, interval=1)
+                self.ui_click_until_smt_disappear(self.I_NOTICE_GOD_IN, self.I_GET_REWARD, interval=1)
                 continue
-        # 循环领取：只点击当前可见的领取/确认按钮
-        empty_round = 0
-        click_count = 0
-        max_empty_round = 8
-        while empty_round < max_empty_round and click_count < self.MAX_REWARD_CLICK:
-            self.screenshot()
-            if self.appear_then_click(self.I_GOD_REWARD, interval=1):
-                click_count += 1
-                empty_round = 0
-                continue
-
-            if self.appear_then_click(self.I_GET_REWARD, interval=1):
-                click_count += 1
-                empty_round = 0
-                continue
-
-            # 当前页面无可点击目标，等待界面刷新后继续检查
-            empty_round += 1
-            time.sleep(0.5)
-
-        logger.info(f'游戏内二次领取结束，点击次数: {click_count}, 空轮次: {empty_round}')
+        logger.info('游戏内二次领取结束')
 
     def _exit_in_game_reward_page(self):
         while 1:

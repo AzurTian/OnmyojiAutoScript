@@ -10,7 +10,7 @@
     "itemName": "ksitigarbha_find",
     "roiFront": "696,199,110,111",
     "roiBack": "901,197,116,110",
-    "mode": "default",
+    "mode": "vector",
     "description": "description"
   }
 ]

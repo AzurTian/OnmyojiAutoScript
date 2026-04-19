@@ -9,15 +9,6 @@
     "description": "进去地藏像"
   },
   {
-    "itemName": "activity",
-    "imageName": "res_activity.png",
-    "roiFront": "604,68,67,33",
-    "roiBack": "604,68,67,33",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "地藏像界面"
-  },
-  {
     "itemName": "activity_notice",
     "imageName": "res_activity_notice.png",
     "roiFront": "1093,480,42,75",
@@ -65,8 +56,8 @@
   {
     "itemName": "get_reward",
     "imageName": "res_get_reward.png",
-    "roiFront": "945,454,30,33",
-    "roiBack": "931,410,89,98",
+    "roiFront": "476,211,29,60",
+    "roiBack": "468,181,89,98",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "获取奖励成功,点击返回"
