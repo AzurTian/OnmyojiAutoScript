@@ -49,10 +49,6 @@ _NO_WINDOW = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
 
 class ScriptTask(GameUi, AutoCheckinBigGodAssets):
 
-    MAX_STEP_RETRY = 6
-    MAX_FIND_SWIPE = 6
-    MAX_REWARD_CLICK = 12
-    STEP_WAIT = 8
 
     def run(self):
         self.gl_uid = ""
