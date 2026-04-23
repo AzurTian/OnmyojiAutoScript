@@ -91,8 +91,6 @@ class CostumeAssets:
 	                                      file="./tasks/Component/Costume/main13/main13_harvest_guild_reward_13.png")
 	# 地藏像
 	I_KSITIGARBHA_13 = RuleImage(roi_front=(46,346,29,28), roi_back=(0,281,490,307), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main13/main13_ksitigarbha_13.png")
-	# 地藏像
-	I_KSITIGARBHA_13 = RuleImage(roi_front=(46,346,29,28), roi_back=(0,281,490,307), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main13/main13_ksitigarbha_13.png")
 
 	# Image Rule Assets
 	# description 

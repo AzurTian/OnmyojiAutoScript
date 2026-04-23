@@ -199,8 +199,8 @@ class ScriptTask(GameUi, AutoCheckinBigGodAssets):
 
     def _claim_reward_in_game(self):
         logger.info('开始游戏内二次领取流程...')
-        self.ui_get_current_page()
-        self.ui_goto(page_main)
+        # app_start 后可能仍持有旧 frame_id，强制首帧重截图避免图像服务缓存 miss
+        self.goto_page(page_main, skip_first_screenshot=False)
         self._enter_notice_god_center()
         self._exit_in_game_reward_page()
         return True
@@ -223,8 +223,8 @@ class ScriptTask(GameUi, AutoCheckinBigGodAssets):
                 self._exit_in_game_reward_page()
                 raise TaskEnd('AutoCheckinBigGod')
         # 进入通知界面
-        self.ui_clicks(clicks=[self.I_KSITIGARBHA, self.I_ACTIVITY_NOTICE],
-            stop=self.I_ACTIVITY_NOTICE_IN,interval=1)
+        self.ui_click(self.I_KSITIGARBHA, self.I_ACTIVITY_NOTICE, interval=1)
+        self.ui_click(self.I_ACTIVITY_NOTICE, self.I_ACTIVITY_NOTICE_IN, interval=1)
 
         # 寻找大神福利界面
         while 1:

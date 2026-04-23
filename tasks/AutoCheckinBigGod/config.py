@@ -14,7 +14,7 @@ class CheckinBigGodConfig(BaseModel):
     claim_reward_in_game: bool = Field(
         title='ClaimRewardInGame',
         default=False,
-        description='是否在游戏内二次领取奖励'
+        description='claim_reward_in_game_help'
     )
 
 
