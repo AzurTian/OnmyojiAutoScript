@@ -183,6 +183,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
             self.set_next_run(task='RyouToppa', finish=True, server=True, success=True)
         else:
             self.set_next_run(task='RyouToppa', finish=True, server=True, success=False)
+        self.goto_page(page_main)
         raise TaskEnd
 
     def plan_tomorrow_ryoutoppa(self):

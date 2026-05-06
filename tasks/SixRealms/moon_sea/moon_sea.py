@@ -59,7 +59,12 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
             self.screenshot()
             if not self.in_main():
                 continue
-            isl_type, isl_num, isl_roi = self.decide()
+            isl_type, isl_num, isl_roi = MoonSeaType.island100, 0, (0, 0, 0, 0)
+            for i in range(3):
+                if isl_type != MoonSeaType.island100:
+                    break
+                self.screenshot()
+                isl_type, isl_num, isl_roi = self.decide()
             if isl_num == 1 and isl_type != MoonSeaType.island106:
                 # 如果前一个，召唤一次宁息
                 if self.cnt_skill101 >= 5:
@@ -72,7 +77,12 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
                 else:
                     self.activate_store()
                     self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=3)
-                    isl_type, isl_num, isl_roi = self.decide()
+                    isl_type, isl_num, isl_roi = MoonSeaType.island100, 0, (0, 0, 0, 0)
+                    for i in range(3):
+                        if isl_type != MoonSeaType.island100:
+                            break
+                        self.screenshot()
+                        isl_type, isl_num, isl_roi = self.decide()
                     # 文字检测不一定发现到宁息
                     if isl_type != MoonSeaType.island101:
                         logger.warning('OCR not found island101')
@@ -92,7 +102,7 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
             match isl_type:
                 case MoonSeaType.island101: self.run_l101()
                 case MoonSeaType.island102: self.run_l102()
-                case MoonSeaType.island103: self.run_103()
+                case MoonSeaType.island103: self.run_l103()
                 case MoonSeaType.island104: self.run_l104()
                 case MoonSeaType.island105: self.run_l105()
             self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=3)

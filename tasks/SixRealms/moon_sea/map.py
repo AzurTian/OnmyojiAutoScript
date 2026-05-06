@@ -30,9 +30,12 @@ class MoonSeaMap(MoonSeaSkills):
         if self.appear(self.I_BOSS_FIRE):
             # 最后的boss
             return MoonSeaType.island106, 0, (0, 0, 0, 0)
-        isl_type = MoonSeaType.island100
-        isl_roi = (0, 0, 0, 0)
-        isl_num = 0
+        isl_type, isl_num, isl_roi = MoonSeaType.island100, 0, (0, 0, 0, 0)
+        isl_type_1, isl_num_1, isl_roi_1 = MoonSeaType.island100, 0, (0, 0, 0, 0)
+        isl_type_2, isl_num_2, isl_roi_2 = MoonSeaType.island100, 0, (0, 0, 0, 0)
+        isl_type_3, isl_num_3, isl_roi_3 = MoonSeaType.island100, 0, (0, 0, 0, 0)
+        isl_type_4, isl_num_4, isl_roi_4 = MoonSeaType.island100, 0, (0, 0, 0, 0)
+        isl_type_5, isl_num_5, isl_roi_5 = MoonSeaType.island100, 0, (0, 0, 0, 0)
         results = self.map_ocr.detect_and_ocr(image=self.device.image)
         rx1, ry1, rw, rh = self.O_OCR_MAP.roi
         rx2, ry2 = rx1 + rw, ry1 + rh
@@ -55,22 +58,35 @@ class MoonSeaMap(MoonSeaSkills):
                 continue
             if isl_type == MoonSeaType.island100 and self.contains_any_char(result.ocr_text, chars='宁息'):
                 # 如果身上没有达到300块钱就不去了
+                isl_type_1, isl_roi_1 = MoonSeaType.island101, (x1, y1, w, h)
                 if self.appear(self.I_M_STORE):
                     continue
-                isl_type = MoonSeaType.island101
-                isl_roi = x1, y1, w, h
+                isl_type, isl_roi = MoonSeaType.island101, (x1, y1, w, h)
             elif isl_type == MoonSeaType.island100 and self.contains_any_char(result.ocr_text, chars='神秘'):
-                isl_type = MoonSeaType.island102
-                isl_roi = x1, y1, w, h
+                isl_type_2, isl_roi_2 = MoonSeaType.island102, (x1, y1, w, h)
+                isl_type, isl_roi = MoonSeaType.island102, (x1, y1, w, h)
             elif isl_type == MoonSeaType.island100 and self.contains_any_char(result.ocr_text, chars='回混范'):
-                isl_type = MoonSeaType.island103
+                isl_type_3, isl_roi_3 = MoonSeaType.island103, (x1, y1, w, h)
+                isl_type, isl_roi = MoonSeaType.island103, (x1, y1, w, h)
                 isl_roi = x1, y1, w, h
-            elif isl_type == MoonSeaType.island100 and self.contains_any_char(result.ocr_text, chars='蜜馨屡战'):
-                isl_type = MoonSeaType.island104
-                isl_roi = x1, y1, w, h
+            elif isl_type == MoonSeaType.island100 and self.contains_any_char(result.ocr_text, chars='鹰蜜馨屡战'):
+                isl_type_4, isl_roi_4 = MoonSeaType.island104, (x1, y1, w, h)
+                isl_type, isl_roi = MoonSeaType.island104, (x1, y1, w, h)
             elif isl_type == MoonSeaType.island100 and self.contains_any_char(result.ocr_text, chars='星之'):
-                isl_type = MoonSeaType.island105
-                isl_roi = x1, y1, w, h
+                isl_type_5, isl_roi_5 = MoonSeaType.island105, (x1, y1, w, h)
+                isl_type, isl_roi = MoonSeaType.island105, (x1, y1, w, h)
+        if isl_type == MoonSeaType.island100:
+            isl_type, isl_roi = isl_type_1, isl_roi_1
+        elif self.cnt_skill101 >= 5 and isl_type_1 != MoonSeaType.island100:
+            isl_type, isl_roi = isl_type_1, isl_roi_1
+        elif self.cnt_skill101 >= 5 and isl_type_2 != MoonSeaType.island100:
+            isl_type, isl_roi = isl_type_2, isl_roi_2
+        elif self.cnt_skill101 >= 5 and isl_type_3 != MoonSeaType.island100:
+            isl_type, isl_roi = isl_type_3, isl_roi_3
+        elif self.cnt_skill101 >= 5 and isl_type_4 != MoonSeaType.island100:
+            isl_type, isl_roi = isl_type_4, isl_roi_4
+        elif self.cnt_skill101 >= 5 and isl_type_5 != MoonSeaType.island100:
+            isl_type, isl_roi = isl_type_5, isl_roi_5
         logger.info('Island type: {}, Residue: {}, ROI: {}'.format(isl_type, isl_num, isl_roi))
         return isl_type, isl_num, isl_roi
 
@@ -98,7 +114,7 @@ class MoonSeaMap(MoonSeaSkills):
                     continue
             logger.info('Entering island randomly')
             return
-        isl_roi = [isl_roi[0]-40, isl_roi[1] + 70, isl_roi[2] + 40, isl_roi[3]+40]
+        isl_roi = (isl_roi[0]-40, isl_roi[1] + 70, isl_roi[2] + 40, isl_roi[3]+40)
         self.C_ISLAND_ENTER.roi_front = isl_roi
         while 1:
             self.screenshot()

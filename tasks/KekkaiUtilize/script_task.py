@@ -51,6 +51,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
         self.recive_guild_ap_or_assets(con.harvest_guild_max_times)
         if not con.utilize_enable:
             self.set_next_run(task='KekkaiUtilize', finish=True, success=True)
+        self.goto_page(page_main)
         raise TaskEnd
 
     def recive_guild_ap_or_assets(self, max_tries: int = 3):
