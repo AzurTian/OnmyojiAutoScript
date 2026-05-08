@@ -448,7 +448,8 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
                 return True
             clicked = self.appear_then_click(self.I_ADD_1, interval=1) or \
                 self.appear_then_click(self.I_ADD_2, interval=1) or \
-                self.appear_then_click(self.I_ADD_5_4, interval=1)
+                self.appear_then_click(self.I_ADD_5_4, interval=1) or \
+                self.appear_then_click(self.I_ADD_SEA, interval=1)
             if clicked:
                 no_click_timeout.reset()
 
