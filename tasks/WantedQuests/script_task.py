@@ -600,13 +600,13 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
         # 没有检测到斜杠，符合格式：前N位与后N位相同,表示已完成
         reg_XX = re.compile(r'^(\d+)\1$')
         # 过滤掉协或者未知悬赏等其他无用字符
-        reg_other = re.compile(r'[?？协]')
+        reg_other = re.compile(r'[?？协边]')
         for index, res in enumerate(res_list):
             if reg_fengyin.match(res.ocr_text):
                 continue
             if reg_time.match(res.ocr_text):
                 continue
-            if reg_other.match(res.ocr_text):
+            if reg_other.match(res.ocr_text) is not None:
                 continue
             if (match := reg_progress.match(res.ocr_text)):
                 spliter_index = match.start(2)
@@ -627,10 +627,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
             # 例如：1414 66 1212
             if reg_XX.match(res.ocr_text):
                 continue
-            # 什么都没匹配上，判断上一个识别结果如果为悬赏封印，那么认为该识别结果错误，尝试执行一次
-            last_index = (index - 1) if index > 0 else 0
-            if reg_fengyin.match(res_list[last_index].ocr_text):
-                return 0, 1, 3, calc_xywh(res_list[last_index].box)
+            # 什么都没匹配上，则跳过该次识别
 
         return -1, -1, -1, [0, 0, 0, 0]
 
