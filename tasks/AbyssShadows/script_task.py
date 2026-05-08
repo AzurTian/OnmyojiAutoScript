@@ -45,8 +45,12 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
         super().__init__(config, device)
         # 当前所用队伍预设
         self.cur_preset = None
-        # 🔧 新增：当前御魂预设缓存
+        # 🔧当前御魂预设缓存
         self.cur_soul_preset = None
+        # 🔧精英预设切换状态标志
+        self.elite_preset_switched = False
+        # 🔧副将预设切换状态标志
+        self.general_preset_switched = False
         # process list
         self.ps_list: CodeList = CodeList('')
         # 已完成 列表
@@ -773,20 +777,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             return
 
         # 直接在狭间页面点击式神录按钮进入式神录
-        self.click(self.I_ABYSS_SHIKI, interval=2)
-
-        # 等待进入式神录页面
-        retry = 0
-        while retry < 15:
-            if self.appear(GlobalGameAssets.I_UI_BACK_YELLOW):
-                logger.info("已进入式神录页面")
-                break
-            sleep(1)
-            retry += 1
-
-        if retry >= 15:
-            logger.warning("进入式神录页面失败")
-            return
+        self.goto_page(page_shikigami_records)
 
         # 切换御魂
         try:
@@ -806,23 +797,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             logger.error(f"狭间中御魂切换失败: {e}")
             raise RequestHumanTakeover
         finally:
-            # 使用黄色返回按钮返回狭间活动页面
-            if self.appear(GlobalGameAssets.I_UI_BACK_YELLOW):
-                self.click(GlobalGameAssets.I_UI_BACK_YELLOW, interval=2)
-                sleep(2)
-            # 等待返回狭间页面
-            retry = 0
-            while retry < 10:
-                current_area = self.check_current_area()
-                if current_area is not None:
-                    # 返回了有效的区域（DRAGON, PEACOCK, FOX, LEOPARD 之一），确认成功
-                    logger.info(f"已从式神录返回狭间页面，当前区域: {current_area.name}")
-                    break
-                sleep(1)
-                retry += 1
-
-            if retry >= 10:
-                logger.warning("返回狭间页面失败")
+            # 返回狭间活动页面
+            self.goto_page(page_abyss)
 
     def check_available(self, item_code: Code):
         # 判断该怪物是否可用
