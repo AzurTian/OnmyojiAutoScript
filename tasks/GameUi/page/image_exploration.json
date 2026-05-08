@@ -65,7 +65,7 @@
   {
     "itemName": "exploration_goto_hero_test",
     "imageName": "page_exploration_goto_hero_test.png",
-    "roiFront": "837,630,58,56",
+    "roiFront": "829,634,58,56",
     "roiBack": "33,619,1150,99",
     "method": "Template matching",
     "threshold": 0.8,
@@ -92,7 +92,7 @@
   {
     "itemName": "exploration_goto_six_gates",
     "imageName": "page_exploration_goto_six_gates.png",
-    "roiFront": "840,638,54,48",
+    "roiFront": "928,640,54,48",
     "roiBack": "33,619,1150,99",
     "method": "Template matching",
     "threshold": 0.8,

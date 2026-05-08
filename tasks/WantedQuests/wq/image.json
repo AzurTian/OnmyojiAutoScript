@@ -3,7 +3,7 @@
     "itemName": "wq_seal",
     "imageName": "wq_wq_seal.png",
     "roiFront": "174,184,20,29",
-    "roiBack": "56,93,664,455",
+    "roiBack": "27,93,693,488",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "封印"
@@ -12,7 +12,7 @@
     "itemName": "wq_done",
     "imageName": "wq_wq_done.png",
     "roiFront": "248,183,37,39",
-    "roiBack": "107,147,570,389",
+    "roiBack": "25,147,652,461",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "勾号"
