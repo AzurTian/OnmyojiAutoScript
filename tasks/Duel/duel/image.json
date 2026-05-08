@@ -178,5 +178,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "斗技荣誉图标"
+  },
+  {
+    "itemName": "d_win_share",
+    "imageName": "d_win_share.png",
+    "roiFront": "1123,608,82,73",
+    "roiBack": "1123,608,82,73",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "胜利分享"
   }
 ]
