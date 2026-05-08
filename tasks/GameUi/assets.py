@@ -17,23 +17,9 @@ class GameUiAssets:
 	I_ACT_LIST_EXPAND = RuleImage(roi_front=(1186,141,40,41), roi_back=(1162,110,92,103), threshold=0.8, method="Template matching", file="./tasks/GameUi/additional/additional_act_list_expand.png")
 
 
-	# Ocr Rule Assets
-	# 点击空白处关闭此界面 
-	O_CLICK_CLOSE_1 = RuleOcr(roi=(521,659,232,32), area=(521,659,232,32), mode="Single", method="Default", keyword="点击空白处关闭此界面", name="click_close_1")
-	# 点击空白处关闭弹窗 
-	O_CLICK_CLOSE_2 = RuleOcr(roi=(508,584,214,40), area=(508,584,214,40), mode="Single", method="Default", keyword="点击空白处关闭弹窗", name="click_close_2")
-
-
 	# Image Rule Assets
 	# 商店弹窗红色关闭 
 	I_AD_CLOSE_RED = RuleImage(roi_front=(993,130,33,36), roi_back=(953,91,215,121), threshold=0.8, method="Template matching", file="./tasks/GameUi/additional/additional_ad_close_red.png")
-
-
-	# Image Rule Assets
-	# description 
-	I_AD_DISAPPEAR = RuleImage(roi_front=(412,405,37,40), roi_back=(412,405,37,40), threshold=0.75, method="Template matching", file="./tasks/GameUi/additional/additional_ad_disappear.png")
-	# description 
-	I_RECORDS_CLOSE = RuleImage(roi_front=(914,143,30,30), roi_back=(914,143,30,30), threshold=0.7, method="Template matching", file="./tasks/GameUi/additional/additional_records_close.png")
 
 
 	# Image Rule Assets
@@ -67,7 +53,7 @@ class GameUiAssets:
 	# 探索前往六道之门 
 	I_EXPLORATION_GOTO_SIX_GATES = RuleImage(roi_front=(928,640,54,48), roi_back=(33,619,1150,99), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_exploration_goto_six_gates.png")
 	# 探索前往契灵之境 
-	I_EXPLORATION_GOTO_BONDLING_FAIRYLAND = RuleImage(roi_front=(940,634,52,47), roi_back=(33,619,1150,99), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_exploration_goto_bondling_fairyland.png")
+	I_EXPLORATION_GOTO_BONDLING_FAIRYLAND = RuleImage(roi_front=(1024,635,52,47), roi_back=(33,619,1150,99), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_exploration_goto_bondling_fairyland.png")
 	# 觉醒页面标志(必须在下方,觉醒页面有动画加载) 
 	I_CHECK_AWAKE = RuleImage(roi_front=(165,533,39,45), roi_back=(115,521,201,120), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_awake.png")
 	# 八岐大蛇页面标志(同觉醒逻辑back固定刚好等待加载动画) 
@@ -176,7 +162,7 @@ class GameUiAssets:
 	I_TOWN_GOTO_HYAKKISEN = RuleImage(roi_front=(192,145,48,67), roi_back=(86,130,447,100), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_town_goto_hyakkisen.png")
 	# 斗技主界面左上角文字图像 
 	I_CHECK_DUEL = RuleImage(roi_front=(149,16,64,38), roi_back=(133,0,110,74), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_duel.png")
-	# description 
+	# 现世逢魔页面标志 
 	I_CHECK_DEMON_ENCOUNTER = RuleImage(roi_front=(26,658,42,43), roi_back=(2,619,100,100), threshold=0.8, method="Template matching", file="./tasks/GameUi/page/page_check_demon_encounter.png")
 	# 检查狩猎战界面 
 	I_CHECK_HUNT = RuleImage(roi_front=(575,30,46,25), roi_back=(553,1,81,68), threshold=0.7, method="Template matching", file="./tasks/GameUi/page/page_check_hunt.png")
@@ -202,37 +188,5 @@ class GameUiAssets:
 	# 活动列表页爬塔活动文字 
 	L_ACT_LIST_OCR = RuleList(folder="./tasks/GameUi/page", direction="vertical", mode="ocr", roi_back=(50,123,49,553), size=(45, 69), 
 					 array=["版本"])
-
-
-	# Image Rule Assets
-	# 左上角蓝色的返回 
-	I_BACK_BL = RuleImage(roi_front=(32,31,50,53), roi_back=(1,2,139,120), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_back_blue.png")
-	# 式神录 
-	I_HOME_SHIKIKAMI = RuleImage(roi_front=(1092,611,73,41), roi_back=(1092,611,73,41), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_shikikami.png")
-	# 阴阳术 
-	I_HOME_OMNYOUJI = RuleImage(roi_front=(989,613,59,58), roi_back=(989,613,59,58), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_omnyouji.png")
-	# description 
-	I_HOME_FRIEND = RuleImage(roi_front=(876,619,60,53), roi_back=(876,619,60,53), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_friend.png")
-	# 花合战 
-	I_HOME_TSK = RuleImage(roi_front=(764,608,66,56), roi_back=(764,608,66,56), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_tsk.png")
-	# 商店 
-	I_HOME_MALL = RuleImage(roi_front=(654,620,51,55), roi_back=(654,620,51,55), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_mall.png")
-	# 阴阳寮 
-	I_HOME_GUILD = RuleImage(roi_front=(540,607,53,50), roi_back=(540,607,53,50), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_guild.png")
-	# 组队 
-	I_HOME_TEAM = RuleImage(roi_front=(430,616,49,61), roi_back=(430,616,49,61), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_team.png")
-	# 同心队 
-	I_HOME_CONCENTRIC_TEAM = RuleImage(roi_front=(310,618,67,60), roi_back=(310,618,67,60), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_concentric_team.png")
-	# 珍旅居 
-	I_HOME_HELP = RuleImage(roi_front=(201,617,56,57), roi_back=(201,617,56,57), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_help.png")
-	# 图鉴 
-	I_HOME_COLLECT = RuleImage(roi_front=(92,607,48,74), roi_back=(92,607,48,74), threshold=0.8, method="Template matching", file="./tasks/GameUi/res/res_home_collect.png")
-
-
-	# Ocr Rule Assets
-	# 庭院到探索 
-	O_HOME_EXPLORE = RuleOcr(roi=(310,105,858,194), area=(0,0,100,100), mode="Full", method="Default", keyword="探索", name="home_explore")
-	# Ocr-description 
-	O_NEW = RuleOcr(roi=(0,0,100,100), area=(0,0,100,100), mode="Single", method="Default", keyword="", name="new")
 
 

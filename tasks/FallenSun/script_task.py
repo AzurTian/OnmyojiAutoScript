@@ -310,13 +310,6 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                     break
 
         # 回去
-        while 1:
-            self.screenshot()
-            if not self.appear(self.I_FORM_TEAM):
-                break
-            if self.appear_then_click(self.I_BACK_BL, interval=1):
-                continue
-
         self.goto_page(page_main)
 
     def run_wild(self):
