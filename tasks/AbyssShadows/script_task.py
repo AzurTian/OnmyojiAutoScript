@@ -541,26 +541,31 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
         preset = get_preset(enemy_type)
 
         if self.config.model.abyss_shadows.process_manage.enable_switch_preset_in_as:
-            # 首领：比较预设是否相同
-            if enemy_type == EnemyType.BOSS and preset != self.cur_preset:
-                logger.info(f"敌人类型 {enemy_type.name} -- 切换阵容预设到 {preset}")
+            # 首领：每一次都需要更换预设队伍
+            if enemy_type == EnemyType.BOSS:
+                logger.info(f"敌人类型 {enemy_type.name} -- [强制] 切换阵容预设到 {preset}")
                 self.switch_preset_team_with_str(preset)
                 self.cur_preset = preset
-    
-            # 精英和副将：需要知道上次是为哪种敌人类型切换的
-            elif enemy_type in [EnemyType.GENERAL, EnemyType.ELITE]:
-                # 使用一个组合键来记录
-                if not hasattr(self, '_last_switch_type'):
-                    self._last_switch_type = None
-        
-                # 如果这是该类型第一次切换，或者预设不同，就切换
-                if self._last_switch_type != enemy_type or preset != self.cur_preset:
-                    logger.info(f"敌人类型 {enemy_type.name} -- 切换阵容预设到 {preset}")
+                
+            # 精英：只需要切换一次预设队伍
+            elif enemy_type == EnemyType.ELITE:
+                if not self.elite_preset_switched:
+                    logger.info(f"敌人类型 {enemy_type.name} -- 首次切换精英阵容预设到 {preset}")
                     self.switch_preset_team_with_str(preset)
                     self.cur_preset = preset
-                    self._last_switch_type = enemy_type
+                    self.elite_preset_switched = True
                 else:
-                    logger.info(f"敌人类型 {enemy_type.name} -- 阵容预设 {preset} 已激活，跳过切换")
+                    logger.info(f"敌人类型 {enemy_type.name} -- 精英预设已激活，跳过切换（游戏内同步生效）")
+                    
+            # 副将：只需要切换一次预设队伍
+            elif enemy_type == EnemyType.GENERAL:
+                if not self.general_preset_switched:
+                    logger.info(f"敌人类型 {enemy_type.name} -- 首次切换副将阵容预设到 {preset}")
+                    self.switch_preset_team_with_str(preset)
+                    self.cur_preset = preset
+                    self.general_preset_switched = True
+                else:
+                    logger.info(f"敌人类型 {enemy_type.name} -- 副将预设已激活，跳过切换（游戏内同步生效）")
 
         # 点击准备
         _timer_battle = Timer(180)
