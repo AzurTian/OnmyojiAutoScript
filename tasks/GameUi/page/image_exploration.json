@@ -101,7 +101,7 @@
   {
     "itemName": "exploration_goto_bondling_fairyland",
     "imageName": "page_exploration_goto_bondling_fairyland.png",
-    "roiFront": "940,634,52,47",
+    "roiFront": "1024,635,52,47",
     "roiBack": "33,619,1150,99",
     "method": "Template matching",
     "threshold": 0.8,
