@@ -51,7 +51,9 @@ class SoloExploration(BaseExploration):
                             self.ui_click(self.I_E_AUTO_ROTATE_OFF, stop=self.I_E_AUTO_ROTATE_ON)
                     # 小纸人
                     if self.appear(self.I_BATTLE_REWARD):
-                        logger.info("发现小纸人奖励，按配置退出探索")
+                        if self._config.exploration_config.collect_paper_reward and self.ui_get_reward(self.I_BATTLE_REWARD):
+                            continue
+                        logger.info("Not collect paper doll reward")
                         self.quit_explore()
                     # boss
                     if self.appear(self.I_BOSS_BATTLE_BUTTON):
@@ -175,7 +177,10 @@ class SoloExploration(BaseExploration):
                         self.ui_click(self.I_E_AUTO_ROTATE_OFF, stop=self.I_E_AUTO_ROTATE_ON)
                 # 小纸人
                 if self.appear(self.I_BATTLE_REWARD):
-                    logger.info("发现小纸人奖励，按配置退出探索")
+                    if self._config.exploration_config.collect_paper_reward and self.ui_get_reward(
+                            self.I_BATTLE_REWARD):
+                        continue
+                    logger.info("Not collect paper doll reward")
                     self.quit_explore()
                 # 中途有人跑路
                 if not self.appear(self.I_TEAM_EMOJI):

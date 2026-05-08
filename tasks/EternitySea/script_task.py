@@ -162,7 +162,7 @@ class ScriptTask(
             if self.check_then_accept():
                 continue
 
-            if self.is_in_room():
+            if self.is_in_room(False):
                 self.device.stuck_record_clear()
                 if self.wait_battle(wait_time=self._task_config.invite_config.wait_time):
                     self.run_general_battle(
@@ -172,12 +172,15 @@ class ScriptTask(
                 else:
                     break
             # 队长秒开的时候，检测是否进入到战斗中
-            elif self.check_take_over_battle(False, config=self._task_config.general_battle_config):
-                continue
+            if self.is_in_battle(False):
+                self.run_general_battle(
+                    config=self._task_config.general_battle_config,
+                    exit_matcher=self.I_CHECK_TEAM,
+                )
 
         while 1:
             # 有一种情况是本来要退出的，但是队长邀请了进入的战斗的加载界面
-            if self.appear(self.I_GI_HOME) or self.appear(self.I_GI_EXPLORE):
+            if self.appear(self.I_CHECK_MAIN) or self.appear(self.I_CHECK_EXPLORATION):
                 break
             # 如果可能在房间就退出
             if self.exit_room():

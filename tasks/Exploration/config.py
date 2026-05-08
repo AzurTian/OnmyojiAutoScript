@@ -92,6 +92,7 @@ class ExplorationConfig(BaseModel):
 
     exploration_level: ExplorationLevel = Field(title='探索等级', default=ExplorationLevel.EXPLORATION_28,
                                                 description='exploration_level_help')
+    collect_paper_reward: bool = Field(default=True, description='collect_paper_reward_help')
 
     auto_rotate: AutoRotate = Field(title='自动添加候补式神', default=AutoRotate.no,
                                     description='auto_rotate_help')

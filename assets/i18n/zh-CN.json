@@ -102,5 +102,7 @@
   "ap100_limit": "100体爬塔次数限制",
   "boss_limit": "首领爬塔次数限制",
   "run_sequence": "运行顺序",
-  "random_sleep": "随机休息"
+  "random_sleep": "随机休息",
+  "collect_paper_reward": "是否收取小纸人奖励",
+  "collect_paper_reward_help": "关闭则不收取直接退出"
 }

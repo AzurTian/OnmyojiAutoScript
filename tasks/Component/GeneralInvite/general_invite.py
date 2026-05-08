@@ -10,6 +10,7 @@ from datetime import timedelta, time
 from module.atom.image import RuleImage
 
 from module.base.timer import Timer
+from tasks.GameUi.assets import GameUiAssets
 from tasks.base_task import BaseTask
 from tasks.Component.GeneralInvite.assets import GeneralInviteAssets
 from tasks.Component.GeneralInvite.config_invite import InviteConfig, FindMode
@@ -439,6 +440,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
             return True
         logger.info('Click add to invite friend')
         no_click_timeout = Timer(5).start()
+        click_timer = Timer(1)
         while True:
             self.screenshot()
             if no_click_timeout.started() and no_click_timeout.reached():
@@ -446,12 +448,14 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
                 return False
             if self.appear(self.I_LOAD_FRIEND) or self.appear(self.I_INVITE_ENSURE):
                 return True
-            clicked = self.appear_then_click(self.I_ADD_1, interval=1) or \
-                self.appear_then_click(self.I_ADD_2, interval=1) or \
-                self.appear_then_click(self.I_ADD_5_4, interval=1) or \
-                self.appear_then_click(self.I_ADD_SEA, interval=1)
-            if clicked:
-                no_click_timeout.reset()
+            if not click_timer.started() or click_timer.reached():
+                clicked = self.appear_then_click(self.I_ADD_1) or \
+                    self.appear_then_click(self.I_ADD_2) or \
+                    self.appear_then_click(self.I_ADD_5_4) or \
+                    self.appear_then_click(self.I_ADD_SEA)
+                click_timer.reset()
+                if clicked:
+                    no_click_timeout.reset()
 
     @staticmethod
     def _normalize_friend_class_name(friend_class: str) -> str:
@@ -678,7 +682,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
             self.screenshot()
 
             # 如果自己在探索界面或者是庭院，那就是房间已经被销毁了
-            if self.appear(self.I_GI_HOME) or self.appear(self.I_GI_EXPLORE):
+            if self.appear(GameUiAssets.I_CHECK_MAIN) or self.appear(GameUiAssets.I_CHECK_EXPLORATION):
                 logger.warning('Room destroyed')
                 success = False
                 break

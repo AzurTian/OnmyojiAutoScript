@@ -243,12 +243,16 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 else:
                     break
             # 队长秒开的时候，检测是否进入到战斗中
-            elif self.check_take_over_battle(False, config=self.config.fallen_sun.general_battle_config):
-                continue
+            if self.is_in_battle(False):
+                self.run_general_battle(
+                    config=self.config.fallen_sun.general_battle_config,
+                    battle_key=self._fallen_sun_battle_key(),
+                    exit_matcher=self.I_CHECK_TEAM,
+                )
 
         while 1:
             # 有一种情况是本来要退出的，但是队长邀请了进入的战斗的加载界面
-            if self.appear(self.I_GI_HOME) or self.appear(self.I_GI_EXPLORE):
+            if self.appear(self.I_CHECK_MAIN) or self.appear(self.I_CHECK_EXPLORATION):
                 break
             # 如果可能在房间就退出
             if self.exit_room():
