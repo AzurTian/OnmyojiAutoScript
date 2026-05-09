@@ -67,7 +67,7 @@ page_main.add_enter_success_hooks(
 
 # 庭院区域页面。
 page_shikigami_records = Page(GameUiAssets.I_CHECK_RECORDS, category="global")
-page_shikigami_records.add_enter_success_hooks(GameUiAssets.I_AD_DISAPPEAR, GameUiAssets.I_RECORDS_CLOSE, GlobalGameAssets.I_UI_CANCEL_SAMLL)
+page_shikigami_records.add_enter_success_hooks(GlobalGameAssets.I_UI_CANCEL_SAMLL)
 page_shikigami_records.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_shikigami_records->page_main")
 page_main.connect(page_shikigami_records, GameUiAssets.I_MAIN_GOTO_SHIKIGAMI_RECORDS, key="page_main->page_shikigami_records")
 
