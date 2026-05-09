@@ -103,6 +103,15 @@ class StateMachine(BaseTask):
         logger.hr(f'Climb switch to {self.climb_type}', 2)
         return True
 
+    def incr_count(self):
+        """
+        当前爬塔类型完成一次战斗, 次数 +1
+        """
+        climb_type = self.climb_type
+        self.count_map[climb_type] = self.count_map.get(climb_type, 0) + 1
+        limit = getattr(self.conf.general_climb, f'{climb_type}_limit', 0) or 0
+        logger.info(f'Climb type {climb_type} count: {self.count_map[climb_type]}/{limit}')
+
 
 class ScriptTask(StateMachine, GameUi, GeneralBattle, SwitchSoul, ActivityShikigamiAssets):
     """
@@ -153,6 +162,7 @@ class ScriptTask(StateMachine, GameUi, GeneralBattle, SwitchSoul, ActivityShikig
                             self._run_boss()
                         case pages.page_battle_prepare | pages.page_battle:
                             self.run_general_battle(cur_battle_conf, battle_key=f'act_{self.climb_type}')
+                            self.incr_count()
                         case pages.page_reward:
                             self.click(pages.random_click(ltrb=(False, False, True, False)), interval=1.5)
                         case _:
@@ -193,6 +203,7 @@ class ScriptTask(StateMachine, GameUi, GeneralBattle, SwitchSoul, ActivityShikig
         if self.enter_battle():
             self.run_general_battle(getattr(self.conf, f'{self.climb_type}_battle_conf'),
                                     battle_key=f'act_{self.climb_type}')
+            self.incr_count()
 
     def enter_battle(self):
         click_times, max_times = 0, random.randint(3, 5)
