@@ -41,7 +41,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             self.check_utilize_add()
 
         # 查看育成满级
-        self.check_max_lv(con.shikigami_class)
+        self.check_max_lv(con.shikigami_class, con.auto_fill)
         # 检查蹭卡收获
         self.check_utilize_harvest()
         # 收体力盒子或者是经验盒子
@@ -97,13 +97,17 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             self.run_utilize(con.select_friend_list, con.shikigami_class, con.shikigami_order)
             self.goto_page(page_guild_realm_growth)
 
-    def check_max_lv(self, shikigami_class: ShikigamiClass = ShikigamiClass.N):
+    def check_max_lv(self, shikigami_class: ShikigamiClass = ShikigamiClass.N, auto_fill: bool = False):
         """
         在结界界面，进入式神育成，检查是否有满级的，如果有就换下一个
         退出的时候还是结界界面
         :return:
         """
         self.goto_page(page_guild_realm_growth)
+        if auto_fill:
+            self.ui_click(self.I_AUTO_FILL, self.I_REMOVE_ALL, interval=1.5)
+            self.goto_page(page_guild_realm)
+            return
         if self.appear(self.I_RS_LEVEL_MAX):
             # 存在满级的式神
             logger.info('Exist max level shikigami and replace it')

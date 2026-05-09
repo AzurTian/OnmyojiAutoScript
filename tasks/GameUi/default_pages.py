@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
+from tasks.Component.GeneralInvite.assets import GeneralInviteAssets
 from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
 from tasks.Exploration.assets import ExplorationAssets
-from tasks.GameUi.action import conditional_action
+from tasks.GameUi.action import conditional_action, sequence
 from typing import Union
 
 """GameUi 全局页面定义。"""
@@ -143,7 +144,8 @@ page_duel = Page(GameUiAssets.I_CHECK_DUEL, category="global")
 page_duel.connect(page_town, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_duel->page_town")
 page_town.connect(page_duel, GameUiAssets.I_TOWN_GOTO_DUEL, key="page_town->page_duel")
 
-page_demon_encounter = Page(GameUiAssets.I_CHECK_DEMON_ENCOUNTER, category="global")
+page_demon_encounter = Page(any_of(GameUiAssets.I_CHECK_DEMON_ENCOUNTER, GameUiAssets.I_CHECK_DEMON_ENCOUNTER_2),
+                            category="global")
 page_demon_encounter.connect(page_town, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_demon_encounter->page_town")
 page_town.connect(page_demon_encounter, GameUiAssets.I_TOWN_GOTO_DEMON_ENCOUNTER, key="page_town->page_demon_encounter")
 
@@ -288,3 +290,7 @@ page_reward = Page(
     priority=25
 )
 page_reward.add_enter_success_hooks(lambda _task: random_click())
+
+page_battle_team = Page(any_of(GeneralInviteAssets.I_GI_EMOJI_1, GeneralInviteAssets.I_GI_EMOJI_2,
+                               GeneralInviteAssets.I_FIRE),
+                        category="global")

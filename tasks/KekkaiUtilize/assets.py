@@ -57,6 +57,10 @@ class KekkaiUtilizeAssets:
 	I_PLANT_TREE_CLOSE = RuleImage(roi_front=(777,91,36,34), roi_back=(711,52,169,125), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/realm/realm_plant_tree_close.png")
 	# 寮结界卡界面 
 	I_CHECK_GUILD_CARD = RuleImage(roi_front=(66,93,49,85), roi_back=(29,61,150,210), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/realm/realm_check_guild_card.png")
+	# 智能放入 
+	I_AUTO_FILL = RuleImage(roi_front=(1146,505,47,51), roi_back=(1114,478,115,107), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/realm/realm_auto_fill.png")
+	# 一键卸下 
+	I_REMOVE_ALL = RuleImage(roi_front=(1146,505,47,51), roi_back=(1114,478,115,107), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/realm/realm_remove_all.png")
 
 
 	# Ocr Rule Assets

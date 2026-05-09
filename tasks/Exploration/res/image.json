@@ -174,7 +174,7 @@
     "itemName": "treasure_box_click",
     "imageName": "res_treasure_box_click.png",
     "roiFront": "32,363,51,40",
-    "roiBack": "2,130,135,406",
+    "roiBack": "0,79,110,637",
     "method": "Template matching",
     "threshold": 0.7,
     "description": "宝箱"

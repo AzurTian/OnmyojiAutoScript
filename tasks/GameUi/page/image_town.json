@@ -133,5 +133,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"
+  },
+  {
+    "itemName": "check_demon_encounter_2",
+    "imageName": "page_check_demon_encounter_2.png",
+    "roiFront": "501,441,53,122",
+    "roiBack": "358,326,370,288",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "逢魔之时新页面标志"
   }
 ]

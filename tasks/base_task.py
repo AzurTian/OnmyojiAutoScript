@@ -260,7 +260,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
     def wait_until_appear(self,
                           target: RuleImage | RuleOcr,
                           skip_first_screenshot=False,
-                          wait_time: int = None) -> bool:
+                          wait_time: int | float = None) -> bool:
         """
         等待直到出现目标
         :param wait_time: 等待时间，单位秒

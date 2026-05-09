@@ -98,6 +98,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
                     logger.info('Wait for 30s and invite again')
                     self.timer_invite = None
                 self.invite_friends(config)
+        return False
 
     def room_check_can_fire(self, config: InviteConfig) -> bool:
         fire = False  # 是否开启挑战
@@ -186,12 +187,10 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
         """
         if is_screenshot:
             self.screenshot()
-        if self.appear(self.I_GI_EMOJI_1):
+        if self.appear(GeneralInviteAssets.I_GI_EMOJI_1):
             return True
-        if self.appear(self.I_GI_EMOJI_2):
+        if self.appear(GeneralInviteAssets.I_GI_EMOJI_2):
             return True
-        # if self.appear(self.I_MATCHING):
-        #     return False
         return False
 
     def exit_room(self) -> bool:
@@ -200,23 +199,26 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
         :return:
         """
         if not self.is_in_room():
-            return False
+            return True
         logger.info('Exit room')
-        while 1:
+        timeout_timer = Timer(5).start()
+        while True:
             self.screenshot()
-            if not self.is_in_room() and \
-                    not self.appear_then_click(self.I_GI_SURE, interval=0.8) and \
-                    not self.appear(self.I_BACK_YELLOW):
+            if timeout_timer.reached():
                 break
-            if self.appear_then_click(self.I_GI_SURE, interval=0.5):
+            if not self.is_in_room() and \
+                    not self.appear_then_click(GeneralInviteAssets.I_GI_SURE, interval=0.8) and \
+                    not self.appear(self.I_BACK_YELLOW):
+                return True
+            if self.appear_then_click(GeneralInviteAssets.I_GI_SURE, interval=0.5):
                 continue
-            if not self.appear(self.I_GI_SURE) and self.appear_then_click(self.I_BACK_YELLOW, interval=0.8):
-                self.wait_until_appear(self.I_GI_SURE, wait_time=0.8)
+            if not self.appear(GeneralInviteAssets.I_GI_SURE) and self.appear_then_click(self.I_BACK_YELLOW, interval=0.8):
+                self.wait_until_appear(GeneralInviteAssets.I_GI_SURE, wait_time=0.8)
                 continue
-            if not self.appear(self.I_GI_SURE) and self.appear_then_click(self.I_BACK_YELLOW_SEA, interval=0.8):
-                self.wait_until_appear(self.I_GI_SURE, wait_time=0.8)
+            if not self.appear(GeneralInviteAssets.I_GI_SURE) and self.appear_then_click(self.I_BACK_YELLOW_SEA, interval=0.8):
+                self.wait_until_appear(GeneralInviteAssets.I_GI_SURE, wait_time=0.8)
                 continue
-        return True
+        return False
 
     def click_fire(self):
         while 1:
@@ -642,10 +644,10 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
         队员接受邀请
         :return:
         """
-        if not self.appear(self.I_I_ACCEPT) and not self.appear(self.I_I_ACCEPT_APPRENTICE):
+        if not self.appear_accept():
             return False
         logger.info('Click accept')
-        while 1:
+        while True:
             self.screenshot()
             if self.is_in_room():
                 return True
@@ -663,6 +665,10 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
                     self.appear_then_click(self.I_I_ACCEPT_APPRENTICE, interval=1):
                 continue
         return True
+
+    def appear_accept(self) -> bool:
+        """出现邀请标志"""
+        return self.appear(self.I_I_ACCEPT) or self.appear(self.I_I_ACCEPT_APPRENTICE)
 
     def wait_battle(self, wait_time: time) -> bool:
         """

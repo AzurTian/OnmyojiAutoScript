@@ -3,6 +3,7 @@
 # github https://github.com/runhey
 from tasks.GuguArtStudio.config import GuguArtStudio
 from tasks.GuildActivityMonitor.config import GuildActivityMonitor
+from tasks.OtherWorldTwilight.config import OtherWorldTwilight
 from typing import Dict, Any
 
 import re
@@ -116,6 +117,7 @@ class ConfigModel(ConfigBase):
     fallen_sun: FallenSun = Field(default_factory=FallenSun)
     eternity_sea: EternitySea = Field(default_factory=EternitySea)
     six_realms: SixRealms = Field(default_factory=SixRealms)
+    other_world_twilight : OtherWorldTwilight = Field(default_factory=OtherWorldTwilight)
 
     # 这些是活动的
     activity_shikigami: ActivityShikigami = Field(default_factory=ActivityShikigami)
