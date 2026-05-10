@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from module.logger import logger
+from module.server.api_logger import ensure_api_logger
 from module.server.home_router import home_app
 from module.server.script_router import script_app
 from module.server.stats_router import stats_app
@@ -57,6 +58,7 @@ async def on_startup():
     app.state 的生命周期在定义app的时候就有了
     :return:
     """
+    ensure_api_logger()
     logger.info('OAS web service startup done')
     if app.state.script_instances:
         await mm.restart_processes(app.state.script_instances)

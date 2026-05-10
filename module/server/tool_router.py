@@ -7,13 +7,16 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from starlette.websockets import WebSocketState
 
 from module.logger import logger
+from module.server.api_logger import ApiLoggingRoute, log_ws_event
 from module.server.tool import AnnotatorError, annotator_manager
 
 tool_app = APIRouter(
     prefix="/tool",
     tags=["tool"],
+    route_class=ApiLoggingRoute,
 )
 
 
@@ -368,6 +371,7 @@ async def annotator_crop_save(data: CropSaveBody):
 @tool_app.websocket('/annotator/ws/{session_id}')
 async def annotator_frame_ws(websocket: WebSocket, session_id: str):
     await websocket.accept()
+    log_ws_event(f"annotator_ws[{session_id}] connect")
     try:
         annotator_manager.get_session_snapshot(session_id)
         while True:
@@ -378,6 +382,7 @@ async def annotator_frame_ws(websocket: WebSocket, session_id: str):
 
             status = annotator_manager.emulator_status(session_id)
             if status.get("state") == "error":
+                log_ws_event(f"annotator_ws[{session_id}] event: emulator_error")
                 await websocket.send_json(
                     {
                         "event": "error",
@@ -390,8 +395,10 @@ async def annotator_frame_ws(websocket: WebSocket, session_id: str):
 
             await asyncio.sleep(0.1)
     except WebSocketDisconnect:
+        log_ws_event(f"annotator_ws[{session_id}] disconnect")
         logger.info(f"[annotator] ws disconnect, session={session_id}")
     except AnnotatorError as e:
+        log_ws_event(f"annotator_ws[{session_id}] annotator_error: code={e.code}, message={e.message}", level="warning")
         if e.code != "invalid_session":
             logger.warning(f"[annotator] ws annotator error, session={session_id}, code={e.code}")
         try:
@@ -405,12 +412,15 @@ async def annotator_frame_ws(websocket: WebSocket, session_id: str):
     except Exception as e:
         message = str(e).strip().lower()
         if e.__class__.__name__ == "ClientDisconnected" or "disconnected" in message:
+            log_ws_event(f"annotator_ws[{session_id}] client_disconnected_during_send")
             logger.info(f"[annotator] ws client disconnected during send, session={session_id}")
         else:
+            log_ws_event(f"annotator_ws[{session_id}] error: {type(e).__name__}: {e}", level="error")
             logger.exception(f"[annotator] ws failed, session={session_id}")
         try:
             await websocket.close(code=1011)
         except Exception:
             pass
-
-
+    finally:
+        if websocket.client_state == WebSocketState.DISCONNECTED:
+            log_ws_event(f"annotator_ws[{session_id}] disconnect")

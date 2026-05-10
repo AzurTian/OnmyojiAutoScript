@@ -7,11 +7,13 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from module.server.api_logger import ApiLoggingRoute
 from module.server.log_stats import log_stats_service
 
 stats_app = APIRouter(
     prefix="/stats",
     tags=["stats"],
+    route_class=ApiLoggingRoute,
 )
 
 

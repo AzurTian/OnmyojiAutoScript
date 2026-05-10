@@ -146,8 +146,8 @@
   {
     "itemName": "check_goryou",
     "imageName": "page_check_goryou.png",
-    "roiFront": "881,17,30,39",
-    "roiBack": "881,17,30,39",
+    "roiFront": "880,8,30,39",
+    "roiBack": "880,8,30,39",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "御灵页面标志"

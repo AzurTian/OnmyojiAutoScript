@@ -8,6 +8,7 @@ from pathlib import Path
 from module.config.utils import write_file
 from module.image.rpc import ensure_image_server_ready, get_image_client, shutdown_image_server
 from module.logger import logger
+from module.server.api_logger import ApiLoggingRoute
 from module.ocr.rpc import ensure_ocr_server_ready, get_ocr_client, shutdown_ocr_server
 from module.server.main_manager import MainManager
 from module.server.updater import Updater
@@ -16,6 +17,7 @@ from module.server.i18n import I18n
 home_app = APIRouter(
     prefix="/home",
     tags=["home"],
+    route_class=ApiLoggingRoute,
 )
 
 
