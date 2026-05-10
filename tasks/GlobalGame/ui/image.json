@@ -106,5 +106,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "弯曲返回按钮"
+  },
+  {
+    "itemName": "ui_any_to_main",
+    "imageName": "ui_ui_any_to_main.png",
+    "roiFront": "102,14,47,46",
+    "roiBack": "0,0,179,91",
+    "method": "Template matching",
+    "threshold": 0.9,
+    "description": "按住即可返回庭院"
   }
 ]
