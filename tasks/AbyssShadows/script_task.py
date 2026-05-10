@@ -16,12 +16,11 @@ from module.device.device import Device
 from tasks.AbyssShadows.config import AbyssShadows, EnemyType, AreaType, Code, AbyssShadowsDifficulty, \
     CodeList, IndexMap
 from tasks.AbyssShadows.assets import AbyssShadowsAssets
-from tasks.AbyssShadows.page import page_abyss
+from tasks.AbyssShadows.page import page_abyss, page_abyss_map, page_abyss_shikigami_records
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main, page_guild, page_shikigami_records
-from tasks.GlobalGame.assets import GlobalGameAssets
 
 
 
@@ -72,7 +71,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             raise TaskEnd
 
         # 切换御魂
-        self.switch_soul_in_as()
+        #self.switch_soul_in_as()
         # 进入狭间
         self.goto_page(page_abyss)
 
@@ -94,6 +93,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             if _next is None:
                 raise AbyssShadowsFinished
             area_enter = _next.get_areatype()
+            first_enemy_type = _next.get_enemy_type()  # 🔧 新增：获取第一个敌人的类型
 
             # 通过能否进入，检测狭间是否开启
             if not self.select_boss(area_enter):
@@ -101,6 +101,13 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
                 self.goto_page(page_main)
                 self.set_next_run(task='AbyssShadows', server=False, target=self.get_next_dt(datetime.now()))
                 raise TaskEnd
+
+            # 🔧 【核心新增】在等待战斗开始前，于狭间页面内切换御魂
+            if self.config.model.abyss_shadows.process_manage.enable_switch_soul_in_as:
+                logger.info(f"进入狭间，准备为第一个敌人({_next})切换御魂...")
+                # 调用现有的、在狭间内切换御魂的函数
+                self.switch_soul_in_abyss(first_enemy_type)
+            # 🔧 修改结束
 
             # 集结中图片
             self.wait_until_appear(self.I_WAIT_TO_START, wait_time=2)
@@ -777,7 +784,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             return
 
         # 直接在狭间页面点击式神录按钮进入式神录
-        self.goto_page(page_shikigami_records)
+        self.goto_page(page_abyss_shikigami_records)
 
         # 切换御魂
         try:
@@ -798,7 +805,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             raise RequestHumanTakeover
         finally:
             # 返回狭间活动页面
-            self.goto_page(page_abyss)
+            self.goto_page(page_abyss_map)
 
     def check_available(self, item_code: Code):
         # 判断该怪物是否可用
