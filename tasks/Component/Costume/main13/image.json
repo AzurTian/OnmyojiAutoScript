@@ -48,7 +48,7 @@
     "itemName": "wq_done_13",
     "imageName": "main13_wq_done_13.png",
     "roiFront": "172,281,32,34",
-    "roiBack": "97,245,213,170",
+    "roiBack": "97,171,211,244",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"

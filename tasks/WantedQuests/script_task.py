@@ -255,8 +255,8 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
             # ,荒川之怒·壹，4，前往按钮，function
             result = [-1, '', -1, GOTO_BUTTON[index], self.challenge, '']
             type_wq = OCR_WQ_TYPE[index].ocr(self.device.image)
-            if type_wq == '式神':  # 适配老逻辑, 将式神碎片改为挑战
-                type_wq = '挑战'
+            # 适配老逻辑, 将式神碎片改为挑战
+            type_wq = '挑战' if type_wq == '式神' else type_wq
             info_wq_1 = OCR_WQ_INFO[index].ocr(self.device.image)
             info_wq_1 = info_wq_1.replace('：', ':').replace('（', '(').replace('）', ')')
             info_wq_1 = info_wq_1.replace('：', ':')

@@ -7,6 +7,7 @@ import random
 from enum import Enum
 from cached_property import cached_property
 from datetime import timedelta, datetime
+from module.atom.gif import RuleGif
 from module.atom.image import RuleImage
 
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
@@ -247,7 +248,7 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
         self.appear_then_click(self.I_E_SURE_BUTTON)
 
     # 找up按钮
-    def search_up_fight(self, up_type: UpType = None) -> Optional[RuleImage]:
+    def search_up_fight(self, up_type: UpType = None) -> Optional[RuleImage | RuleGif]:
         up_type = self._config.exploration_config.up_type if up_type is None else up_type
         if up_type == UpType.ALL and self.appear(self.I_NORMAL_BATTLE_BUTTON):
             return self.I_NORMAL_BATTLE_BUTTON
@@ -377,7 +378,7 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
         """是否到达探索的最后方, 需要先调用截图"""
         return self._match_end.stable(self.device.image, refresh_after_stable=True, frame_id=self.device.image_frame_id)
 
-    def get_fire_button(self) -> Optional[RuleImage]:
+    def get_fire_button(self) -> Optional[RuleImage | RuleGif]:
         """获取需要攻击的按钮"""
         if self.appear(self.I_BOSS_BATTLE_BUTTON):
             self.fire_monster_type = 'boss'

@@ -8,6 +8,7 @@ import re
 
 from module.logger import logger
 from module.atom.image import RuleImage
+from tasks.GameUi.default_pages import page_shirin
 
 from tasks.GameUi.page import page_main, page_guild
 from tasks.GameUi.game_ui import GameUi
@@ -23,21 +24,16 @@ class Guild(Buy, GameUi, RichManAssets):
         if not con.enable:
             return
         logger.hr('Start guild', 1)
-        self.goto_page(page_guild)
-        while 1:
-            self.screenshot()
-            if self.appear(self.I_GUILD_CLOSE_RED):
-                break
-            if self.appear_then_click(self.I_GUILD_SHRINE, interval=0.8):
-                continue
-            if self.appear_then_click(self.I_GUILD_STORE, interval=1.1):
-                continue
+        self.goto_page(page_shirin)
+        self.ui_click(self.I_GUILD_STORE, self.I_GUILD_CLOSE_RED, interval=1.1)
         logger.info('Enter guild store success')
         time.sleep(0.5)
         swipe_cnt, max_swipe = 0, random.randint(4, 6)
-        mystery_ret, scrap_ret, skin_ret = False, False, False
+        mystery_ret, scrap_ret, skin_ret, gift_ret = False, False, False, False
         while swipe_cnt <= max_swipe:
             self.screenshot()
+            if con.honor_gift and self.appear(self.I_GUILD_HONOR_GIFT, interval=1.5) and not gift_ret:  # 功勋礼包
+                gift_ret = self._guild_honor_gift()
             if con.mystery_amulet and self.appear(self.I_GUILD_BLUE, interval=1.5) and not mystery_ret:  # 蓝票
                 mystery_ret = self._guild_mystery_amulet()
             if con.black_daruma_scrap and self.appear(self.I_GUILD_SCRAP, interval=1.5) and not scrap_ret:  # 黑碎
@@ -49,14 +45,21 @@ class Guild(Buy, GameUi, RichManAssets):
             logger.attr(max_swipe - swipe_cnt, 'remain swipe times')
             swipe_cnt += 1
         # 回去
-        while 1:
-            self.screenshot()
-            if self.appear(self.I_GUILD_SHRINE):
-                break
-            if self.appear_then_click(self.I_GUILD_CLOSE_RED, interval=1):
-                continue
-            if self.appear_then_click(self.I_UI_BACK_YELLOW, interval=1):
-                continue
+        self.goto_page(page_shirin)
+
+    def _guild_honor_gift(self):
+        # 功勋礼包
+        logger.hr('Guild honor gift', 2)
+        self.screenshot()
+        if not self.buy_check_money(self.O_GUILD_TOTAL, 210):
+            return False
+        number = self.check_remain(self.I_GUILD_HONOR_GIFT)
+        if number == 0:
+            logger.warning('No mystery amulet can buy')
+            return False
+        self.buy_more(self.I_GUILD_HONOR_GIFT, number)
+        time.sleep(0.5)
+        return True
 
     def _guild_mystery_amulet(self):
         # 蓝票

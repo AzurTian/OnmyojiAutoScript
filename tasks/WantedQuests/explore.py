@@ -1,11 +1,11 @@
-from cached_property import cached_property
-
-from module.atom.animate import RuleAnimate
+from module.atom.gif import RuleGif
 from module.atom.image import RuleImage
-from module.base.timer import Timer
 from module.logger import logger
-from tasks.Exploration.base import BaseExploration, Scene
+from tasks.Exploration import page as pages
+from tasks.Exploration.config import UpType
+from tasks.Exploration.script_task import ScriptTask as ExplorationScriptTask
 from tasks.Exploration.version import HighLight
+from typing import Optional
 
 
 class ExploreWantedBoss(Exception):
@@ -13,85 +13,43 @@ class ExploreWantedBoss(Exception):
     pass
 
 
-class WQExplore(BaseExploration, HighLight):
-    _cnt_exploration: int = 0
+class WQExplore(ExplorationScriptTask, HighLight):
+    _explor_cnt: int = 0  # 探索次数
+    _max_cnt: int = 0  # 探索最大次数
 
-    @cached_property
-    def _match_end(self):
-        return RuleAnimate(self.I_SWIPE_END)
+    def search_up_fight(self, up_type: UpType = None) -> Optional[RuleImage | RuleGif]:
+        if self.appear(self.TEMPLATE_GIF):
+            self.fire_monster_type = 'wq_normal'
+            return self.TEMPLATE_GIF
+        return None
+
+    def check_exit(self, current_page: pages.Page | None) -> bool:
+        need_exit = self._explor_cnt >= self._max_cnt
+        # 探索次数已经够了但是任何怪物都没打过
+        if need_exit and self.fire_monster_type == '':
+            raise ExploreWantedBoss
+        return need_exit
+
+    def arrive_end(self) -> bool:
+        arrived_end = super().arrive_end()
+        self._explor_cnt += 1 if arrived_end else 0
+        return arrived_end
+
+    def fire(self, button) -> bool:
+        fired = super().fire(button)
+        self._explor_cnt += 1 if fired and self.fire_monster_type == 'boss' else 0
+        return fired
 
     def explore(self, goto: RuleImage, num: int):
         logger.info(f'Start exploring with number: {num}')
-        explore_init = False
-        explore_only_boss: bool = True
-        _cnt_exploration = 0
-        search_fail_cnt = 0
-        while 1:
+        self._max_cnt = num
+        while True:
             self.screenshot()
-            if self.get_current_scene(reuse_screenshot=False) == Scene.ENTRANCE:
+            if pages.page_exp_entrance == self.get_current_page(False):
                 break
             if self.appear_then_click(goto, interval=2):
                 continue
-
-        while 1:
-            scene = self.get_current_scene(reuse_screenshot=False)
-            # 进入探索
-            if scene == Scene.ENTRANCE:
-                if _cnt_exploration >= num:
-                    logger.info('Execution exploration end')
-                    self.ui_click_until_disappear(self.I_UI_BACK_RED)
-                    if explore_only_boss:
-                        raise ExploreWantedBoss
-                    break
-                logger.info("点击探索")
-                self.ui_click(self.I_E_EXPLORATION_CLICK, stop=self.I_E_SETTINGS_BUTTON)
-                continue
-            # 探索大世界
-            elif scene == Scene.WORLD:
-                self.wait_until_stable(
-                    self.I_CHECK_EXPLORATION,
-                    timer=Timer(limit=0.5, count=2),
-                    timeout=Timer(2, count=10)
-                )
-                curr_scene = self.get_current_scene(reuse_screenshot=False)
-                if curr_scene == Scene.WORLD and _cnt_exploration >= num:
-                    logger.info('All Done')
-                    break
-                continue
-            # 探索里面
-            elif scene == Scene.MAIN:
-                # 小纸人
-                if self.appear(self.I_BATTLE_REWARD):
-                    if self.ui_get_reward(self.I_BATTLE_REWARD):
-                        continue
-                # boss
-                if self.appear(self.I_BOSS_BATTLE_BUTTON):
-                    if self.fire(self.I_BOSS_BATTLE_BUTTON):
-                        logger.info(f'Boss battle, minions cnt {self.minions_cnt}')
-                        _cnt_exploration += 1
-                        explore_only_boss = False
-                    continue
-                # 小怪
-                if self.appear(self.TEMPLATE_GIF) and self.fire(self.TEMPLATE_GIF):
-                    explore_only_boss = False
-                    logger.info(f'Fight, minions cnt {self.minions_cnt}')
-                    continue
-                # 向后拉,寻找怪
-                if search_fail_cnt >= 4:
-                    search_fail_cnt = 0
-                    if self._match_end.stable(self.device.image, frame_id=self.device.image_frame_id):
-                        _cnt_exploration += 1
-                        self.quit_explore()
-                        continue
-                    if self.swipe(self.S_SWIPE_BACKGROUND_RIGHT, interval=3):
-                        continue
-                else:
-                    search_fail_cnt += 1
-            elif scene==Scene.BATTLE_PREPARE:
-                self.ui_click_until_disappear(self.I_PREPARE_HIGHLIGHT, interval=0.5)
-            elif scene == Scene.UNKNOWN:
-                continue
-
+        self.run_alone()
 
 if __name__ == '__main__':
     from module.config.config import Config

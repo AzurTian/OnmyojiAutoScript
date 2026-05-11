@@ -22,7 +22,8 @@ class Weekday(str, Enum):
         return list(Weekday).index(self)
 
 
-class GuildBanquetTime(BaseModel):
+class GuildBanquetConfig(BaseModel):
+    auto_switch_shikigami: bool = Field(default=False, description='guild_auto_switch_shikigami_help')
     # 自定义运行时间
     day_1: Weekday = Field(default=Weekday.Wednesday, description="每周第1次运行星期设置，第一次星期要比第二次星期早")
     run_time_1: Time = Field(default=Time(hour=20, minute=0, second=0),
@@ -33,5 +34,5 @@ class GuildBanquetTime(BaseModel):
 
 class GuildBanquet(ConfigBase):
     scheduler: Scheduler = Field(default_factory=Scheduler)
-    guild_banquet_time: GuildBanquetTime = Field(default_factory=GuildBanquetTime)
+    guild_banquet_config: GuildBanquetConfig = Field(default_factory=GuildBanquetConfig)
 
