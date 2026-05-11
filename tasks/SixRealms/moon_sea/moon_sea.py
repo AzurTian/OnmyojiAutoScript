@@ -1,8 +1,6 @@
-import time
-
+import re
 from module.logger import logger
 
-from cached_property import cached_property
 from datetime import datetime, timedelta
 
 from tasks.SixRealms.moon_sea.map import MoonSeaMap
@@ -11,102 +9,57 @@ from tasks.SixRealms.moon_sea.l102 import MoonSeaL102
 from tasks.SixRealms.moon_sea.l103 import MoonSeaL103
 from tasks.SixRealms.moon_sea.l104 import MoonSeaL104
 from tasks.SixRealms.moon_sea.l105 import MoonSeaL105
-from tasks.SixRealms.common import MoonSeaType
+from tasks.SixRealms.moon_sea.common import MoonSeaType
 
 
 class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, MoonSeaL105):
-
-    @cached_property
-    def island_func(self) -> dict:
-        return {
-            MoonSeaType.island101: self.run_l101(),
-            MoonSeaType.island102: self.run_l102(),
-            MoonSeaType.island103: self.run_103(),
-            MoonSeaType.island104: self.run_l104(),
-            MoonSeaType.island105: self.run_l105(),
-        }
 
     @property
     def _conf(self):
         return self.config.model.six_realms.six_realms_gate
 
-    def _run_moon_sea(self):
-        # 在六道界面
-        limit_time = self._conf.limit_time
-        max_cont = self._conf.limit_count
-        max_time: timedelta = timedelta(
-            hours=limit_time.hour,
-            minutes=limit_time.minute,
-            seconds=limit_time.second
-        )
-        cnt = 0
-        while 1:
-            if cnt >= max_cont:
-                logger.info('Run out of count, exit')
-                break
-            if datetime.now() - self.start_time >= max_time:
-                logger.info('Run out of time, exit')
-                break
-            self.one()
-            cnt += 1
-        logger.info('Exit Moon Sea')
-
-
-    def one(self):
+    def run_moon_sea(self):
         self.cnt_skill101 = 1
         self._start()
-        while 1:
+        while True:
             self.screenshot()
             if not self.in_main():
                 continue
-            isl_type, isl_num, isl_roi = MoonSeaType.island100, 0, (0, 0, 0, 0)
-            for i in range(3):
-                if isl_type != MoonSeaType.island100:
-                    break
-                self.screenshot()
-                isl_type, isl_num, isl_roi = self.decide()
-            if isl_num == 1 and isl_type != MoonSeaType.island106:
-                # 如果前一个，召唤一次宁息
-                if self.cnt_skill101 >= 5:
-                    # 如果柔风满级就不召唤
-                    pass
-                elif self.appear(self.I_M_STORE):
-                    # 如果没有三百块就不能召唤
-                    logger.info('There have no money to active store at the last island')
-                    pass
-                else:
-                    self.activate_store()
-                    self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=3)
-                    isl_type, isl_num, isl_roi = MoonSeaType.island100, 0, (0, 0, 0, 0)
-                    for i in range(3):
-                        if isl_type != MoonSeaType.island100:
-                            break
-                        self.screenshot()
-                        isl_type, isl_num, isl_roi = self.decide()
-                    # 文字检测不一定发现到宁息
-                    if isl_type != MoonSeaType.island101:
-                        logger.warning('OCR not found island101')
-                        logger.warning('Try to entry the island in the right randomly order')
-                        self.entry_island_random()
-
-            # 如果是boss
-            if isl_type == MoonSeaType.island106:
+            if self.appear(self.I_BOSS_FIRE):  # 最后boss
                 self.boss_team_lock()
                 if self.boss_battle():
                     break
-                else:
+                continue
+            remain_turns = self.O_REMAIN_TURNS.ocr_single(self.device.image)
+            match = re.search(r'\d{1,2}', remain_turns)
+            isl_num = 0
+            if self.contains_any_char(remain_turns, chars='回合') and match:
+                isl_num = int(match.group())
+            # 如果还剩1回合, 且当前不是商店, 并且技能没满和金币足够就开启商店
+            if isl_num == 1 and not self.appear(self.I_MS_LAND_SHOP) and self.cnt_skill101 < 5 and self.coin_num >= 300:
+                self.activate_store()
+            # 优先级：商店 > 神秘 > 混沌 > 星之屿 > 战斗
+            elif self.appear(self.I_MS_LAND_SHOP):
+                if not self.enter_island(self.I_MS_LAND_SHOP):
                     continue
-
-            self.enter_island(isl_type=isl_type, isl_roi=isl_roi)
-            isl_type = self.island_name()
-            match isl_type:
-                case MoonSeaType.island101: self.run_l101()
-                case MoonSeaType.island102: self.run_l102()
-                case MoonSeaType.island103: self.run_l103()
-                case MoonSeaType.island104: self.run_l104()
-                case MoonSeaType.island105: self.run_l105()
-            self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=3)
-            continue
+                self.run_l101()
+            elif self.appear(self.I_MS_LAND_MYSTERY):
+                if not self.enter_island(self.I_MS_LAND_MYSTERY):
+                    continue
+                self.run_l102()
+            elif self.appear(self.I_MS_LAND_CHAOS):
+                if not self.enter_island(self.I_MS_LAND_CHAOS):
+                    continue
+                self.run_l103()
+            elif self.appear(self.I_MS_LAND_STAR):
+                if not self.enter_island(self.I_MS_LAND_STAR):
+                    continue
+                self.run_l105()
+            elif self.appear(self.I_MS_LAND_FIRE):
+                if not self.enter_island(self.I_MS_LAND_FIRE):
+                    continue
+                self.run_l104()
+            self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=1.5)
 
     def _continue(self):
         logger.warning('Moon Sea Continue')
@@ -126,7 +79,6 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
             if self.appear_then_click(self.I_MENTER, interval=1):
                 continue
             if self.appear(self.I_MCONINUE):
-                # 继续上一把的
                 self._continue()
                 return
         logger.info("Ensure select ShouZu")
@@ -169,21 +121,6 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
         # 选中第一个柔风
         logger.info("Select first skill")
 
-    def island_name(self) -> MoonSeaType:
-        while 1:
-            self.screenshot()
-            text = self.O_ISLAND_NAME.ocr(self.device.image)
-            if '星' in text:
-                return MoonSeaType.island105
-            if '战' in text:
-                return MoonSeaType.island104
-            if '混' in text:
-                return MoonSeaType.island103
-            if '神秘' in text:
-                return MoonSeaType.island102
-            if '宁息' in text:
-                return MoonSeaType.island101
-
     def boss_team_lock(self):
         while 1:
             self.screenshot()
@@ -207,7 +144,6 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
                 logger.warning('Boss battle give up')
                 self.ui_click_until_disappear(self.I_BOSS_BATTLE_GIVEUP, interval=1)
                 continue
-
             if self.appear(self.I_BOSS_USE_DOUBLE, interval=1):
                 # 双倍奖励
                 logger.info('Double reward')
@@ -237,9 +173,9 @@ if __name__ == '__main__':
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config('日常1')
     d = Device(c)
     t = MoonSea(c, d)
     t.screenshot()
 
-    t.one()
+    t.run_moon_sea()

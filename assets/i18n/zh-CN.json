@@ -112,5 +112,9 @@
   "honor_gift": "功勋礼包",
   "guild_banquet_config": "寮宴会配置",
   "auto_switch_shikigami": "自动切换式神",
-  "guild_auto_switch_shikigami_help": "开启后会在式神经验全满后自动切换式神"
+  "guild_auto_switch_shikigami_help": "开启后会在式神经验全满后自动切换式神",
+  "six_realms_type": "六道之门类型",
+  "six_realms_type_help": "暂只支持月之海椒图",
+  "MoonSea": "月之海椒图",
+  "PeacockKingdom": "孔雀国觉"
 }

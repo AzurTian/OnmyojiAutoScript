@@ -1,0 +1,47 @@
+[
+  {
+    "itemName": "ms_land_fire",
+    "imageName": "ms_ms_land_fire.png",
+    "roiFront": "289,313,18,26",
+    "roiBack": "124,140,1013,515",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "鏖战岛屿标志"
+  },
+  {
+    "itemName": "ms_land_chaos",
+    "imageName": "ms_ms_land_chaos.png",
+    "roiFront": "650,373,17,20",
+    "roiBack": "124,140,1013,515",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "混沌岛屿标志"
+  },
+  {
+    "itemName": "ms_land_star",
+    "imageName": "ms_ms_land_star.png",
+    "roiFront": "651,379,17,20",
+    "roiBack": "124,140,1013,515",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "星之屿岛屿标志"
+  },
+  {
+    "itemName": "ms_land_shop",
+    "imageName": "ms_ms_land_shop.png",
+    "roiFront": "650,406,18,26",
+    "roiBack": "124,140,1013,515",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "宁息岛屿标志"
+  },
+  {
+    "itemName": "ms_land_mystery",
+    "imageName": "ms_ms_land_mystery.png",
+    "roiFront": "651,430,18,26",
+    "roiBack": "124,140,1013,515",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "神秘岛屿标志"
+  }
+]

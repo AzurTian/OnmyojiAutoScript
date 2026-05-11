@@ -1,0 +1,20 @@
+[
+  {
+    "itemName": "l103_exit",
+    "imageName": "l103_exit.png",
+    "roiFront": "1171,587,69,70",
+    "roiBack": "1078,538,195,180",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "description"
+  },
+  {
+    "itemName": "l103_land_flag",
+    "imageName": "l103_land_flag.png",
+    "roiFront": "543,601,100,100",
+    "roiBack": "543,601,100,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "动画完了就有这个东西"
+  }
+]

@@ -1,16 +1,16 @@
 [
   {
     "itemName": "menter",
-    "imageName": "gate1_menter.png",
+    "imageName": "ms_menter.png",
     "roiFront": "346,167,30,100",
     "roiBack": "346,167,30,100",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "description"
+    "description": "进入月之海"
   },
   {
     "itemName": "mshuten",
-    "imageName": "gate1_mshuten.png",
+    "imageName": "ms_mshuten.png",
     "roiFront": "46,609,70,65",
     "roiBack": "46,609,70,65",
     "method": "Template matching",
@@ -19,7 +19,7 @@
   },
   {
     "itemName": "mshouzu_select",
-    "imageName": "gate1_mshouzu_select.png",
+    "imageName": "ms_mshouzu_select.png",
     "roiFront": "544,179,199,438",
     "roiBack": "544,179,199,438",
     "method": "Template matching",
@@ -28,7 +28,7 @@
   },
   {
     "itemName": "mshouzu",
-    "imageName": "gate1_mshouzu.png",
+    "imageName": "ms_mshouzu.png",
     "roiFront": "43,608,73,67",
     "roiBack": "43,608,73,67",
     "method": "Template matching",
@@ -37,7 +37,7 @@
   },
   {
     "itemName": "mstart",
-    "imageName": "gate1_mstart.png",
+    "imageName": "ms_mstart.png",
     "roiFront": "1136,575,100,100",
     "roiBack": "1043,527,215,167",
     "method": "Template matching",
@@ -46,7 +46,7 @@
   },
   {
     "itemName": "mstart_confirm",
-    "imageName": "gate1_mstart_confirm.png",
+    "imageName": "ms_mstart_confirm.png",
     "roiFront": "1136,575,100,100",
     "roiBack": "1080,548,182,150",
     "method": "Template matching",
@@ -55,7 +55,7 @@
   },
   {
     "itemName": "mstart_uncheck",
-    "imageName": "gate1_mstart_uncheck.png",
+    "imageName": "ms_mstart_uncheck.png",
     "roiFront": "543,340,38,40",
     "roiBack": "543,340,38,40",
     "method": "Template matching",
@@ -64,7 +64,7 @@
   },
   {
     "itemName": "mstart_check",
-    "imageName": "gate1_mstart_check.png",
+    "imageName": "ms_mstart_check.png",
     "roiFront": "542,340,39,41",
     "roiBack": "542,340,39,41",
     "method": "Template matching",
@@ -73,7 +73,7 @@
   },
   {
     "itemName": "mskip",
-    "imageName": "gate1_mskip.png",
+    "imageName": "ms_mskip.png",
     "roiFront": "1117,28,58,36",
     "roiBack": "1117,28,58,36",
     "method": "Template matching",
@@ -82,7 +82,7 @@
   },
   {
     "itemName": "prepare_battle",
-    "imageName": "gate1_prepare_battle.png",
+    "imageName": "ms_prepare_battle.png",
     "roiFront": "33,640,48,54",
     "roiBack": "33,640,48,54",
     "method": "Template matching",
@@ -91,7 +91,7 @@
   },
   {
     "itemName": "mconinue",
-    "imageName": "gate1_mconinue.png",
+    "imageName": "ms_mconinue.png",
     "roiFront": "1121,578,100,100",
     "roiBack": "1121,578,100,100",
     "method": "Template matching",
@@ -100,7 +100,7 @@
   },
   {
     "itemName": "mfirst_skill",
-    "imageName": "gate1_mfirst_skill.png",
+    "imageName": "ms_mfirst_skill.png",
     "roiFront": "255,577,141,39",
     "roiBack": "206,550,227,100",
     "method": "Template matching",
@@ -109,7 +109,7 @@
   },
   {
     "itemName": "m_store",
-    "imageName": "gate1_m_store.png",
+    "imageName": "ms_m_store.png",
     "roiFront": "1124,594,61,57",
     "roiBack": "1103,576,100,100",
     "method": "Template matching",
@@ -118,7 +118,7 @@
   },
   {
     "itemName": "back_exit",
-    "imageName": "gate1_back_exit.png",
+    "imageName": "ms_back_exit.png",
     "roiFront": "11,18,51,47",
     "roiBack": "0,0,100,100",
     "method": "Template matching",
@@ -127,7 +127,7 @@
   },
   {
     "itemName": "m_store_activity",
-    "imageName": "gate1_m_store_activity.png",
+    "imageName": "ms_m_store_activity.png",
     "roiFront": "1121,596,72,57",
     "roiBack": "1107,573,100,100",
     "method": "Template matching",
@@ -136,7 +136,7 @@
   },
   {
     "itemName": "mstart_confirm2",
-    "imageName": "gate1_mstart_confirm2.png",
+    "imageName": "ms_mstart_confirm2.png",
     "roiFront": "1154,581,74,85",
     "roiBack": "1079,535,196,177",
     "method": "Template matching",
@@ -144,17 +144,8 @@
     "description": "description"
   },
   {
-    "itemName": "island_tag_flag",
-    "imageName": "gate1_island_tag_flag.png",
-    "roiFront": "543,601,100,100",
-    "roiBack": "543,601,100,100",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "动画完了就有这个东西"
-  },
-  {
     "itemName": "exit_sixrealms",
-    "imageName": "gate1_exit_sixrealms.png",
+    "imageName": "ms_exit_sixrealms.png",
     "roiFront": "507.5,308,100,100",
     "roiBack": "507.5,308,100,100",
     "method": "Template matching",

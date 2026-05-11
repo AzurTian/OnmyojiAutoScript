@@ -1,5 +1,5 @@
+import random
 import re
-import time
 from module.logger import logger
 from module.base.timer import Timer
 from tasks.SixRealms.moon_sea.skills import MoonSeaSkills
@@ -9,22 +9,23 @@ class MoonSeaL101(MoonSeaSkills):
 
     def buy_skill_101(self) -> bool:
         logger.info('Buy skill 101')
-        self.wait_animate_stable(self.C_STORE_ANIMATE_KEEP, timeout=2)
+        self.wait_animate_stable(self.C_STORE_ANIMATE_KEEP, timeout=1.5)
         self.wait_until_appear(self.I_STORE_STABLE_FLAG)
         buy_try: int = 0
-        while 1:
+        while True:
             self.screenshot()
             if self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=1.5):
                 break
             if self.appear(self.I_UI_CONFIRM):
                 break
-            if buy_try >= 4:
+            if buy_try >= 3:
                 logger.warning(f'Buy skill 101 failed')
                 return False
             if self.appear(self.I_STORE_SKILL_101, interval=3):
                 x, y = self.I_STORE_SKILL_101.front_center()
-                x -= 60
-                self.device.click(x=x, y=y, )
+                x -= random.randint(35, 60)
+                y += random.randint(-self.I_STORE_SKILL_101.roi_front[3]//2, self.I_STORE_SKILL_101.roi_front[3]//2)
+                self.device.click(x=x, y=y, control_name='Click Buy Skill101')
                 buy_try += 1
         self.ui_click_until_disappear(self.I_UI_CONFIRM)
         self.wait_until_appear(self.I_STORE_EXIT)
@@ -34,31 +35,19 @@ class MoonSeaL101(MoonSeaSkills):
         return True
 
     def refresh_store(self) -> bool:
-        # 刷新宁溪
-        # 只会点击一次
         logger.info('Refresh store')
         text = self.O_STORE_REFRESH_TIME.ocr(self.device.image)
         matches = re.search(f"剩\d+次", text)
-        if matches:
-            refresh_time = int(matches.group()[1])
-            logger.info(f'Refresh time: {refresh_time}')
-            if refresh_time <= 0:
-                logger.warning('Refresh time is 0')
-                return False
-        cnt_refresh = 0
-        # while 1:
-        #     self.screenshot()
-        #     if self.appear(self.I_UI_CONFIRM):
-        #         break
-        #     if self.appear_then_click(self.I_STORE_REFRESH, interval=1.5):
-        #         cnt_refresh += 1
-        #         continue
-        #     if cnt_refresh >= 1:
-        #         return False
-        # self.ui_click_until_disappear(self.I_UI_CONFIRM, interval=2)
-        # self.wait_until_appear(self.I_STORE_EXIT)
+        if not matches:
+            logger.warning('Refresh time not match, exit')
+            return False
+        refresh_time = int(matches.group()[1])
+        logger.info(f'Refresh time: {refresh_time}')
+        if refresh_time <= 0:
+            logger.warning('Refresh time is 0')
+            return False
         self.appear_then_click(self.I_STORE_REFRESH, interval=1.5)
-        self.wait_until_stable(self.I_UI_CONFIRM, timeout=Timer(2, count=10))
+        self.wait_until_stable(self.I_UI_CONFIRM, timeout=Timer(1.5, count=10))
         logger.info('Refresh store done')
         return True
 
@@ -66,31 +55,27 @@ class MoonSeaL101(MoonSeaSkills):
         logger.hr('Start l101')
         logger.info('Keep buying skills until you run out of money')
         self.wait_until_appear(self.I_STORE_EXIT)
-        self.wait_animate_stable(self.C_STORE_ANIMATE_KEEP, timeout=2)
+        self.wait_animate_stable(self.C_STORE_ANIMATE_KEEP, timeout=1.5)
         if self.appear(self.I_UI_CANCEL):
             # 有时候点击进入商店太快了，就进入会选随机的一个
             self.ui_click_until_disappear(self.I_UI_CANCEL, interval=1)
-        while 1:
+        while self.cnt_skill101 < 5:
             self.screenshot()
-            coin = self.O_COIN_NUM.ocr(self.device.image)
-            if coin < 300:
-                logger.info('Not enough coin')
-                break
-            if self.cnt_skill101 >= 5:
-                logger.info('Skill 101 level is max')
-                break
-
+            self.coin_num = self.O_COIN_NUM.ocr(self.device.image)
+            logger.info(f'Current coin: {self.coin_num}')
             if self.appear(self.I_UI_CONFIRM):
                 self.ui_click_until_disappear(self.I_UI_CONFIRM, interval=1)
-            if self.appear(self.I_STORE_SKILL_101):
+                continue
+            if self.coin_num > 300 and self.appear(self.I_STORE_SKILL_101):
                 self.buy_skill_101()
-            elif coin < 400:
+                continue
+            if self.coin_num < 400:  # 钱<400不允许刷新
+                logger.info('There have not enough coin to refresh and buy')
                 break
-            elif not self.refresh_store():
+            if not self.refresh_store():
                 break
-
         logger.info('Finish purchase skill 101')
-        while 1:
+        while True:
             self.screenshot()
             if self.in_main():
                 break
