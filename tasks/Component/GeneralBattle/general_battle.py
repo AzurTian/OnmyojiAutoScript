@@ -226,7 +226,6 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
             self.appear(self.I_BATTLE_INFO)
             or self.appear(self.I_PREPARE_HIGHLIGHT)
             or self.appear(self.I_FRIENDS)
-            or self.appear(self.I_EXIT)
             or self.appear(self.I_WIN)
             or self.appear(self.I_DE_WIN)
             or self.appear(self.I_FALSE)
