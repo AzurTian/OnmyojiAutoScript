@@ -9,15 +9,6 @@
     "description": "Ocr-description"
   },
   {
-    "itemName": "island_name",
-    "roiFront": "88,17,148,49",
-    "roiBack": "88,17,148,49",
-    "mode": "Single",
-    "method": "Default",
-    "keyword": "",
-    "description": "Ocr-description"
-  },
-  {
     "itemName": "coin_num",
     "roiFront": "1171,23,59,31",
     "roiBack": "1171,23,59,31",
@@ -34,5 +25,23 @@
     "method": "Default",
     "keyword": "",
     "description": "Ocr-description"
+  },
+  {
+    "itemName": "remain_turns",
+    "roiFront": "1071,229,67,28",
+    "roiBack": "1071,229,67,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "剩余回合"
+  },
+  {
+    "itemName": "extra_coin_num",
+    "roiFront": "591,331,109,101",
+    "roiBack": "591,331,109,101",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "获取的额外钱币数量"
   }
 ]

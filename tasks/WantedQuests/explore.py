@@ -43,6 +43,7 @@ class WQExplore(ExplorationScriptTask, HighLight):
     def explore(self, goto: RuleImage, num: int):
         logger.info(f'Start exploring with number: {num}')
         self._max_cnt = num
+        self._explor_cnt = 0
         while True:
             self.screenshot()
             if pages.page_exp_entrance == self.get_current_page(False):

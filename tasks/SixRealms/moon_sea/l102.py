@@ -39,9 +39,10 @@ class MoonSeaL102(MoonSeaSkills):
         # 仿造
         logger.info('Imitate')
         cnt_imitate = 0
-        while 1:
+        while self.cnt_skill101 < 5:
             self.screenshot()
             if self.in_main():
+                self.cnt_skill101 += 1
                 break
             if self.appear_then_click(self.I_IMITATE_1, interval=2.5):
                 continue
@@ -52,17 +53,16 @@ class MoonSeaL102(MoonSeaSkills):
             if cnt_imitate >= 3:
                 logger.info('Finish Imitate Fail')
                 logger.info('The most possible reason is that the skill is max level')
-                while 1:
-                    self.screenshot()
-                    if self.in_main():
-                        break
-                    if self.appear_then_click(self.I_BACK_EXIT, interval=2):
-                        continue
                 break
             if self.appear_then_click(self.I_IMITATE, interval=1):
                 cnt_imitate += 1
                 continue
-        self.cnt_skill101 += 1
+        while True:
+            self.screenshot()
+            if self.in_main():
+                break
+            if self.appear_then_click(self.I_BACK_EXIT, interval=2):
+                continue
         logger.info(f'Skill 101 level: {self.cnt_skill101}')
         logger.info('Finish Imitate')
 
