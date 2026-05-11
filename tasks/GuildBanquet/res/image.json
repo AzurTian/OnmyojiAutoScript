@@ -1,11 +1,56 @@
 [
   {
-    "itemName": "flag",
-    "imageName": "res_flag.png",
+    "itemName": "banquet_flag",
+    "imageName": "res_banquet_flag.png",
     "roiFront": "1035,12,33,60",
     "roiBack": "1035,12,33,60",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "description"
+    "description": "寮宴会集结标志"
+  },
+  {
+    "itemName": "banquet_exp_full",
+    "imageName": "res_banquet_exp_full.png",
+    "roiFront": "28,408,18,16",
+    "roiBack": "7,138,106,366",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "经验已满标志"
+  },
+  {
+    "itemName": "banquet_switch",
+    "imageName": "res_banquet_switch.png",
+    "roiFront": "998,164,49,83",
+    "roiBack": "974,131,106,152",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "宴会式神轮换标志"
+  },
+  {
+    "itemName": "banquet_confirm",
+    "imageName": "res_banquet_confirm.png",
+    "roiFront": "1072,411,50,59",
+    "roiBack": "990,348,202,163",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "确定轮换式神标志"
+  },
+  {
+    "itemName": "banquet_all_put",
+    "imageName": "res_banquet_all_put.png",
+    "roiFront": "718,412,90,31",
+    "roiBack": "653,377,233,105",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "一键放入标志"
+  },
+  {
+    "itemName": "banquet_clear_all",
+    "imageName": "res_banquet_clear_all.png",
+    "roiFront": "480,413,90,31",
+    "roiBack": "416,377,233,105",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "一键清空"
   }
 ]

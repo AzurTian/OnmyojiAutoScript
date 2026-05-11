@@ -70,5 +70,14 @@
     "method": "Template matching",
     "threshold": 0.6,
     "description": "购买黑碎检查"
+  },
+  {
+    "itemName": "guild_honor_gift",
+    "imageName": "guild_guild_honor_gift.png",
+    "roiFront": "577,224,56,49",
+    "roiBack": "315,164,584,370",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "功勋礼包"
   }
 ]

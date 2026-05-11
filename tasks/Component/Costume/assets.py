@@ -74,7 +74,7 @@ class CostumeAssets:
 	# description 
 	I_MAIN_GOTO_EXPLORATION_13 = RuleImage(roi_front=(561,133,24,45), roi_back=(543,125,57,64), threshold=0.6, method="Template matching", file="./tasks/Component/Costume/main13/main13_main_goto_exploration_13.png")
 	# description 
-	I_WQ_DONE_13 = RuleImage(roi_front=(172,281,32,34), roi_back=(97,245,213,170), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main13/main13_wq_done_13.png")
+	I_WQ_DONE_13 = RuleImage(roi_front=(172,281,32,34), roi_back=(97,171,211,244), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main13/main13_wq_done_13.png")
 	# description 
 	I_HARVEST_SIGN_13 = RuleImage(roi_front=(890,424,21,30), roi_back=(804,387,312,129), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main13/main13_harvest_sign_13.png")
 	# description 
@@ -128,7 +128,7 @@ class CostumeAssets:
 
 	# Image Rule Assets
 	# description 
-	I_CHECK_MAIN_4 = RuleImage(roi_front=(513,139,48,55), roi_back=(149,108,1068,100), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main4/main4_check_main_4.png")
+	I_CHECK_MAIN_4 = RuleImage(roi_front=(885,192,37,32), roi_back=(149,108,1005,144), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main4/main4_check_main_4.png")
 	# description 
 	I_MAIN_GOTO_EXPLORATION_4 = RuleImage(roi_front=(439,234,32,48), roi_back=(150,201,847,100), threshold=0.8, method="Template matching", file="./tasks/Component/Costume/main4/main4_main_goto_exploration_4.png")
 	#  

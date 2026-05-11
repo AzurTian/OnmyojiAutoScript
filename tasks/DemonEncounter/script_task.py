@@ -14,12 +14,12 @@ from module.base.timer import Timer
 
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.DemonEncounter.config import BossType, DemonEncounter, convert_to_general_battle_config
+from tasks.DemonEncounter.page import page_rwt
 from tasks.GameUi.default_pages import page_main
 from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_demon_encounter, page_shikigami_records
+from tasks.GameUi.page import page_shikigami_records
 from tasks.DemonEncounter.assets import DemonEncounterAssets
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleConfig
 from tasks.DemonEncounter.data.answer import Answer
 
 
@@ -47,7 +47,7 @@ class ScriptTask(GameUi, GeneralBattle, DemonEncounterAssets, SwitchSoul):
         if soul_config.enable or best_soul_config.enable:
             self.goto_page(page_shikigami_records)
             self.checkout_soul()
-        self.goto_page(page_demon_encounter)
+        self.goto_page(page_rwt)
         self.execute_lantern()
         self.execute_boss()
         self.goto_page(page_main)
@@ -118,7 +118,7 @@ class ScriptTask(GameUi, GeneralBattle, DemonEncounterAssets, SwitchSoul):
         def enter_boss():
             logger.info('trying to enter boss...')
             # 点击集结挑战
-            boss_fire_count = 0  # 五次没点到就意味着今天已经挑战过了
+            boss_fire_count = 0  # 三次没点到就意味着今天已经挑战过了
             ocr_people_item = self.O_DE_BEST_BOSS_PEOPLE if self.best_demon_enable else self.O_DE_BOSS_PEOPLE
             while 1:
                 self.screenshot()
@@ -143,7 +143,7 @@ class ScriptTask(GameUi, GeneralBattle, DemonEncounterAssets, SwitchSoul):
                     break
                 if self.appear(self.I_BOSS_GATHER):
                     break
-                if boss_fire_count >= 5:
+                if boss_fire_count >= 3:
                     logger.warning('Boss battle already done')
                     self.set_next_run(task='DemonEncounter', success=False, finish=True, server=True)
                     self.ui_click_until_disappear(self.I_UI_BACK_RED)

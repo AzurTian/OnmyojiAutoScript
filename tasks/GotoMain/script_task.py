@@ -10,6 +10,7 @@ from module.exception import TaskEnd
 class ScriptTask(GameUi):
 
     def run(self) -> None:
+        self.device.stuck_record_clear()
         self.goto_page(page_main)
         raise TaskEnd('Goto main end')
 

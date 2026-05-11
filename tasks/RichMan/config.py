@@ -97,6 +97,7 @@ class Bondlings(BaseModel):
 class GuildStore(BaseModel):
     # 寮商店
     enable: bool = Field(title='Enable', default=False)
+    honor_gift: bool = Field(default=False)
     mystery_amulet: bool = Field(title='Mystery Amulet', default=False)
     black_daruma_scrap: bool = Field(title='Black Daruma Scrap', default=False)
     skin_ticket: int = Field(title='Skin Ticket', default=0, description='skin_ticket_help')

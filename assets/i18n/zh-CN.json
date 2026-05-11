@@ -108,5 +108,9 @@
   "OtherWorldTwilight": "彼世逢魔",
   "other_world_twilight_config": "彼世逢魔配置",
   "auto_fill": "智能放入",
-  "auto_fill_help": "开启后使用智能放入寄养式神"
+  "auto_fill_help": "开启后使用智能放入寄养式神",
+  "honor_gift": "功勋礼包",
+  "guild_banquet_config": "寮宴会配置",
+  "auto_switch_shikigami": "自动切换式神",
+  "guild_auto_switch_shikigami_help": "开启后会在式神经验全满后自动切换式神"
 }

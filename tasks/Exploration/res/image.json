@@ -173,7 +173,7 @@
   {
     "itemName": "treasure_box_click",
     "imageName": "res_treasure_box_click.png",
-    "roiFront": "32,363,51,40",
+    "roiFront": "36,369,42,32",
     "roiBack": "0,79,110,637",
     "method": "Template matching",
     "threshold": 0.7,
