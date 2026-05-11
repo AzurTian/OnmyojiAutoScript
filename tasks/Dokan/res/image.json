@@ -128,8 +128,8 @@
   {
     "itemName": "ryou_dokan_start_challenge",
     "imageName": "res_ryou_dokan_start_challenge.png",
-    "roiFront": "1100,550,180,80",
-    "roiBack": "1100,550,180,80",
+    "roiFront": "1113,561,128,95",
+    "roiBack": "1113,561,128,95",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "状态：检查右下角有没有挑战？通常是失败了，并退出来到集结界面，可重新开始点击右下角挑战进入战斗"

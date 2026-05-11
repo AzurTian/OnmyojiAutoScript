@@ -69,7 +69,7 @@ class DokanAssets:
 	# 状态：集结等待中。检查右下角的挑战是不是灰色的。FIXME 黄色和灰色的挑战截图总是傻傻分不清，先改用OCR 
 	I_RYOU_DOKAN_GATHERING = RuleImage(roi_front=(653,76,46,26), roi_back=(653,76,46,26), threshold=0.85, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_gathering.png")
 	# 状态：检查右下角有没有挑战？通常是失败了，并退出来到集结界面，可重新开始点击右下角挑战进入战斗 
-	I_RYOU_DOKAN_START_CHALLENGE = RuleImage(roi_front=(1100,550,180,80), roi_back=(1100,550,180,80), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_start_challenge.png")
+	I_RYOU_DOKAN_START_CHALLENGE = RuleImage(roi_front=(1113,561,128,95), roi_back=(1113,561,128,95), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_start_challenge.png")
 	# 状态：达到失败次数，CD中。挑战次数恢复倒数 
 	I_RYOU_DOKAN_CD1 = RuleImage(roi_front=(1068,500,146,27), roi_back=(1068,500,146,27), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_cd1.png")
 	# 状态：达到失败次数，CD中。观战按钮 
