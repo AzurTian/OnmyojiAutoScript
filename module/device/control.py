@@ -1,3 +1,5 @@
+import time
+
 # from module.base.button import Button
 from module.base.decorator import cached_property
 from module.base.timer import Timer
@@ -15,6 +17,10 @@ class Control(Minitouch, Adb, Scrcpy, Window):
     def handle_control_check(self, button):
         # Will be overridden in Device
         pass
+
+    @staticmethod
+    def _format_action_duration(duration_seconds: float) -> str:
+        return f'[{duration_seconds:.2f}s] '
 
     def _invalidate_image_batch_cache(self) -> None:
         invalidate = getattr(self, 'invalidate_image_batch_cache', None)
@@ -44,26 +50,6 @@ class Control(Minitouch, Adb, Scrcpy, Window):
             # 'MaaTouch': self.click_maatouch,
         }
 
-    # def click(self, button, control_check=True):
-    #     """
-    #     后面改一改  不用用button的逻辑
-    #     :param button:
-    #     :param control_check:
-    #     :return:
-    #     """
-    #     if control_check:
-    #         self.handle_control_check(button)
-    #     x, y = random_rectangle_point(button.button)
-    #     x, y = ensure_int(x, y)
-    #     logger.info(
-    #         'Click %s @ %s' % (point2str(x, y), button)
-    #     )
-    #     method = self.click_methods.get(
-    #         self.config.script.emulator.control_method,
-    #         self.click_adb
-    #     )
-    #     method(x, y)
-
     def click(self, x: int, y: int, control_check=True, control_name='Click') -> None:
         """
 
@@ -76,15 +62,15 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         if control_check:
             self.handle_control_check(control_name)
         x, y = ensure_int(x, y)
-        logger.info(
-            'Click %s @ %s' % (point2str(x, y), control_name)
-        )
         self._invalidate_image_batch_cache()
         method = self.click_methods.get(
             self.config.script.device.control_method,
             self.click_adb
         )
+        start = time.perf_counter()
         method(x, y)
+        elapsed = time.perf_counter() - start
+        logger.info(f'{self._format_action_duration(elapsed)}Click {point2str(x, y)} @ {control_name}')
 
 
     def multi_click(self, button, n, interval=(0.1, 0.2)):
@@ -105,34 +91,6 @@ class Control(Minitouch, Adb, Scrcpy, Window):
 
             self.click(button, control_check=False)
 
-    # def long_click(self, button, duration=(1, 1.2)):
-    #     """
-    #
-    #     :param button:
-    #     :param duration:
-    #     :return:
-    #     """
-    #     self.handle_control_check(button)
-    #     x, y = random_rectangle_point(button.button)
-    #     x, y = ensure_int(x, y)
-    #     duration = ensure_time(duration)
-    #     logger.info(
-    #         'Click %s @ %s, %s' % (point2str(x, y), button, duration)
-    #     )
-    #     method = self.config.script.emulator.control_method
-    #     if method == 'minitouch':
-    #         self.long_click_minitouch(x, y, duration)
-    #     elif method == 'window_message':
-    #         self.long_click_window_message(x, y, duration)
-    #     elif method == 'uiautomator2':
-    #         self.long_click_uiautomator2(x, y, duration)
-    #     elif method == 'scrcpy':
-    #         self.long_click_scrcpy(x, y, duration)
-    #     # elif method == 'MaaTouch':
-    #     #     self.long_click_maatouch(x, y, duration)
-    #     else:
-    #         self.swipe_adb((x, y), (x, y), duration)
-
     def long_click(self, x: int, y: int, duration=(0.5, 2), control_name='LongClick') -> None:
         """
 
@@ -147,34 +105,35 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         if duration is None:
             duration = 0.8
         duration = ensure_time(duration)
-        logger.info(
-            'Click %s @ %s %s' % (point2str(x, y), control_name, duration)
-        )
         self._invalidate_image_batch_cache()
         method = self.long_click_methods.get(
             self.config.script.device.control_method,
             self.long_click_adb)
+        start = time.perf_counter()
         method(x, y, duration)
+        elapsed = time.perf_counter() - start
+        logger.info(f'{self._format_action_duration(elapsed)}Click {point2str(x, y)} @ {control_name} {duration}')
 
     def swipe(self, p1, p2, duration=(0.1, 0.2), control_name='SWIPE', distance_check=True):
         self.handle_control_check(control_name)
         p1, p2 = ensure_int(p1, p2)
         duration = ensure_time(duration)
         method = self.config.script.device.control_method
+        swipe_log = None
         if method == 'minitouch':
-            logger.info('Swipe %s -> %s' % (point2str(*p1), point2str(*p2)))
+            swipe_log = 'Swipe %s -> %s' % (point2str(*p1), point2str(*p2))
         elif method == 'window_message':
-            logger.info('Swipe %s -> %s' % (point2str(*p1), point2str(*p2)))
+            swipe_log = 'Swipe %s -> %s' % (point2str(*p1), point2str(*p2))
         elif method == 'uiautomator2':
-            logger.info('Swipe %s -> %s, %s' % (point2str(*p1), point2str(*p2), duration))
+            swipe_log = 'Swipe %s -> %s, %s' % (point2str(*p1), point2str(*p2), duration)
         elif method == 'scrcpy':
-            logger.info('Swipe %s -> %s' % (point2str(*p1), point2str(*p2)))
+            swipe_log = 'Swipe %s -> %s' % (point2str(*p1), point2str(*p2))
         # elif method == 'MaaTouch':
         #     logger.info('Swipe %s -> %s' % (point2str(*p1), point2str(*p2)))
         else:
             # ADB needs to be slow, or swipe doesn't work
             duration *= 2.5
-            logger.info('Swipe %s -> %s, %s ' % (point2str(*p1), point2str(*p2), duration))
+            swipe_log = 'Swipe %s -> %s, %s ' % (point2str(*p1), point2str(*p2), duration)
 
         if distance_check:
             if p1[0] == p2[0]:
@@ -190,23 +149,22 @@ class Control(Minitouch, Adb, Scrcpy, Window):
                 logger.info('Swipe distance < 10px, dropped')
                 return
 
+        self._invalidate_image_batch_cache()
+        start = time.perf_counter()
         if method == 'minitouch':
-            self._invalidate_image_batch_cache()
             self.swipe_minitouch(p1, p2)
         elif method == 'window_message':
-            self._invalidate_image_batch_cache()
             self.swipe_window_message(p1, p2)
         elif method == 'uiautomator2':
-            self._invalidate_image_batch_cache()
             self.swipe_uiautomator2(p1, p2, duration=duration)
         elif method == 'scrcpy':
-            self._invalidate_image_batch_cache()
             self.swipe_scrcpy(p1, p2)
         # elif method == 'MaaTouch':
         #     self.swipe_maatouch(p1, p2)
         else:
-            self._invalidate_image_batch_cache()
             self.swipe_adb(p1, p2, duration=duration)
+        elapsed = time.perf_counter() - start
+        logger.info(f'{self._format_action_duration(elapsed)}{swipe_log}')
 
     def swipe_vector(self, vector, box=(123, 159, 1175, 628), random_range=(0, 0, 0, 0), padding=15,
                      duration=(0.1, 0.2), whitelist_area=None, blacklist_area=None, name='SWIPE', distance_check=True):
@@ -234,16 +192,15 @@ class Control(Minitouch, Adb, Scrcpy, Window):
             whitelist_area=whitelist_area,
             blacklist_area=blacklist_area
         )
-        self.swipe(p1, p2, duration=duration, name=name, distance_check=distance_check)
+        self.swipe(p1, p2, duration=duration, control_name=name, distance_check=distance_check)
 
     def drag(self, p1, p2, segments=1, shake=(0, 15), point_random=(-10, -10, 10, 10), shake_random=(-5, -5, 5, 5),
              swipe_duration=0.25, shake_duration=0.1, name='DRAG'):
         self.handle_control_check(name)
         p1, p2 = ensure_int(p1, p2)
-        logger.info(
-            'Drag %s -> %s' % (point2str(*p1), point2str(*p2))
-        )
+        drag_log = 'Drag %s -> %s' % (point2str(*p1), point2str(*p2))
         method = self.config.script.emulator.control_method
+        start = time.perf_counter()
         if method == 'minitouch':
             self.drag_minitouch(p1, p2, point_random=point_random)
         elif method == 'uiautomator2':
@@ -259,3 +216,5 @@ class Control(Minitouch, Adb, Scrcpy, Window):
                            f'falling back to ADB swipe may cause unexpected behaviour')
             self.swipe_adb(p1, p2, duration=ensure_time(swipe_duration * 2))
             # self.click(Button(area=(), color=(), button=area_offset(point_random, p2), name=name))
+        elapsed = time.perf_counter() - start
+        logger.info(f'{self._format_action_duration(elapsed)}{drag_log}')
