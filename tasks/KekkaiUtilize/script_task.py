@@ -191,7 +191,6 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
                         if self.appear_then_click(self.I_UI_REWARD, self.C_UI_REWARD, interval=1, threshold=0.6):
                             continue
                     logger.info('Reward box')
-                    self.goto_page(page_guild_realm)
                     break
 
                 if self.appear_then_click(self.I_BOX_AP, interval=1):
@@ -215,8 +214,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             while 1:
                 self.screenshot()
                 # 如果出现结界皮肤， 表示收取好了
-                if self.appear(self.I_REALM_SHIN) and not self.appear(self.I_BOX_EXP, threshold=0.6) and not self.appear(self.I_BOX_EXP_MAX, threshold=0.6):
-                    logger.info('No exp box remained, break')
+                if self.appear(self.I_REALM_SHIN) and not self.appear(self.I_BOX_EXP, threshold=0.6):
                     break
                 # 如果出现收取确认，表明进入到了有满级的
                 if self.appear(self.I_UI_CONFIRM):
@@ -235,22 +233,20 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
                         if self.appear_then_click(target_button, interval=1):
                             continue
                     break
+
                 if self.appear(self.I_EXP_EXTRACT):
                     # 如果达到今日领取的最大，就不领取了
                     cur, res, totol = self.O_BOX_EXP.ocr(self.device.image)
-                    logger.info(f'Exp box OCR result: cur={cur}, res={res}, totol={totol}')
                     if cur == res == totol == 0:
-                        logger.warning('Exp box OCR no data, retry')
                         continue
                     if cur == totol and cur + res == totol:
                         logger.info('Exp box reach max do not collect')
-                        break                
+                        break
                 if self.appear_then_click(self.I_BOX_EXP, threshold=0.6, interval=1):
                     continue
-                if self.appear_then_click(self.I_BOX_EXP_MAX, threshold=0.6, interval=1):
-                    continue                
                 if self.appear_then_click(self.I_EXP_EXTRACT, interval=1):
                     continue
+
                 if time_exp.reached():
                     logger.warning('Extract exp box timeout')
                     break
