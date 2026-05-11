@@ -16,11 +16,11 @@ from module.device.device import Device
 from tasks.AbyssShadows.config import AbyssShadows, EnemyType, AreaType, Code, AbyssShadowsDifficulty, \
     CodeList, IndexMap
 from tasks.AbyssShadows.assets import AbyssShadowsAssets
-from tasks.AbyssShadows.page import page_abyss, page_abyss_map, page_abyss_shikigami_records
+from tasks.AbyssShadows.page import page_abyss, page_abyss_map, page_shikigami_records
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_guild, page_shikigami_records
+from tasks.GameUi.page import page_main, page_shikigami_records
 
 
 
@@ -128,6 +128,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
         logger.info("Abyss shadows process done")
 
         # 保持好习惯，一个任务结束了就返回到庭院，方便下一任务的开始
+        #self.goto_page(page_abyss_map)
         self.goto_page(page_main)
 
         # 设置下次运行时间
@@ -675,75 +676,6 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             return
         self.switch_preset_team(True, int(tmp[0]), int(tmp[1]))
 
-    def switch_soul_in_as(self):
-        """在庭院中根据攻击顺序的第一个敌人类型切换御魂（预切换）"""
-        if self.switch_soul_done:
-            return
-        if not self.config.model.abyss_shadows.process_manage.enable_switch_soul_in_as:
-            self.switch_soul_done = True
-            return
-
-        logger.info("开始在庭院中预切换御魂...")
-
-        # 获取攻击顺序
-        attack_order = self.config.model.abyss_shadows.process_manage.attack_order
-        if not attack_order:
-            logger.warning("攻击顺序为空")
-            return
-
-        # 获取第一个敌人
-        first_code_str = attack_order.split(';')[0].strip()
-        if not first_code_str:
-            logger.warning("第一个敌人代码为空")
-            return
-
-        # 解析敌人类型
-        first_code = Code(first_code_str)
-        enemy_type = first_code.get_enemy_type()
-
-        # 根据敌人类型获取对应的御魂预设
-        preset_str = None
-        match enemy_type:
-            case EnemyType.BOSS:
-                preset_str = self.config.model.abyss_shadows.process_manage.preset_boss
-            case EnemyType.GENERAL:
-                preset_str = self.config.model.abyss_shadows.process_manage.preset_general
-            case EnemyType.ELITE:
-                preset_str = self.config.model.abyss_shadows.process_manage.preset_elite
-
-        if not preset_str or preset_str == "-1,-1":
-            logger.info(f"敌人 {first_code_str} ({enemy_type.name}) 未配置有效预设 (-1,-1)，跳过预切换")
-            return
-
-        logger.info(f"第一个敌人是 {first_code_str} ({enemy_type.name})，在庭院中预切换至预设 {preset_str}")
-
-        # 在庭院中切换御魂
-        try:
-            # 进入式神录页面
-            self.goto_page(page_shikigami_records)
-            sleep(2)
-
-            # 切换御魂
-            l = preset_str.split(',')
-            if len(l) != 2:
-                logger.error(f"无效的预设格式: {preset_str}")
-                self.goto_page(page_main)
-                return
-
-            self.run_switch_soul((int(l[0]), int(l[1])))
-
-            # 更新缓存
-            self.cur_soul_preset = preset_str
-            self.switch_soul_done = True
-
-            logger.info(f"成功在庭院中预切换至 {enemy_type.name} 预设 {preset_str}")
-
-        except Exception as e:
-            logger.error(f"庭院中预切换御魂失败: {e}")
-        finally:
-            # 返回庭院
-            self.goto_page(page_main)
-
     def switch_soul_in_abyss(self, enemy_type: EnemyType):
         """从狭间活动页面进入式神录切换御魂（带预设缓存）"""
         if not self.config.model.abyss_shadows.process_manage.enable_switch_soul_in_as:
@@ -784,7 +716,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, AbyssShadowsAssets):
             return
 
         # 直接在狭间页面点击式神录按钮进入式神录
-        self.goto_page(page_abyss_shikigami_records)
+        self.goto_page(page_shikigami_records)
 
         # 切换御魂
         try:
