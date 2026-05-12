@@ -270,7 +270,7 @@ class BaseCor:
         if result is not None:
             # logger.info("Filter result: %s" % result)
             return result
-
+        # TODO: 有问题,会把ocr_full搞炸,本来不匹配的结果由于单字匹配愣是返回了区域,导致外层永远无法判断到底是否匹配
         # 如果适用顺序拼接还是没有匹配到，那可能是竖排的，使用单个字节的keyword进行匹配
         indices = []
         # 对于keyword中的每一个字符，都要在strings中进行匹配

@@ -72,60 +72,6 @@
     "description": "选择buff"
   },
   {
-    "itemName": "buff_awaken",
-    "imageName": "gb_buff_awaken.png",
-    "roiFront": "373,126,383,53",
-    "roiBack": "373,126,383,53",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "觉醒加成"
-  },
-  {
-    "itemName": "buff_soul",
-    "imageName": "gb_buff_soul.png",
-    "roiFront": "377,192,371,56",
-    "roiBack": "377,192,371,56",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "御魂加成"
-  },
-  {
-    "itemName": "buff_gold_50",
-    "imageName": "gb_buff_gold_50.png",
-    "roiFront": "375,259,373,56",
-    "roiBack": "375,259,373,56",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "金币加成50"
-  },
-  {
-    "itemName": "buff_gold_100",
-    "imageName": "gb_buff_gold_100.png",
-    "roiFront": "371,329,389,54",
-    "roiBack": "371,329,389,54",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "金币加成100"
-  },
-  {
-    "itemName": "buff_exp_50",
-    "imageName": "gb_buff_exp_50.png",
-    "roiFront": "378,400,370,50",
-    "roiBack": "378,400,370,50",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "经验加成50"
-  },
-  {
-    "itemName": "buff_exp_100",
-    "imageName": "gb_buff_exp_100.png",
-    "roiFront": "372,463,386,50",
-    "roiBack": "372,463,386,50",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "经验加成100"
-  },
-  {
     "itemName": "local",
     "imageName": "gb_local.png",
     "roiFront": "25,563,30,34",

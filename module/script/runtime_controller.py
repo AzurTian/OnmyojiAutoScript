@@ -51,6 +51,7 @@ class ScriptRuntimeController:
         """
         self.script = script
         self.server_update_wait_until: datetime | None = None
+        self.server_update_wait_log_until: datetime | None = None
 
     @property
     def config(self):
@@ -83,16 +84,63 @@ class ScriptRuntimeController:
                 f'{self._format_datetime(self.server_update_wait_until)}, resume normal recovery'
             )
             self.server_update_wait_until = None
+            self.server_update_wait_log_until = None
 
     def _is_server_update_wait_active(self) -> bool:
         self._clear_server_update_wait_if_expired()
         return self.server_update_wait_until is not None
 
-    def _get_restart_runtime_outcome(self) -> dict[str, Any] | None:
+    def _wait_for_server_update_window(self, context: str) -> ScriptRuntimeDecision:
+        """
+        在停服等待窗口内安静等待到边界，避免反复重调度和重复拉起环境。
+
+        Args:
+            context: 当前等待发生的上下文，用于中断日志。
+
+        Returns:
+            ScriptRuntimeDecision: 等待后的调度决策。
+        """
+        if not self._is_server_update_wait_active():
+            return ScriptRuntimeDecision.READY
+
+        wait_until = self.server_update_wait_until
+        if wait_until is None:
+            return ScriptRuntimeDecision.READY
+
+        if self.server_update_wait_log_until != wait_until:
+            logger.info(
+                'Server update wait window active until '
+                f'{self._format_datetime(wait_until)}, suspend runtime actions until then'
+            )
+            self.server_update_wait_log_until = wait_until
+
+        if not self.script.wait_until(wait_until):
+            logger.info(f'Server update wait during {context} was interrupted by config reload, reschedule scheduler')
+            return ScriptRuntimeDecision.RESCHEDULE
+
+        self._clear_server_update_wait_if_expired()
+        return ScriptRuntimeDecision.READY
+
+    def _get_runtime_outcome(self) -> dict[str, Any] | None:
         outcome = getattr(self.script, 'last_task_runtime_outcome', None)
         if not isinstance(outcome, dict):
             return None
         return outcome
+
+    def _consume_server_update_delay_outcome(self, source: str) -> ScriptRuntimeDecision | None:
+        outcome = self._get_runtime_outcome()
+        if outcome is None or outcome.get('status') != 'server_update_delayed':
+            return None
+
+        wait_until = outcome.get('wait_until')
+        if isinstance(wait_until, datetime):
+            self.server_update_wait_until = wait_until
+            self.server_update_wait_log_until = None
+        logger.info(
+            f'{source} delayed by server update, '
+            f'reschedule scheduler and wait until {self._format_datetime(self.server_update_wait_until)}'
+        )
+        return ScriptRuntimeDecision.RESCHEDULE
 
     @staticmethod
     def _time_to_timedelta(value) -> timedelta:
@@ -174,18 +222,12 @@ class ScriptRuntimeController:
             logger.warning('Restart task failed during runtime recovery')
             return ScriptRuntimeDecision.FAILED
 
-        outcome = self._get_restart_runtime_outcome()
-        if outcome is not None and outcome.get('status') == 'server_update_delayed':
-            wait_until = outcome.get('wait_until')
-            if isinstance(wait_until, datetime):
-                self.server_update_wait_until = wait_until
-            logger.info(
-                'Restart recovery delayed by server update, '
-                f'reschedule scheduler and wait until {self._format_datetime(self.server_update_wait_until)}'
-            )
-            return ScriptRuntimeDecision.RESCHEDULE
+        decision = self._consume_server_update_delay_outcome('Restart recovery')
+        if decision is not None:
+            return decision
 
         self.server_update_wait_until = None
+        self.server_update_wait_log_until = None
 
         if not self.device.app_is_running():
             logger.warning('Game is still not running after Restart recovery')
@@ -209,22 +251,23 @@ class ScriptRuntimeController:
         Returns:
             ScriptRuntimeDecision: 当前分支后续应如何处理。
         """
+        if allow_server_update_skip:
+            wait_decision = self._wait_for_server_update_window('idle preparation')
+            if wait_decision is not ScriptRuntimeDecision.READY:
+                return wait_decision
+
         self._ensure_emulator_running('Wake emulator before ensuring game state')
 
         if not self.device.app_is_running():
-            if allow_server_update_skip and self._is_server_update_wait_active():
-                logger.info(
-                    'Server update wait window active until '
-                    f'{self._format_datetime(self.server_update_wait_until)}, '
-                    'skip Restart recovery during idle preparation'
-                )
-                return ScriptRuntimeDecision.READY
             return self._run_restart_recovery('Game is not running, recover it via Restart')
 
         if require_main:
             logger.info('Ensure game stays at main page during wait')
             if self.script.run('GotoMain'):
                 return ScriptRuntimeDecision.READY
+            decision = self._consume_server_update_delay_outcome('GotoMain preparation')
+            if decision is not None:
+                return decision
             logger.warning('GotoMain failed while preparing idle state')
             return ScriptRuntimeDecision.FAILED
 
@@ -271,19 +314,16 @@ class ScriptRuntimeController:
         Returns:
             ScriptRuntimeDecision: 当前轮次应继续执行、重新调度或中断。
         """
-        self._ensure_emulator_running('Wake emulator before running task')
-
         if task == 'Restart':
             return ScriptRuntimeDecision.READY
 
+        wait_decision = self._wait_for_server_update_window(f'task `{task}` preparation')
+        if wait_decision is not ScriptRuntimeDecision.READY:
+            return wait_decision
+
+        self._ensure_emulator_running('Wake emulator before running task')
+
         if not self.device.app_is_running():
-            if self._is_server_update_wait_active():
-                logger.info(
-                    'Server update wait window active until '
-                    f'{self._format_datetime(self.server_update_wait_until)}, '
-                    f'postpone task `{task}` and reschedule scheduler'
-                )
-                return ScriptRuntimeDecision.RESCHEDULE
             return self._run_restart_recovery(f'Game is not running before task `{task}`, recover it via Restart')
 
         return ScriptRuntimeDecision.READY
@@ -306,6 +346,10 @@ class ScriptRuntimeController:
         startup_lead = self._time_to_timedelta(self.config.script.optimization.emulator_startup_lead_time)
 
         while self.emulator_down:
+            wait_decision = self._wait_for_server_update_window('idle emulator preheat')
+            if wait_decision is not ScriptRuntimeDecision.READY:
+                return wait_decision
+
             now = datetime.now()
             wake_time = next_run - startup_lead if startup_lead > timedelta(0) else next_run
             if wake_time > now:

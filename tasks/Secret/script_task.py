@@ -148,31 +148,6 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, SecretAssets):
         :return: 如果找得到返回层数，找不到返回None
         """
 
-        def set_layer_roi(ocr_target: RuleOcr, roi: tuple):
-            ocr_target.roi[0] = int(roi[0]) - 225
-            ocr_target.roi[1] = int(roi[1]) - 40
-
-        def check_layer(ocr_target: RuleOcr, roi=None) -> int or None:
-            #
-            # 手动留了一个bug： 即使匹配到了未通关 但是在判断层数的时候还是会先判断第一个是什么的
-            level = ocr_target.ocr(self.device.image)
-            if not isinstance(level, str):
-                logger.warning(f'OCR failed, try again {level}')
-            level = level.replace('·', '').replace(' ', '').replace('。', '').replace('武', '贰')
-            if level not in self.lay_list and roi:
-                print(roi)
-                print(ocr_target.roi)
-                set_layer_roi(ocr_target, roi)
-                self.screenshot()
-                level = ocr_target.ocr(self.device.image)
-            if level not in self.lay_list:
-                return None
-            try:
-                return self.match_layer[level]
-            except KeyError:
-                logger.warning(f'OCR failed, try again {level}')
-                return None
-
         def confirm_layer(ocr_target: RuleOcr, roi=None) -> int or None:
             """
             检查层数， 启用函数check_layer
