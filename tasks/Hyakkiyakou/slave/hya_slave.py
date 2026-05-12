@@ -219,6 +219,7 @@ class HyaSlave(HyaDevice, HyaColor, HyakkiyakouAssets):
 
         # 是否有召回活动(星重聚阴阳师)
         if self.appear(self.I_ENSURE_RECALL):
+            logger.info('Recall activity detected')
             hya_recall_activity = True
             # 应该动态改roi而不是新开一个图
             friend_buttons1 = [self.I_FRIEND_SAME_1_RECALL, self.I_FRIEND_REMOTE_1_RECALL, ]

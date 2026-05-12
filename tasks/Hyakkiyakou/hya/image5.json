@@ -39,7 +39,7 @@
     "itemName": "friend_same_1_recall",
     "imageName": "hya_friend_same_1.png",
     "roiFront": "167,123,106,62",
-    "roiBack": "154,105,132,94",
+    "roiBack": "114,102,132,94",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "回归活动使用"
@@ -57,7 +57,7 @@
     "itemName": "friend_same_2_recall",
     "imageName": "hya_friend_same_2.png",
     "roiFront": "168,126,100,60",
-    "roiBack": "152,112,133,80",
+    "roiBack": "107,114,133,80",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "回归活动使用"

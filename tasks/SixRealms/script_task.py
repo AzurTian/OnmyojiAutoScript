@@ -1,7 +1,7 @@
 # This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pathlib import Path
 
@@ -42,6 +42,7 @@ class ScriptTask(GameUi, SwitchSoul, MoonSea, PeacockKingdom):
                 _config.switch_soul_config_2.team_name
             )
         self.goto_page(page_six_gates)
+        logger.hr(f'{_config.six_realms_gate.six_realms_type.name}', 1)
         cnt = 0
         while True:
             if cnt >= self._conf.limit_count:
@@ -50,6 +51,8 @@ class ScriptTask(GameUi, SwitchSoul, MoonSea, PeacockKingdom):
             if datetime.now() - self.start_time >= self._conf.limit_time_v:
                 logger.info('Run out of time, exit')
                 break
+            logger.hr("General battle start", 2)
+            start_time = datetime.now()
             match _config.six_realms_gate.six_realms_type:
                 case SixRealmsType.MOON_SEA:
                     self.run_moon_sea()
@@ -59,6 +62,9 @@ class ScriptTask(GameUi, SwitchSoul, MoonSea, PeacockKingdom):
                     logger.warning('Unknown six realms type')
                     self.run_moon_sea()
             cnt += 1
+            logger.info(f'Battle count: {cnt}')
+            elapsed = datetime.now() - start_time
+            logger.info(f'Battle time: {elapsed.seconds//60}m{elapsed.seconds%60}s')
         self.goto_page(page_main)
         self.set_next_run('SixRealms', success=True, finish=True)
         raise TaskEnd

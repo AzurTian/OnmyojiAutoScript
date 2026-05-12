@@ -1,15 +1,12 @@
 import re
 from module.logger import logger
 
-from datetime import datetime, timedelta
-
 from tasks.SixRealms.moon_sea.map import MoonSeaMap
 from tasks.SixRealms.moon_sea.l101 import MoonSeaL101
 from tasks.SixRealms.moon_sea.l102 import MoonSeaL102
 from tasks.SixRealms.moon_sea.l103 import MoonSeaL103
 from tasks.SixRealms.moon_sea.l104 import MoonSeaL104
 from tasks.SixRealms.moon_sea.l105 import MoonSeaL105
-from tasks.SixRealms.moon_sea.common import MoonSeaType
 
 
 class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, MoonSeaL105):
@@ -35,11 +32,12 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
             isl_num = 0
             if self.contains_any_char(remain_turns, chars='回合') and match:
                 isl_num = int(match.group())
-            # 如果还剩1回合, 且当前不是商店, 并且技能没满和金币足够就开启商店
-            if isl_num == 1 and not self.appear(self.I_MS_LAND_SHOP) and self.cnt_skill101 < 5 and self.coin_num >= 300:
-                self.activate_store()
+            # 如果还剩1回合, 且当前不是商店, 并且技能没满和金币足够(300开商店+300买柔风)就开启商店
+            if isl_num == 1 and not self.appear(self.I_MS_LAND_SHOP) and self.cnt_skill101 < 5 and self.coin_num >= 600:
+                if self.activate_store():
+                    self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=1.5)
             # 优先级：商店 > 神秘 > 混沌 > 星之屿 > 战斗
-            elif self.appear(self.I_MS_LAND_SHOP):
+            if self.appear(self.I_MS_LAND_SHOP):
                 if not self.enter_island(self.I_MS_LAND_SHOP):
                     continue
                 self.run_l101()
@@ -71,7 +69,6 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
                 continue
 
     def _start(self):
-        logger.hr('Moon Sea', 1)
         while 1:
             self.screenshot()
             if self.appear(self.I_MSTART):

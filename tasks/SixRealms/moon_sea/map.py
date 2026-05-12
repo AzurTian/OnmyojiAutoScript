@@ -34,6 +34,10 @@ class MoonSeaMap(MoonSeaSkills):
         cnt_act = 0
         while True:
             self.screenshot()
+            if self.appear(self.I_UI_CANCEL):
+                logger.info('Maybe coin not enough, cancel shopping')
+                self.ui_click_until_disappear(self.I_UI_CANCEL, interval=2)
+                return False
             if self.appear(self.I_UI_CONFIRM):
                 self.ui_click_until_disappear(self.I_UI_CONFIRM, interval=2)
                 break

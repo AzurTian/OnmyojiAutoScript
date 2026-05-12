@@ -37,8 +37,8 @@
   },
   {
     "itemName": "bl_check_money",
-    "roiFront": "1123,12,127,33",
-    "roiBack": "1123,12,127,33",
+    "roiFront": "1139,12,118,34",
+    "roiBack": "1139,12,118,34",
     "mode": "DigitCounter",
     "method": "Default",
     "keyword": "",

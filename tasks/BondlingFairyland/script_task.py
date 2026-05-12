@@ -80,7 +80,9 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, GeneralBattle, SwitchSoul, 
             self.ui_click(self.I_MALL_SCCALES, self.I_MALL_SCCALES_CHECK)
             self.ui_click(self.I_MALL_BONDLINGS_SURE, self.I_MALL_BONDLINGS_ON)
             MAX_COUNT = cong.bondling_config.limit_num
-            cu, re, total = self.O_BL_CHECK_MONEY.ocr(self.device.image)
+            cu, re, total = self.O_BL_CHECK_MONEY.ocr_digit_counter(self.device.image)
+            if cu > 10000:  # 识别出现问题进行补正
+                cu = int(str(cu)[1:])
             if cu >= MAX_COUNT:
                 logger.info(f'契忆数量: {cu} 大于 {MAX_COUNT}')
                 self.goto_page(page_main)
