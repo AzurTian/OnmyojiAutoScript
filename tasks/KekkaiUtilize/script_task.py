@@ -259,14 +259,9 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
         self.screenshot()
         box_ap = self.appear(self.I_BOX_AP)
         box_exp = self.appear(self.I_BOX_EXP, threshold=0.6) or self.appear(self.I_BOX_EXP_MAX, threshold=0.6)
-        logger.info(f'体力盒子检测状态: {box_exp}')
-        logger.info(f'经验盒子检测状态: {box_exp}')
-
         if ap_enable:
-            logger.info(f'体力盒子检测状态: {box_exp}')
             _check_ap_box(box_ap)
         if exp_enable:
-            logger.info(f'经验盒子检测状态: {box_exp}')
             _check_exp_box(box_exp)
         self.goto_page(page_guild_realm)
 
