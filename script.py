@@ -32,6 +32,7 @@ from module.server.i18n import I18n
 from module.image.rpc import ensure_image_server_ready
 from module.ocr.rpc import ensure_ocr_server_ready
 from module.script import ScriptRuntimeController, ScriptRuntimeDecision
+from tasks.Restart.server_update import delay_pending_tasks_for_server_update, is_server_update_window
 
 _log_switch_lock = threading.Lock()#线程锁
 
@@ -334,6 +335,17 @@ class Script:
         if 'config' in self.__dict__:
             self.config.task_runtime_outcome = None
 
+    def _set_task_runtime_outcome(self, task: str, status: str, wait_until: datetime | None = None) -> None:
+        outcome = {
+            'task': task,
+            'status': status,
+        }
+        if wait_until is not None:
+            outcome['wait_until'] = wait_until
+        self.last_task_runtime_outcome = outcome
+        if 'config' in self.__dict__:
+            self.config.task_runtime_outcome = outcome
+
     def _capture_task_runtime_outcome(self, command: str) -> None:
         outcome = getattr(self.config, 'task_runtime_outcome', None)
         self.last_task_runtime_outcome = outcome if isinstance(outcome, dict) else None
@@ -352,6 +364,14 @@ class Script:
             return
 
         logger.info(f'Restart runtime outcome: {status}')
+
+    def _delay_tasks_for_server_update(self, task: str, reason: str) -> bool:
+        if not is_server_update_window():
+            return False
+
+        delay_target = delay_pending_tasks_for_server_update(self.config, reason=reason)
+        self._set_task_runtime_outcome(task=task, status='server_update_delayed', wait_until=delay_target)
+        return True
 
     def run(self, command: str) -> bool:
         """
@@ -398,6 +418,12 @@ class Script:
             return False
         except GamePageUnknownError as e:
             logger.info('Game server may be under maintenance or network may be broken, check server status now')
+            if command == 'GotoMain' and self._delay_tasks_for_server_update(
+                task=command,
+                reason='failed to goto main during morning server update window',
+            ):
+                logger.info('GotoMain failed during server update window, delayed pending tasks and reschedule')
+                return False
             # 这个还不重要 留着坑填
             logger.critical('Game page unknown')
             self.save_error_log()

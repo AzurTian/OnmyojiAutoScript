@@ -3,14 +3,14 @@
 # github https://github.com/runhey
 from datetime import datetime
 
-from module.exception import TaskEnd
+from module.exception import RequestHumanTakeover, TaskEnd
 from module.logger import logger
 from tasks.Component.Login.service import LoginService
+from tasks.Restart.server_update import delay_pending_tasks_for_server_update, is_server_update_window
 from tasks.base_task import BaseTask
 
 
 class ScriptTask(BaseTask):
-
     def _set_runtime_outcome(self, status: str, wait_until: datetime | None = None) -> None:
         outcome = {
             'task': 'Restart',
@@ -25,10 +25,13 @@ class ScriptTask(BaseTask):
         主要就是登录的模块
         :return:
         """
-        if not self.delay_pending_tasks():
+        try:
             self.recover_app()
             self.finish_recovery()
-        raise TaskEnd('ScriptTask end')
+        except RequestHumanTakeover:
+            if not self.delay_pending_tasks(reason='login failed during Restart recovery'):
+                raise
+        raise TaskEnd
 
     def app_stop(self):
         logger.hr('App stop')
@@ -65,21 +68,14 @@ class ScriptTask(BaseTask):
             self.config.task_call('DailyTrifles')
         self._set_runtime_outcome(status='recovered')
 
-    def delay_pending_tasks(self) -> bool:
+    def delay_pending_tasks(self, reason: str) -> bool:
         """
-        周三更新游戏的时候延迟
+        仅在早间登录失败时，统一延后待执行任务。
         @return:
         """
-        datetime_now = datetime.now()
-        if not (datetime_now.weekday() == 2 and 6 <= datetime_now.hour <= 8):
+        if not is_server_update_window():
             return False
-        delay_target = datetime_now.replace(hour=9, minute=0, second=0, microsecond=0)
-        logger.info("The game server is updating, delay the pending tasks to 9:00")
-        logger.warning('Delay pending tasks')
-        # running 中的必然是 Restart
-        for pending_task in self.config.pending_task:
-            self.set_next_run(task=pending_task.command, target=delay_target)
-        self.set_next_run(task='Restart', success=True, finish=True, server=True)
+        delay_target = delay_pending_tasks_for_server_update(self.config, reason=reason)
         self._set_runtime_outcome(status='server_update_delayed', wait_until=delay_target)
         return True
 
