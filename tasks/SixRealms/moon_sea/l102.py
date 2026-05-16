@@ -47,7 +47,7 @@ class MoonSeaL102(MoonSeaSkills):
             if self.appear_then_click(self.I_IMITATE_1, interval=2.5):
                 continue
             if self.appear_then_click(self.I_IMITATE_SUCCESS, interval=1.5):
-                continue
+                break
             if self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=1):
                 continue
             if self.appear_then_click(self.I_UI_CONFIRM, interval=1):
@@ -63,6 +63,10 @@ class MoonSeaL102(MoonSeaSkills):
             self.screenshot()
             if self.in_main():
                 break
+            if self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=1):
+                continue
+            if self.appear_then_click(self.I_UI_CONFIRM, interval=1):
+                continue
             if self.appear_then_click(self.I_BACK_EXIT, interval=2):
                 continue
         logger.info(f'Skill 101 level: {self.cnt_skill101}')

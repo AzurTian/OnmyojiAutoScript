@@ -2,6 +2,7 @@ import time
 import re
 
 from cached_property import cached_property
+from tasks.GameUi.default_pages import random_click
 
 from module.logger import logger
 from module.base.timer import Timer
@@ -28,7 +29,7 @@ class MoonSeaSkills(BaseTask, SixRealmsAssets):
         self.ui_click(self.I_BATTLE_TEAM_UNLOCK, self.I_BATTLE_TEAM_LOCK)
         return
 
-    def island_battle(self):
+    def island_battle(self) -> bool:
         # 小怪战斗
         self.screenshot()
         while 1:
@@ -37,11 +38,39 @@ class MoonSeaSkills(BaseTask, SixRealmsAssets):
                 break
             if self.appear(self.I_COIN):
                 break
+            if self.appear(self.I_BOSS_SHARE):
+                # 放弃本轮直接结算避免超时重启卡死在鏖战选择界面
+                logger.info('Island battle failed')
+                self.ui_click_until_appear_or_timeout(random_click(ltrb=(True, False, True, False)), self.I_MSTART, timeout=10)
+                return False
             if self.appear_then_click(self.I_NPC_FIRE, interval=1):
                 self.device.stuck_record_clear()
                 self.device.stuck_record_add('BATTLE_STATUS_S')
                 continue
+            if self.appear(self.I_BOSS_BATTLE_GIVEUP):
+                # 小怪战斗失败了，以下是结算处理套用boss_battle
+                logger.warning('Island battle give up')
+                self.ui_click_until_disappear(self.I_BOSS_BATTLE_GIVEUP, interval=1)
+                continue
+            if self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=1):
+                continue
+            if self.appear(self.I_BOSS_USE_DOUBLE, interval=1):
+                # 双倍奖励
+                logger.info('Double reward')
+                self.ui_get_reward(self.I_BOSS_USE_DOUBLE)
+            if self.ui_reward_appear_click():
+                continue
+            if self.appear_then_click(self.I_BOSS_GET_EXP, interval=1):
+                logger.info('Get EXP')
+                continue
+            if self.appear_then_click(self.I_UI_CANCEL, interval=1):
+                # 取消购买 万相赐福
+                continue
+            if self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=1):
+                continue
         self.device.stuck_record_clear()
+        # 战斗正常结算
+        return True
 
     @cached_property
     def selects_button(self):

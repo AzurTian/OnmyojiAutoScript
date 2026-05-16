@@ -60,7 +60,8 @@ class MoonSea(MoonSeaMap, MoonSeaL101, MoonSeaL102, MoonSeaL103, MoonSeaL104, Mo
             elif self.appear(self.I_MS_LAND_FIRE):
                 if not self.enter_island(self.I_MS_LAND_FIRE):
                     continue
-                self.run_l104()
+                if not self.run_l104():
+                    break
             self.wait_animate_stable(self.C_MAIN_ANIMATE_KEEP, timeout=1.5)
 
     def _continue(self):
