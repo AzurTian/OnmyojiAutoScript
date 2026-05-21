@@ -367,9 +367,9 @@ class RuleImage:
         result = True
         for i, (m, n) in enumerate(matches):
             # 设定阈值, 距离小于对方的距离的0.7倍我们认为是好的匹配点.
-            if m.distance < 0.6 * n.distance:
+            if m.distance < 0.7 * n.distance:
                 good.append(m)
-        if len(good) >= 10:
+        if len(good) >= 8:
             src_pts = float32([self.kp[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
             dst_pts = float32([kp[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
 

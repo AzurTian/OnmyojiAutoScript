@@ -774,9 +774,9 @@ class ImageRuntime:
             if len(pair) < 2:
                 continue
             first, second = pair
-            if first.distance < 0.6 * second.distance:
+            if first.distance < 0.7 * second.distance:
                 good.append(first)
-        if len(good) < 10:
+        if len(good) < 8:
             logger.debug(f"{log_name} sift good_matches={len(good)}")
             return False, float(len(good)), None
 
