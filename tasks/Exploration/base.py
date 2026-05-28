@@ -332,8 +332,7 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
                     self.click(self.C_CLICK_SETTINGS, interval=2)
                     return True
             case AutoRotate.no:  # 不是自动添加候补式神则关闭轮换
-                if self.appear_then_click(self.I_E_AUTO_ROTATE_ON, interval=0.8):
-                    return True
+                self.appear_then_click(self.I_E_AUTO_ROTATE_ON, interval=0.8)    
         return False
 
     def arrive_end(self) -> bool:
