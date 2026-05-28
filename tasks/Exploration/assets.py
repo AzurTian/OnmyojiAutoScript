@@ -46,7 +46,7 @@ class ExplorationAssets:
 	# 金币怪 
 	I_UP_COIN = RuleImage(roi_front=(330,529,74,74), roi_back=(1,317,1278,316), threshold=0.8, method="Sift Flann", file="./tasks/Exploration/highlight/highlight_up_coin.png")
 	# 达摩怪 
-	I_UP_DARUMA = RuleImage(roi_front=(1146,510,80,80), roi_back=(1,265,1278,369), threshold=0.8, method="Sift Flann", file="./tasks/Exploration/highlight/highlight_up_daruma.png")
+	I_UP_DARUMA = RuleImage(roi_front=(1146,510,80,80), roi_back=(1,342,1279,360), threshold=0.8, method="Sift Flann", file="./tasks/Exploration/highlight/highlight_up_daruma.png")
 
 
 	# Click Rule Assets
