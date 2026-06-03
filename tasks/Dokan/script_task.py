@@ -226,6 +226,9 @@ class ScriptTask(GameUi, SwitchSoul, GeneralBattle, DokanAssets):
 
     def run_on_dokan_map(self):
         """道馆地图页面逻辑处理"""
+        # 如果地图显示挑战已完成或者剩余挑战次数为0视为完成道馆,直接退出
+        if self.appear(self.I_RYOU_DOKAN_REMAIN_ATTACK_COUNT_ZERO) or self.appear(self.I_RYOU_DOKAN_REMAIN_ATTACK_COUNT_DONE):
+            raise DokanFinishedError
         if self.appear(self.I_RYOU_DOKAN_FINDING_DOKAN):  # 道馆未开启
             try_start_dokan = self.config.dokan.dokan_config.try_start_dokan
             if not try_start_dokan:  # 未设置开启道馆则退出
