@@ -307,7 +307,8 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         timeout_timer = Timer(3).start()
         while not timeout_timer.reached():
             self.screenshot()
-            if self.appear_then_click(self.I_HARVEST_MAIL, interval=1.2) or \
+            if self.appear_then_click(self.I_DT_HARVEST_MAIL_COPY2, interval=1.2) or \
+                    self.appear_then_click(self.I_HARVEST_MAIL, interval=1.2) or \
                     self.appear_then_click(self.I_HARVEST_MAIL_COPY, interval=1.2):
                 continue
             if self.appear_then_click(self.I_HARVEST_MAIL_CONFIRM, interval=1):

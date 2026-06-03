@@ -34,7 +34,8 @@ class DailyTriflesAssets:
 	I_READ_ALL_MAIL = RuleImage(roi_front=(180,605,130,35), roi_back=(149,588,182,72), threshold=0.8, method="Template matching", file="./tasks/DailyTrifles/dt/dt_read_all_mail.png")
 	# 确认收取邮件 
 	I_HARVEST_MAIL_CONFIRM = RuleImage(roi_front=(687,543,168,64), roi_back=(687,543,168,64), threshold=0.8, method="Template matching", file="./tasks/DailyTrifles/dt/dt_harvest_mail_confirm.png")
-
+	# 右上角的邮件图标 
+	I_DT_HARVEST_MAIL_COPY2 = RuleImage(roi_front=(1133,26,44,36), roi_back=(1054,0,226,87), threshold=0.9, method="Template matching", file="./tasks/DailyTrifles/dt/dt_harvest_mail_copy2.png")
 
 	# Image Rule Assets
 	# description 

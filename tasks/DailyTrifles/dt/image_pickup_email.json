@@ -43,5 +43,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "确认收取邮件"
+  },
+  {
+    "itemName": "dt_harvest_mail_copy2",
+    "imageName": "dt_harvest_mail_copy2.png",
+    "roiFront": "1133,26,44,36",
+    "roiBack": "1054,0,226,87",
+    "method": "Template matching",
+    "threshold": 0.9,
+    "description": "右上角的邮件图标"
   }
 ]
