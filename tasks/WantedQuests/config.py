@@ -1,13 +1,46 @@
 # This Python file uses the following encoding: utf-8
 # @author runhey
 # github https://github.com/runhey
+from cached_property import cached_property
+from dataclasses import dataclass
 from enum import Enum
+from module.atom.image import RuleImage
 
 from pydantic import BaseModel, Field
 
 from tasks.Component.SwitchSoul.switch_soul_config import SwitchSoulConfig
 from tasks.Component.config_base import ConfigBase, Time
 from tasks.Component.config_scheduler import Scheduler
+from typing import List
+
+
+class WQType(str, Enum):
+    """悬赏类型"""
+    CHALLENGE = '挑战'
+    EXPLORE = '探索'
+    SECRET = '秘闻'
+    YOKAI = '妖气'
+
+    def __repr__(self):
+        return self.value
+
+    @staticmethod
+    def contains(type_str: str):
+        try:
+            WQType(type_str)
+            return True
+        except ValueError:
+            return False
+
+
+@dataclass(frozen=True)
+class WQInfo:
+    """悬赏信息"""
+    type: WQType    # 悬赏类型
+    dest: str       # 目的地(探索第十章/秘闻第七层/...)
+    number: int     # 怪物数量
+    goto_btn: RuleImage # 前往按钮
+    do_num: int     # 执行次数(探索一章节4个怪,需要打12个怪,则执行3次)
 
 
 class CooperationType(int, Enum):
@@ -49,22 +82,6 @@ class CooperationSelectMask(int, Enum):
 
 
 class CooperationSelectMaskDescription(str, Enum):
-    # NoInvite = '不邀请'
-    # GoldOnly = '仅金币'
-    # JadeOnly = '仅勾协'
-    # GoldAndJade = '金币和勾协'
-    # FoodOnly = '仅食协'
-    # GoldAndFood = '金币+食协'
-    # JadeAndFood = '勾协+食协'
-    # GoldAndJadeAndFood = '金币+勾协+食协'
-    # SushiOnly = '仅体协'
-    # GoldAndSushi = '金币+体协'
-    # JadeAndSushi = '勾协+体协'
-    # GoldAndJadeAndSushi = '金币+勾协+体协'
-    # FoodAndSushi = '食协+体协'
-    # GoldAndFoodAndSushi = '金币+食协+体协'
-    # JadeAndFoodAndSushi = '勾协+食协+体协'
-    # Any = '全部'
     NoInvite = 'NoInvite'
     GoldOnly = 'GoldOnly'
     JadeOnly = 'JadeOnly'
@@ -94,6 +111,21 @@ class WantedQuestsConfig(BaseModel):
     cooperation_only: bool = Field(default=False, description="cooperation_only_help")
     # 忽略任务的任务目标名称（“酒吞童子”等）,多个用逗号“，,"分隔
     unwanted_boss_names: str = Field(default='酒吞童子,阎魔', description='unwanted_boss_name_help')
+
+    @cached_property
+    def _wq_type_ordered_list(self) -> List[WQType]:
+        from module.logger import logger
+        wq_type_ordered_txt = self.battle_priority.replace(' ', '').replace('\n', '')
+        if wq_type_ordered_txt == '':
+            return [WQType.CHALLENGE, WQType.SECRET, WQType.EXPLORE]
+        wq_type_list = []
+        for wq_type_txt in wq_type_ordered_txt.split('>'):
+            wq_type_txt = wq_type_txt.strip()
+            if not WQType.contains(wq_type_txt):
+                logger.warning(f'Read unsupported wq type: {wq_type_txt}, skip')
+                continue
+            wq_type_list.append(WQType(wq_type_txt))
+        return wq_type_list
 
 
 class WantedQuests(ConfigBase):

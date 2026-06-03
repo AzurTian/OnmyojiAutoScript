@@ -370,7 +370,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
             },
             allow_none=False,
         )
-        logger.info(f"Delay task `{task}` to {next_run} ({kv})")
+        # logger.info(f"Delay task `{task}` to {next_run} ({kv})")
 
         # 保证线程安全的
         self.lock_config.acquire()

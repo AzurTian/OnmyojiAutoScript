@@ -2,17 +2,12 @@
 # @author runhey
 # github https://github.com/runhey
 from time import sleep
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from module.logger import logger
 from module.exception import TaskEnd, GameStuckError
 from module.base.timer import Timer
-from tasks.GameUi.default_pages import random_click
-
-from tasks.GameUi.game_ui import GameUi
-from tasks.Component.GeneralBattle.general_battle import GeneralBattle
-from tasks.Component.GeneralInvite.general_invite import GeneralInvite
-from tasks.Component.GeneralRoom.general_room import GeneralRoom
+from tasks.Orochi.page import page_orochi
 from tasks.Orochi.script_task import ScriptTask as OrochiScriptTask
 from tasks.Orochi.config import Layer
 from tasks.GameUi.page import page_main, page_soul_zones, page_shikigami_records
@@ -21,16 +16,35 @@ from tasks.TrueOrochi.assets import TrueOrochiAssets
 
 class ScriptTask(OrochiScriptTask, TrueOrochiAssets):
 
-    def run(self):
-    
-        conf = self.config.true_orochi.true_orochi_config
+    def _default_detect_categories(self) -> set[str]:
+        categories = super()._default_detect_categories()
+        categories.add("orochi")
+        return categories
 
+    def run(self):
+        conf = self.config.true_orochi.true_orochi_config
         if conf.current_success >= 2:
             # 超过两次就说明这周打完了没有必要再打了
             logger.warning('This week is full')
             self.check_times(True)
             raise TaskEnd('TrueOrochi')
-
+        self.goto_page(page_orochi)
+        battle = self.check_true_orochi(True)
+        if not battle:
+            logger.warning('Not find true orochi')
+            logger.warning('Try to battle orochi for ten times')
+            # 判断是否需要挑战十层触发真蛇
+            if not conf.find_true_orochi:
+                logger.info('Not find_true_orochi_help')
+                self.check_times(False)
+                raise TaskEnd('TrueOrochi')
+            battle = self.get_true_orochi()
+        if not battle:
+            # 如果还没有真蛇，那么就退出
+            self.check_times(battle)
+            raise TaskEnd('TrueOrochi')
+        # 如果有真蛇，那么就开始战斗
+        logger.hr('True Orochi Battle')
         # 御魂切换方式一
         if self.config.true_orochi.switch_soul.enable:
             self.goto_page(page_shikigami_records)
@@ -40,49 +54,7 @@ class ScriptTask(OrochiScriptTask, TrueOrochiAssets):
             self.goto_page(page_shikigami_records)
             self.run_switch_soul_by_name(self.config.true_orochi.switch_soul.group_name,
                                          self.config.true_orochi.switch_soul.team_name)
-
-        self.goto_page(page_soul_zones)
-        self.orochi_enter()
-        sleep(0.5)
-        battle = self.check_true_orochi(True)
-        if not battle:
-            logger.warning('Not find true orochi')
-            logger.warning('Try to battle orochi for ten times')
-
-            # 判断是否需要挑战十层触发真蛇
-            if not conf.find_true_orochi:
-                logger.info('Not find_true_orochi_help')
-                self.check_times(False)
-                raise TaskEnd('TrueOrochi')
-
-            self.check_layer(Layer.TEN)
-            self.check_lock(False)
-            count_orochi_ten = 0
-            while 1:
-                self.screenshot()
-                if not self.appear(self.I_OROCHI_FIRE):
-                    continue
-                if self.check_true_orochi(False):
-                    logger.info('Find true orochi')
-                    battle = True
-                    break
-                if count_orochi_ten >= 10:
-                    logger.warning('Not find true orochi')
-                    battle = False
-                    break
-                # 否则点击挑战
-                if self.appear(self.I_OROCHI_FIRE):
-                    self.ui_click_until_disappear(self.I_OROCHI_FIRE)
-                    self.run_general_battle()
-                    count_orochi_ten += 1
-                    continue
-
-        if not battle:
-            # 如果还没有真蛇，那么就退出
-            self.check_times(battle)
-            raise TaskEnd('TrueOrochi')
-        # 如果有真蛇，那么就开始战斗
-        logger.hr('True Orochi Battle')
+        self.goto_page(page_orochi)
         conf.current_success += 1
         while 1:
             self.screenshot()
@@ -161,8 +133,30 @@ class ScriptTask(OrochiScriptTask, TrueOrochiAssets):
             sleep(0.5)
 
         logger.info("Battle process end")
+        self.goto_page(page_main)
         self.check_times(battle)
         raise TaskEnd('TrueOrochi')
+
+    def get_true_orochi(self) -> bool:
+        """获取真蛇(攻打十层10次, 发现真蛇就退出, 会更改limit_count)"""
+        self.config.orochi.orochi_config.layer = Layer.TEN
+        self.limit_count = 0
+        self.limit_time = timedelta(hours=10)
+        # 切换十层御魂
+        if self.config.true_orochi.switch_soul.enable_switch_layer_soul:
+            self.switch_orochi_souls()
+            self.goto_page(page_orochi)
+        while True:
+            self.screenshot()
+            if self.check_true_orochi(False):
+                logger.info('Find true orochi')
+                return True
+            if self.limit_count >= 10:
+                logger.warning('Not find true orochi')
+                break
+            self.limit_count += 1
+            self.run_alone()
+        return False
 
     def check_true_orochi(self, screenshot=False) -> bool:
         """
@@ -198,10 +192,6 @@ class ScriptTask(OrochiScriptTask, TrueOrochiAssets):
             self.config.true_orochi.true_orochi_config.current_success = min(2, self.config.true_orochi.true_orochi_config.current_success)
         self.config.save()
         self.set_next_run(task='TrueOrochi', target=next_run)
-        # self.set_next_run('TrueOrochi', finish=True, success=True)
-
-    def run_true_orochi(self) -> bool:
-        pass
 
 
 if __name__ == '__main__':
@@ -214,5 +204,3 @@ if __name__ == '__main__':
     t.screenshot()
 
     t.run()
-
-

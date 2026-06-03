@@ -24,12 +24,8 @@ class Shrine(GameUi, RichManAssets):
             self.screenshot()
             if self.appear(self.I_S_NEXT_PERIOD):
                 break
-            if self.click(self.C_C_SHRINE, interval=2):
+            if self.appear_then_click(self.I_S_SUMMON_TO_SHRINE, interval=2):
                 continue
-            # if self.appear_then_click(self.I_CENTER1, interval=1):
-            #     continue
-            # if self.appear_then_click(self.I_CENTER2, interval=1):
-            #     continue
         logger.info('Enter Shrine')
         time.sleep(0.5)
         if con.black_daruma:

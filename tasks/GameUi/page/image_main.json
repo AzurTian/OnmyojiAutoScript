@@ -5,8 +5,8 @@
     "roiFront": "807,108,76,45",
     "roiBack": "49,98,1033,61",
     "method": "Template matching",
-    "threshold": 0.8,
-    "description": "description"
+    "threshold": 0.95,
+    "description": "庭院标志"
   },
   {
     "itemName": "main_scroll_close",
@@ -191,8 +191,8 @@
   {
     "itemName": "check_team",
     "imageName": "page_check_team.png",
-    "roiFront": "32,585,82,90",
-    "roiBack": "32,585,82,90",
+    "roiFront": "32,585,82,65",
+    "roiBack": "0,563,148,139",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "组队页面标志"
@@ -201,7 +201,7 @@
     "itemName": "check_collection",
     "imageName": "page_check_collection.png",
     "roiFront": "380,620,100,100",
-    "roiBack": "380,620,100,100",
+    "roiBack": "371,608,880,112",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "图鉴页面标志"
@@ -221,14 +221,14 @@
     "roiFront": "1073,174,57,65",
     "roiBack": "571,153,586,124",
     "method": "Template matching",
-    "threshold": 0.8,
+    "threshold": 0.7,
     "description": "庭院召唤标志"
   },
   {
     "itemName": "check_summon",
     "imageName": "page_check_summon.png",
     "roiFront": "750,580,30,28",
-    "roiBack": "750,580,350,120",
+    "roiBack": "578,516,419,204",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "召唤页面标志"

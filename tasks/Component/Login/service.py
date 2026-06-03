@@ -127,19 +127,17 @@ class LoginService(BaseTask, RestartAssets, GameUiAssets):
         return login_success
 
     def app_handle_login(self) -> bool:
-        for _ in range(2):
-            self.device.stuck_record_clear()
-            self.device.click_record_clear()
-            try:
-                self._app_handle_login()
-                return True
-            except (GameTooManyClickError, GameStuckError) as e:
-                logger.warning(e)
-                self.device.app_stop()
-                self.device.app_start()
-                continue
+        self.device.stuck_record_clear()
+        self.device.click_record_clear()
+        try:
+            self._app_handle_login()
+            return True
+        except (GameTooManyClickError, GameStuckError) as e:
+            logger.warning(e)
+            self.device.app_stop()
+            self.device.app_start()
 
-        logger.critical('Login failed more than 3')
+        logger.critical('Login failed')
         logger.critical('Onmyoji server may be under maintenance, or you may lost network connection')
         raise RequestHumanTakeover
 

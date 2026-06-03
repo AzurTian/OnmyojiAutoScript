@@ -1,0 +1,137 @@
+[
+  {
+    "itemName": "sr_switch",
+    "imageName": "sr_sr_switch.png",
+    "roiFront": "407,223,27,57",
+    "roiBack": "388,188,71,146",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "六道之门更替标志"
+  },
+  {
+    "itemName": "sr_to_moon_sea",
+    "imageName": "sr_sr_to_moon_sea.png",
+    "roiFront": "602,149,56,59",
+    "roiBack": "345,112,546,517",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "更替到月之海"
+  },
+  {
+    "itemName": "sr_to_incense_realm",
+    "imageName": "sr_sr_to_incense_realm.png",
+    "roiFront": "756,241,56,59",
+    "roiBack": "345,112,546,517",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "更替到香行域"
+  },
+  {
+    "itemName": "sr_to_seasonrift_forest",
+    "imageName": "sr_sr_to_seasonrift_forest.png",
+    "roiFront": "762,421,56,59",
+    "roiBack": "345,112,546,517",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "更替到错季森"
+  },
+  {
+    "itemName": "sr_to_pure_buddha_realm",
+    "imageName": "sr_sr_to_pure_buddha_realm.png",
+    "roiFront": "598,525,56,59",
+    "roiBack": "345,112,546,517",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "更替到净佛刹"
+  },
+  {
+    "itemName": "sr_to_mantra_tower",
+    "imageName": "sr_sr_to_mantra_tower.png",
+    "roiFront": "432,426,56,59",
+    "roiBack": "345,112,546,517",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "更替到真言塔"
+  },
+  {
+    "itemName": "sr_to_peacock_kingdom",
+    "imageName": "sr_sr_to_peacock_kingdom.png",
+    "roiFront": "434,245,56,59",
+    "roiBack": "345,112,546,517",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "更替到孔雀国"
+  },
+  {
+    "itemName": "sr_moon_sea_info",
+    "imageName": "sr_sr_moon_sea_info.png",
+    "roiFront": "984,608,88,88",
+    "roiBack": "747,558,533,162",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "月之海玩法详情"
+  },
+  {
+    "itemName": "sr_incense_realm_info",
+    "imageName": "sr_sr_incense_realm_info.png",
+    "roiFront": "980,605,95,95",
+    "roiBack": "747,558,533,162",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "香行域玩法详情"
+  },
+  {
+    "itemName": "sr_seasonrift_forest_info",
+    "imageName": "sr_sr_seasonrift_forest_info.png",
+    "roiFront": "982,609,94,88",
+    "roiBack": "747,558,533,162",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "错季森玩法详情"
+  },
+  {
+    "itemName": "sr_pure_buddha_realm_info",
+    "imageName": "sr_sr_pure_buddha_realm_info.png",
+    "roiFront": "989,612,90,92",
+    "roiBack": "747,558,533,162",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "净佛刹玩法详情"
+  },
+  {
+    "itemName": "sr_mantra_tower_info",
+    "imageName": "sr_sr_mantra_tower_info.png",
+    "roiFront": "991,611,84,97",
+    "roiBack": "747,558,533,162",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "真言塔玩法详情"
+  },
+  {
+    "itemName": "sr_peacock_kingdom_info",
+    "imageName": "sr_sr_peacock_kingdom_info.png",
+    "roiFront": "990,607,90,96",
+    "roiBack": "747,558,533,162",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "孔雀国玩法详情"
+  },
+  {
+    "itemName": "sr_double_reward_cancel",
+    "imageName": "sr_sr_double_reward_cancel.png",
+    "roiFront": "492,422,124,48",
+    "roiBack": "422,388,229,115",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "双倍奖励取消标志"
+  },
+  {
+    "itemName": "sr_double_reward_use",
+    "imageName": "sr_sr_double_reward_use.png",
+    "roiFront": "669,417,126,53",
+    "roiBack": "651,407,164,71",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "双倍奖励使用标志"
+  }
+]

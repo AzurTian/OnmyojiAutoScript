@@ -1,0 +1,11 @@
+[
+  {
+    "itemName": "pk_store_refresh_time",
+    "roiFront": "585,660,114,29",
+    "roiBack": "585,660,114,29",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店刷新次数"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "itemName": "pk_store_exit",
+    "imageName": "pk_pk_store_exit.png",
+    "roiFront": "1196,611,54,54",
+    "roiBack": "1196,611,54,54",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "商店离开"
+  },
+  {
+    "itemName": "pk_store_refresh",
+    "imageName": "pk_pk_store_refresh.png",
+    "roiFront": "591,595,53,52",
+    "roiBack": "566,577,110,80",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "商店刷新"
+  },
+  {
+    "itemName": "pk_store_stable_flag",
+    "imageName": "pk_pk_store_stable_flag.png",
+    "roiFront": "1059,257,29,31",
+    "roiBack": "1059,257,29,31",
+    "method": "Template matching",
+    "threshold": 0.7,
+    "description": "商店稳定标志"
+  },
+  {
+    "itemName": "pk_store_skill_thunder",
+    "imageName": "pk_pk_store_skill_thunder.png",
+    "roiFront": "1076,135,41,38",
+    "roiBack": "697,91,482,626",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "商店轰雷技能"
+  }
+]

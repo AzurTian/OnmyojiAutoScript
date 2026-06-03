@@ -16,6 +16,7 @@ from module.logger import logger
 from module.base.timer import Timer
 from module.atom.ocr import RuleOcr
 from tasks.CollectiveMissions.config import MC
+from tasks.CollectiveMissions.page import page_collective_missions
 
 from tasks.GameUi.game_ui import GameUi
 from tasks.GameUi.page import page_main, page_guild
@@ -28,18 +29,16 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
     current_mission: MC = None
 
     def run(self):
-        self.goto_page(page_guild)
-        self.ui_click(self.I_CM_SHRINE, self.I_CM_CM)
-        self.ui_click(self.I_CM_CM, self.I_CM_RECORDS)
+        self.goto_page(page_collective_missions)
         logger.info('Start to detect missions')
         self.get_task_reward()
         if self.is_finish():
-            self.exit()
+            self.goto_page(page_main)
             self.set_next_run(task='CollectiveMissions', success=True)
             raise TaskEnd
         self.select_and_update_cur_mission(self.config.collective_missions.missions_config.missions_select)
         if self.current_mission is None:
-            self.exit()
+            self.goto_page(page_main)
             self.set_next_run(task='CollectiveMissions', success=False)
             raise TaskEnd
         match self.current_mission:
@@ -49,7 +48,7 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
                 self._donate()  # 捐材料
             case MC.SO1 | MC.SO2:
                 self._soul()  # 捐御魂
-        self.exit()
+        self.goto_page(page_main)
         self.set_next_run(task='CollectiveMissions', success=True)
         raise TaskEnd
 
@@ -180,12 +179,6 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
         logger.info('Finish to collect feed N rewards')
         return True
 
-    def exit(self):
-        """退出到庭院"""
-        self.ui_click(self.I_CM_CLOSE, self.I_CM_CM)
-        self.ui_click(self.I_UI_BACK_YELLOW, self.I_CM_SHRINE)
-        self.goto_page(page_main)
-
     def is_finish(self):
         """判断寮三十是否已经捐满"""
         self.screenshot()
@@ -195,13 +188,12 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
             return True
         return False
 
-    def get_task_reward(self, skip_first_screenshot: bool = True):
+    def get_task_reward(self):
         """获取其他已完成的任务奖励"""
         timeout_timer = Timer(3).start()
         process_reward = False
         while not timeout_timer.reached():
-            self.maybe_screenshot(skip_first_screenshot)
-            skip_first_screenshot = False
+            self.maybe_screenshot()
             if not self.appear(self.I_CM_GET_REWARD):
                 break
             process_reward = True
@@ -210,6 +202,8 @@ class ScriptTask(GameUi, CollectiveMissionsAssets):
             timeout_timer.reset()
         if process_reward:
             logger.info('Get task reward finished')
+        else:
+            logger.info('No task reward')
 
     def get_reward_and_close(self,  target: RuleImage):
         # 捐赠可能有双倍的，需要领两次

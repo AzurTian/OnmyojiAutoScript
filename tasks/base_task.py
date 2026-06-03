@@ -260,7 +260,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
     def wait_until_appear(self,
                           target: RuleImage | RuleOcr,
                           skip_first_screenshot=False,
-                          wait_time: int = None) -> bool:
+                          wait_time: int | float = None) -> bool:
         """
         等待直到出现目标
         :param wait_time: 等待时间，单位秒
@@ -425,7 +425,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
                 logger.info(f'Wait_animate_stable({rule}) timeout')
                 break
 
-    def swipe(self, swipe: RuleSwipe, interval: float = None) -> None:
+    def swipe(self, swipe: RuleSwipe, interval: float = None) -> bool:
         """
 
         :param interval:
@@ -433,7 +433,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
         :return:
         """
         if not isinstance(swipe, RuleSwipe):
-            return
+            return False
 
         if interval:
             if swipe.name in self.interval_timer:
@@ -445,7 +445,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
                 self.interval_timer[swipe.name] = Timer(interval)
             # 如果时间还没到达，则不执行
             if not self.interval_timer[swipe.name].reached():
-                return
+                return False
 
         x1, y1, x2, y2 = swipe.coord()
         self.device.swipe(p1=(x1, y1), p2=(x2, y2), control_name=swipe.name)
@@ -454,6 +454,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
         if interval:
             # logger.info(f'Swipe {swipe.name}')
             self.interval_timer[swipe.name].reset()
+        return True
 
     def click(self, click: Union[RuleClick, RuleLongClick, RuleImage, RuleOcr] = None, interval: float = None) -> bool:
         """
@@ -661,7 +662,7 @@ class BaseTask(GlobalGameAssets, CostumeBase):
             self.screenshot()
         return self.appear_then_click(self.I_UI_REWARD, action=self.C_UI_REWARD, interval=0.4, threshold=0.6)
 
-    def ui_get_reward(self, click_image: RuleImage or RuleOcr or RuleClick, click_interval: float = 1):
+    def ui_get_reward(self, click_image: RuleImage | RuleOcr | RuleClick, click_interval: float = 1):
         """
         传进来一个点击图片 或是 一个ocr， 会点击这个图片，然后等待‘获得奖励’，
         最后当获得奖励消失后 退出

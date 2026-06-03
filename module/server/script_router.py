@@ -9,13 +9,14 @@ from datetime import datetime
 from module.config.utils import convert_to_underscore
 
 from module.logger import logger
+from module.server.api_logger import ApiLoggingRoute, log_ws_event
 from module.server.main_manager import mm
 from module.server.script_process import ScriptProcess, ScriptState
 
 from tasks.Component.config_base import TimeDelta
 
 
-script_app = APIRouter()
+script_app = APIRouter(route_class=ApiLoggingRoute)
 
 
 @script_app.get('/test')
@@ -207,30 +208,38 @@ async def websocket_endpoint(websocket: WebSocket, script_name: str):
         mm.script_process[script_name] = ScriptProcess(script_name)
     script_process = mm.script_process[script_name]
     await script_process.connect(websocket)
+    log_ws_event(f"ws[{script_name}] connected")
 
     try:
         await script_process.send_json(websocket, {"state": script_process.state})
+        log_ws_event(f"ws[{script_name}] connect state: {script_process.state}")
         config = mm.config_cache(script_name)
         config.get_next()
-        await script_process.send_json(websocket, {"schedule": config.get_schedule_data()})
-
+        schedule_data = config.get_schedule_data()
+        await script_process.send_json(websocket, {"schedule": schedule_data})
+        log_ws_event(f"ws[{script_name}] connect response: {schedule_data}")
         while True:
             # 初次进入，广播state schedule
             data = await websocket.receive_text()
+            log_ws_event(f"ws[{script_name}] msg: {data}")
             if data == 'get_state':
                 await script_process.broadcast_state({"state": script_process.state})
+                log_ws_event(f"ws[{script_name}] response: {script_process.state}")
             elif data == 'get_schedule':
                 config = mm.config_cache(script_name)
                 config.get_next()
-                await script_process.broadcast_state({"schedule": config.get_schedule_data()})
+                schedule_data = config.get_schedule_data()
+                await script_process.broadcast_state({"schedule": schedule_data})
+                log_ws_event(f"ws[{script_name}] response: {schedule_data}")
             elif data == 'start':
                 await script_process.start()
             elif data == 'stop':
                 await script_process.stop()
 
     except WebSocketDisconnect:
-        logger.warning(f'[{script_name}] websocket disconnect')
+        log_ws_event(f"ws[{script_name}] disconnect", level="warning")
         await script_process.disconnect(websocket)
     except Exception as e:
+        log_ws_event(f"ws[{script_name}] error: {type(e).__name__}: {e}", level="error")
         logger.exception(f'[{script_name}] websocket error: {e}')
         await script_process.disconnect(websocket)

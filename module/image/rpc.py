@@ -240,15 +240,16 @@ class ImageClient:
         """获取服务端当前缓存与调度器状态快照。"""
         return self.client.get_server_info()
 
-    def register_frame(self, image: np.ndarray) -> dict[str, Any]:
+    def register_frame(self, image: np.ndarray, config_name: str) -> dict[str, Any]:
         """
         向服务端注册一张截图帧，并返回可复用的 `frame_id`。
 
         Args:
             image: 当前截图的 numpy 数组。客户端会在本地序列化后上传一次。
+            config_name: 当前脚本配置名；服务端用它删除同配置旧截图帧。
         """
         payload = pickle.dumps(image, protocol=4)
-        return self.client.register_frame(payload)
+        return self.client.register_frame(payload, config_name)
 
     def get_frame_info(self, frame_id: str) -> dict[str, Any]:
         """

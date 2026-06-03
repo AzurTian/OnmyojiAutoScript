@@ -33,3 +33,13 @@ page_friend_utilize = Page(
 page_friend_utilize.connect(page_friend_realm, GlobalGameAssets.I_UI_BACK_BLUE, key="page_friend_utilize->page_friend_realm")
 page_guild_realm_utilize.connect(page_friend_utilize, KekkaiUtilizeAssets.I_U_ENTER_REALM, key="page_guild_realm_utilize->page_friend_utilize")
 page_friend_realm.connect(page_friend_utilize, KekkaiUtilizeAssets.O_R_SHIKIGAMI, key="page_friend_realm->page_friend_utilize")
+# 体力食盒
+page_gr_ap_box = Page(KekkaiUtilizeAssets.I_AP_EXTRACT, priority=75)
+page_gr_ap_box.connect(page_guild_realm, GlobalGameAssets.I_UI_BACK_RED, key="page_gr_ap_box->page_guild_realm")
+page_guild_realm.connect(page_gr_ap_box, KekkaiUtilizeAssets.I_BOX_AP, key="page_guild_realm->page_gr_ap_box")
+# 经验酒壶
+page_gr_exp_jug = Page(KekkaiUtilizeAssets.I_EXP_EXTRACT, priority=75)
+page_gr_exp_jug.connect(page_guild_realm, GlobalGameAssets.I_UI_BACK_RED, key="page_gr_exp_jug->page_guild_realm")
+page_guild_realm.connect(page_gr_exp_jug, action=lambda task: \
+    task.appear_then_click(KekkaiUtilizeAssets.I_BOX_EXP, interval=0.8) or \
+    task.appear_then_click(KekkaiUtilizeAssets.I_BOX_EXP_MAX, interval=0.8), key="page_guild_realm->page_gr_exp_jug")

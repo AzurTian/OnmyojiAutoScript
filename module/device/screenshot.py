@@ -63,7 +63,7 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
                 self.screenshot_adb  # 第二个参数默认的是screenshot_adb
             )
             self.image = method()
-            frame_info = get_image_client().register_frame(self.image)
+            frame_info = get_image_client().register_frame(self.image, self.config.config_name)
             self.image_frame_id = frame_info["frame_id"]
 
             # if self.config.Emulator_ScreenshotDedithering:

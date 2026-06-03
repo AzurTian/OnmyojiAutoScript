@@ -21,10 +21,6 @@ class EternitySeaAssets:
 	I_ETERNITYSEA_UNLOCK = RuleImage(roi_front=(705,659,20,26), roi_back=(645,630,195,90), threshold=0.8, method="Template matching", file="./tasks/EternitySea/res/res_eternitysea_unlock.png")
 	# 关锁 
 	I_NEWETERNITYSEA_LOCK = RuleImage(roi_front=(702,658,24,28), roi_back=(655,636,182,84), threshold=0.6, method="Template matching", file="./tasks/EternitySea/res/res_neweternitysea_lock.png")
-	# 小小宠物，发现宝藏 
-	I_PET_PRESENT = RuleImage(roi_front=(873,184,62,147), roi_back=(873,184,62,147), threshold=0.8, method="Template matching", file="./tasks/EternitySea/res/res_pet_present.png")
-	# description 
-	I_BACK_BOTTOM = RuleImage(roi_front=(1126,49,46,45), roi_back=(1126,49,46,45), threshold=0.8, method="Template matching", file="./tasks/EternitySea/res/res_back_bottom.png")
 
 
 	# List Rule Assets

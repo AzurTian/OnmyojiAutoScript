@@ -9,6 +9,12 @@
 
 `run_general_battle(config, buff, battle_key)` 会在单一循环里截图、识别 `page_battle_prepare` / `page_battle` / `page_battle_result` / `page_reward`，再把处理分派到对应 handler。
 
+## 准备页点击时机
+
+- 默认情况下，只要识别到 `page_battle_prepare`，基类就会按现有节奏尝试点击准备按钮。
+- 当 `GeneralBattleConfig.lock_team_enable = True` 时，基类会改为“连续停留在准备页 3 秒后再点击准备”。
+- 这个 3 秒窗口只统计连续停留时长；中途离开 `page_battle_prepare` 后会重置，下一次重新进入准备页时重新计时。
+
 ## 定时巡检
 
 `GeneralBattle` 在 `page_battle` 阶段提供统一的定时巡检框架：

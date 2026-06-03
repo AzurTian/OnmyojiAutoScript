@@ -1,85 +1,82 @@
 # This Python file uses the following encoding: utf-8
-# @author runhey
-# github https://github.com/runhey
+# @author AzurTian
 from cached_property import cached_property
+from datetime import datetime, timedelta
 
-
-
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_soul_zones, page_shikigami_records
-from module.logger import logger
+from pathlib import Path
 from module.exception import TaskEnd
+from tasks.Component.SwitchSoul.switch_soul_config import SwitchSoulConfig
+from tasks.GameUi.navigator import GameUi
 
-
-from time import sleep
-from datetime import time, datetime, timedelta
-
-from tasks.Sougenbi.assets import SougenbiAssets
-from tasks.Sougenbi.config import SougenbiConfig, SougenbiClass
-
+from tasks.SixRealms.config import SixRealmsType, SixRealms
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
-from tasks.GameUi.game_ui import GameUi
-from tasks.GameUi.page import page_main, page_six_gates
-from tasks.SixRealms.moon_sea.moon_sea import MoonSea
+from tasks.GameUi.page import page_main, page_shikigami_records
 from module.logger import logger
+from tasks.SixRealms.moon_sea.moon_sea import MoonSea
+from tasks.SixRealms.peacock_kingdom.peacock_kingdom import PeacockKingdom
 
 
-class ScriptTask(GameUi, SwitchSoul, MoonSea):
+class ScriptTask(GameUi, SwitchSoul):
+    switched_soul = False
 
-    @property
-    def _config(self):
-        return self.config.model.six_realms
+    @cached_property
+    def moon_sea(self) -> MoonSea:
+        return MoonSea(self.config, self.device)
+
+    @cached_property
+    def peacock_kingdom(self) -> PeacockKingdom:
+        return PeacockKingdom(self.config, self.device)
 
     def run(self):
-        if self._config.switch_soul_config_1.enable:
-            self.goto_page(page_shikigami_records)
-            self.run_switch_soul(self._config.switch_soul_config_1.switch_group_team)
-        if self._config.switch_soul_config_1.enable_switch_by_name:
-            self.goto_page(page_shikigami_records)
-            self.run_switch_soul_by_name(
-                self._config.switch_soul_config_1.group_name,
-                self._config.switch_soul_config_1.team_name
-            )
-        if self._config.switch_soul_config_2.enable:
-            self.goto_page(page_shikigami_records)
-            self.run_switch_soul(self._config.switch_soul_config_2.switch_group_team)
-        if self._config.switch_soul_config_2.enable_switch_by_name:
-            self.goto_page(page_shikigami_records)
-            self.run_switch_soul_by_name(
-                self._config.switch_soul_config_2.group_name,
-                self._config.switch_soul_config_2.team_name
-            )
-        self.goto_page(page_six_gates)
-
-        self.run_moon_sea()
-
-        # 退出六道
-        while 1:
-            self.screenshot()
-            if self.appear(self.I_CHECK_EXPLORATION) or self.appear(self.I_CHECK_MAIN):
+        _config = self.config.model.six_realms
+        cnt = 0
+        while True:
+            if cnt >= _config.six_realms_gate.limit_count:
+                logger.info('Run out of count, exit')
                 break
-            if self.appear_then_click(self.I_BACK_EXIT, interval=2):
-                continue
-
+            if datetime.now() - self.start_time >= _config.six_realms_gate.limit_time_v:
+                logger.info('Run out of time, exit')
+                break
+            start_time = datetime.now()
+            match _config.six_realms_gate.six_realms_type:
+                case SixRealmsType.MOON_SEA:
+                    self.switch_current_soul(_config.switch_soul_config)
+                    self.moon_sea.run()
+                case SixRealmsType.PEACOCK_KINGDOM:
+                    self.switch_current_soul(_config.pk_switch_soul_conf)
+                    self.peacock_kingdom.run()
+                case _:
+                    raise ValueError(f'Invalid six_realms_type {_config.six_realms_gate.six_realms_type}')
+            cnt += 1
+            logger.info(f'Battle count: {cnt}')
+            elapsed = datetime.now() - start_time
+            logger.info(f'Battle time: {elapsed.seconds//60}m{elapsed.seconds%60}s')
+        self.goto_page(page_main)
         self.set_next_run('SixRealms', success=True, finish=True)
         raise TaskEnd
 
-    def run_moon_sea(self):
-        self._run_moon_sea()
-        self.ui_click(self.I_BACK_EXIT, self.I_CHECK_SIX_GATES)
-
-
-
-
+    def switch_current_soul(self, switch_soul_config: SwitchSoulConfig):
+        """切换当前六道御魂"""
+        if self.switched_soul:
+            return
+        if switch_soul_config.enable:
+            self.goto_page(page_shikigami_records)
+            self.run_switch_soul(switch_soul_config.switch_group_team)
+        if switch_soul_config.enable_switch_by_name:
+            self.goto_page(page_shikigami_records)
+            self.run_switch_soul_by_name(switch_soul_config.group_name, switch_soul_config.team_name)
+        self.switched_soul = True
 
 
 if __name__ == '__main__':
-    from module.config.config import Config
-    from module.device.device import Device
-    c = Config('oas1')
-    d = Device(c)
-    t = ScriptTask(c, d)
-    t.screenshot()
+    path = Path(r'D:\dev\OnmyojiAutoScript\tasks\SixRealms\moon_sea\ms')
 
-    t.run()
+    for file in path.iterdir():
+        # 只处理文件，并且文件名以 gate1_ 开头
+        if file.is_file() and file.name.startswith('gate1_'):
+            new_name = 'ms_' + file.name[len('gate1_'):]
+            new_path = file.with_name(new_name)
+
+            print(f'{file.name} -> {new_name}')
+            file.rename(new_path)
 

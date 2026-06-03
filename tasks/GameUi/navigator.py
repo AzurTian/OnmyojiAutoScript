@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import random
 from module.base.decorator import run_once
+from tasks.Exploration.assets import ExplorationAssets
 from tasks.GlobalGame.assets import GlobalGameAssets
 
 """GameUi 导航运行时。"""
@@ -20,7 +22,6 @@ from module.base.timer import Timer
 from module.exception import GamePageUnknownError, GameNotRunningError
 from module.logger import logger
 from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
-from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
 from tasks.GameUi.action import ActionSequence, ConditionalAction
 from tasks.GameUi.assets import GameUiAssets
 from tasks.GameUi.common import infer_tasks_category_from_parts, infer_tasks_category_from_path
@@ -42,10 +43,10 @@ class GameUi(BaseTask, GameUiAssets):
         GlobalGameAssets.I_UI_BACK_RED,
         GlobalGameAssets.I_CHAT_CLOSE_BUTTON,
         ActivityShikigamiAssets.I_SKIP_BUTTON,
-        GeneralBattleAssets.I_CONFIRM,
-        GeneralBattleAssets.I_EXIT_ENSURE,
+        GlobalGameAssets.I_UI_CONFIRM_SAMLL,
+        GlobalGameAssets.I_UI_CONFIRM,
+        ExplorationAssets.I_E_EXIT_CONFIRM,
         GameUiAssets.I_BACK_DAILY,
-        GameUiAssets.I_SIX_GATES_GOTO_EXPLORATION,
         GlobalGameAssets.I_UI_BACK_YELLOW,
         SixRealmsAssets.I_EXIT_SIXREALMS,
         GlobalGameAssets.I_UI_BACK_BLUE,
@@ -287,7 +288,7 @@ class GameUi(BaseTask, GameUiAssets):
         if isinstance(action, ActionSequence):
             return f"ActionSequence[{len(action.actions)}]"
         if callable(action):
-            return getattr(action, "__name__", action.__class__.__name__)
+            return str(getattr(action, "__name__", action.__class__.__name__))
         return repr(action)
 
     def _execute_action(self, action, *, interval: float | None = None, skip_first_screenshot: bool = True) -> bool:
@@ -391,8 +392,9 @@ class GameUi(BaseTask, GameUiAssets):
         Returns:
             以页面 key 为索引的允许页面字典。
         """
-
-        pages = {page.key: page for page in self.navigator.all_pages(self._navigation_graph_categories(destination, current))}
+        categories = self._navigation_graph_categories(destination, current)
+        categories.add(self.navigator.task_category)
+        pages = {page.key: page for page in self.navigator.all_pages(categories)}
         if current is not None:
             pages[current.key] = current
         pages[destination.key] = destination
@@ -505,7 +507,6 @@ class GameUi(BaseTask, GameUiAssets):
         destination = transition.destination
 
         logger.info(f"Page switch: {source} -> {destination}")
-        logger.info(f"Operate transition: {transition.key}")
 
         action_timer = Timer(6.0).start()
         action_done = False
@@ -614,16 +615,22 @@ class GameUi(BaseTask, GameUiAssets):
         logger.warning(f"Unknown close history: {self.navigator.unknown_close_history}")
         raise GamePageUnknownError(f"Cannot goto page[{destination}]")
 
-    def get_current_page(self, skip_first_screenshot: bool = True) -> Page | None:
+    def get_current_page(self, skip_first_screenshot: bool = True, fallback: bool = False) -> Page | None:
         """获取当前稳定页面。
 
         Args:
             skip_first_screenshot: 是否复用当前截图。
+            fallback: 是否回退至识别全部注册页面
 
         Returns:
             当前稳定识别到的页面；识别失败时返回 `None`。
         """
 
+        if not fallback:
+            return self._detect_current_page(
+                skip_first_screenshot=skip_first_screenshot,
+                categories=self._default_detect_categories()
+            )
         return self._detect_current_page_with_fallback(
             skip_first_screenshot=skip_first_screenshot,
             categories=self._default_detect_categories(),
@@ -677,15 +684,19 @@ class GameUi(BaseTask, GameUiAssets):
         """
 
         self.maybe_screenshot(skip_first_screenshot)
-        timer_start = time.time()
+        logger.warning("Try switch to a supported page")
         for action in [*self.navigator.local_unknown_closers, *self.DEFAULT_UNKNOWN_CLOSERS]:
+            action_name = self._action_name(action)
+            # 若最后3次执行的都是该动作，则跳过该动作尝试其他动作
+            if len(self.navigator.unknown_close_history) >= 3 and \
+                    self.navigator.unknown_close_history[-3:] == [action_name] * 3:
+                continue
             if self._execute_action(action, interval=1.5, skip_first_screenshot=False):
-                action_name = self._action_name(action)
-                logger.warning("Trying to switch to supported page")
-                logger.info(f"[{time.time() - timer_start:.1f}s]Close unknown page by {action_name}")
-                self._record_unknown_close_event(f"success:{action_name}")
+                self._record_unknown_close_event(f"{action_name}")
+                # 关掉未知界面后等待页面变化, 防止多次识别到未知界面
+                time.sleep(random.randrange(8, 16, 1) / 10)
                 return True
-        self._record_unknown_close_event("miss")
+        self._record_unknown_close_event(f"None")
 
         @run_once
         def app_check():
@@ -705,6 +716,28 @@ class GameUi(BaseTask, GameUiAssets):
         minicap_check()
         rotation_check()
         return False
+
+    def _finalize_arrival(self, destination: Page, confirm_wait: float, start_time: float) -> bool:
+        """统一处理到达目标页后的收尾动作。
+
+        到达判定已由调用方完成（跳转边到达等待的两帧确认，或当前页刷新返回的两帧确认结果），
+        本方法不再重复确认，只负责收尾：刷新当前页缓存、幂等触发进入成功钩子、按需等待、输出到达日志。
+
+        Args:
+            destination: 已确认到达的目标页面。
+            confirm_wait: 到达后额外等待的确认时间。
+            start_time: 本次导航开始时间戳，用于输出耗时。
+
+        Returns:
+            固定返回 True，表示已到达目标页面。
+        """
+
+        self.navigator.current_page = destination
+        self._run_enter_success_hooks_if_needed(destination)
+        if confirm_wait > 0:
+            Timer(confirm_wait, count=int(confirm_wait // 0.5)).start().wait()
+        logger.attr(f'{time.time() - start_time:.1f}s', f"Page arrived {destination}")
+        return True
 
     def goto_page(self, destination: Page, confirm_wait: float = 0, skip_first_screenshot: bool = True,
                   timeout: int = 30) -> bool | None:
@@ -743,11 +776,6 @@ class GameUi(BaseTask, GameUiAssets):
             skip_first_screenshot = False
 
             if current is None:
-                logger.warning(
-                    "Current page detect miss after scoped/full fallback, "
-                    f"try close unknown pages: scoped={sorted(self._navigation_detect_categories(destination))}, "
-                    f"target={destination.key}"
-                )
                 if self.close_unknown_pages(skip_first_screenshot=False):
                     progress_timer.reset()
                     last_progress_signature = ("close_unknown", destination.key)
@@ -770,12 +798,9 @@ class GameUi(BaseTask, GameUiAssets):
                 last_detected_page_key = current.key
                 reset_repeated_transition_failures()
 
-            if current == destination and self.confirm_page(destination, skip_first_screenshot=False):
-                self._run_enter_success_hooks_if_needed(destination)
-                if confirm_wait > 0:
-                    Timer(confirm_wait, count=int(confirm_wait // 0.5)).start().wait()
-                logger.attr(f'{time.time() - start_time:.1f}s', f"Page arrived {destination}")
-                return True
+            if current == destination:
+                # current 来自 _refresh_current_page，其返回已是两帧稳定确认的结果，无需再次 confirm。
+                return self._finalize_arrival(destination, confirm_wait, start_time)
 
             path = self._build_path(current, destination)
             if not path:
@@ -824,7 +849,8 @@ class GameUi(BaseTask, GameUiAssets):
                 reset_repeated_transition_failures()
 
             if advanced and self.navigator.current_page == destination:
-                continue
+                # _execute_transition 的到达等待已对目标页完成两帧确认，直接收尾返回，避免回环重复确认。
+                return self._finalize_arrival(destination, confirm_wait, start_time)
             if progress_timer.reached():
                 self._log_navigation_timeout(
                     destination,

@@ -23,6 +23,8 @@ from tasks.GameUi.page import page_main, page_shikigami_records
 
 
 class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets, SwitchOnmyoji):
+    # TODO: 斗技适配页面模块
+
     battle_win_count = 0
     battle_lose_count = 0
     current_score = 0
@@ -166,7 +168,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets, SwitchOnmyoji):
         while True:
             self.screenshot()
             self.check_and_get_reward()
-            if self.appear(self.I_CHECK_DUEL, interval=0.6) and self.appear(self.I_D_HELP, interval=0.6):  # 斗技主界面
+            if self.appear(self.I_CHECK_DUEL) and self.appear(self.I_D_HELP):  # 斗技主界面
                 break
             if self.appear(self.I_D_WIN_SHARE,interval= 1.2): #拔得头筹
                 self.click(random_click(ltrb=(True, True, False, True)), interval=1.2)
@@ -187,7 +189,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets, SwitchOnmyoji):
                 ret_timer.start()
                 self.click(random_click(ltrb=(True, True, False, True)), interval=1.2)
                 continue
-            if battle_timeout_cnt >= max_timeout_cnt:
+            if not ret_timer.started() and battle_timeout_cnt >= max_timeout_cnt:
                 logger.warning('Duel battle timeout[>15 minutes], exit')
                 self.duel_exit_battle()
                 continue
@@ -197,7 +199,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets, SwitchOnmyoji):
                 battle_operated = True
                 self.reset_device('BATTLE_STATUS_S')
                 continue
-            if battle_timeout_timer.reached_and_reset():
+            if not ret_timer.started() and battle_timeout_timer.reached_and_reset():
                 battle_timeout_cnt += 1
                 self.reset_device('BATTLE_STATUS_S')
                 logger.warning("battle' time is too long, increase wait time")
@@ -290,9 +292,9 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, DuelAssets, SwitchOnmyoji):
 
     def check_and_get_reward(self):
         """检查并收获奖励"""
-        if self.appear(self.I_REWARD, interval=0.6) or self.appear(self.I_UI_REWARD, interval=0.6):
-            self.click(random_click(ltrb=(True, True, False, True)))
-            logger.info('get reward')
+        if self.appear(self.I_REWARD) or self.appear(self.I_UI_REWARD):
+            if self.click(random_click(ltrb=(True, True, False, True)), interval=0.6):
+                logger.info('get reward')
 
     def is_in_battle_prepare(self, skip_screenshot=True) -> bool:
         """是否在战斗准备界面"""

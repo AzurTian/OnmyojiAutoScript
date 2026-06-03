@@ -17,18 +17,6 @@ class KekkaiActivationAssets:
 	C_A_SELECT_AUTO = RuleClick(roi_front=(173,160,354,127), roi_back=(173,160,354,127), name="a_select_auto")
 
 
-	# Ocr Rule Assets
-	# 这张卡一共有多少小时 
-	O_CARD_ALL_TIME = RuleOcr(roi=(926,262,95,31), area=(926,262,95,31), mode="Duration", method="Default", keyword="", name="card_all_time")
-	# 识别结界卡每小时收益 
-	O_CHECK_CARD_NUMBER = RuleOcr(roi=(305,153,107,481), area=(305,153,107,481), mode="Single", method="Default", keyword="", name="check_card_number")
-
-
-	# Swipe Rule Assets
-	# description 
-	S_CARDS_SWIPE = RuleSwipe(roi_front=(178,401,23,23), roi_back=(176,168,29,24), mode="default", name="cards_swipe")
-
-
 	# Image Rule Assets
 	# 斗鱼收获奖励4星 
 	I_A_HARVEST_FISH4 = RuleImage(roi_front=(897,159,48,40), roi_back=(872,128,140,181), threshold=0.8, method="Template matching", file="./tasks/KekkaiActivation/a/a_a_harvest_fish4.png")
@@ -83,6 +71,18 @@ class KekkaiActivationAssets:
 	# Image Rule Assets
 	# 用于判断是否滑到底了 
 	I_AA_SWIPE_BLOCK = RuleImage(roi_front=(124,622,35,32), roi_back=(117,612,50,51), threshold=0.9, method="Template matching", file="./tasks/KekkaiActivation/a/a_aa_swipe_block.png")
+
+
+	# Ocr Rule Assets
+	# 这张卡一共有多少小时 
+	O_CARD_ALL_TIME = RuleOcr(roi=(926,262,95,31), area=(926,262,95,31), mode="Duration", method="Default", keyword="", name="card_all_time")
+	# 识别结界卡每小时收益 
+	O_CHECK_CARD_NUMBER = RuleOcr(roi=(305,153,107,481), area=(305,153,107,481), mode="Single", method="Default", keyword="", name="check_card_number")
+
+
+	# Swipe Rule Assets
+	# description 
+	S_CARDS_SWIPE = RuleSwipe(roi_front=(178,401,23,23), roi_back=(176,168,29,24), mode="default", name="cards_swipe")
 
 
 	# Image Rule Assets

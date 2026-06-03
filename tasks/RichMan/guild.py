@@ -8,36 +8,36 @@ import re
 
 from module.logger import logger
 from module.atom.image import RuleImage
+from tasks.GameUi.default_pages import page_shirin
 
 from tasks.GameUi.page import page_main, page_guild
 from tasks.GameUi.game_ui import GameUi
 from tasks.Component.Buy.buy import Buy
 from tasks.RichMan.assets import RichManAssets
 from tasks.RichMan.config import GuildStore
+from tasks.RichMan.page import page_guild_store
 
 
 class Guild(Buy, GameUi, RichManAssets):
 
-    def execute_guild(self, con: GuildStore = None):
+    def _default_detect_categories(self) -> set[str]:
+        categories = super()._default_detect_categories()
+        categories.add("guild")
+        return categories
 
+    def execute_guild(self, con: GuildStore = None):
         if not con.enable:
             return
         logger.hr('Start guild', 1)
-        self.goto_page(page_guild)
-        while 1:
-            self.screenshot()
-            if self.appear(self.I_GUILD_CLOSE_RED):
-                break
-            if self.appear_then_click(self.I_GUILD_SHRINE, interval=0.8):
-                continue
-            if self.appear_then_click(self.I_GUILD_STORE, interval=1.1):
-                continue
+        self.goto_page(page_guild_store)
         logger.info('Enter guild store success')
         time.sleep(0.5)
         swipe_cnt, max_swipe = 0, random.randint(4, 6)
-        mystery_ret, scrap_ret, skin_ret = False, False, False
+        mystery_ret, scrap_ret, skin_ret, gift_ret = False, False, False, False
         while swipe_cnt <= max_swipe:
             self.screenshot()
+            if con.honor_gift and self.appear(self.I_GUILD_HONOR_GIFT, interval=1.5) and not gift_ret:  # 功勋礼包
+                gift_ret = self._guild_honor_gift()
             if con.mystery_amulet and self.appear(self.I_GUILD_BLUE, interval=1.5) and not mystery_ret:  # 蓝票
                 mystery_ret = self._guild_mystery_amulet()
             if con.black_daruma_scrap and self.appear(self.I_GUILD_SCRAP, interval=1.5) and not scrap_ret:  # 黑碎
@@ -49,14 +49,21 @@ class Guild(Buy, GameUi, RichManAssets):
             logger.attr(max_swipe - swipe_cnt, 'remain swipe times')
             swipe_cnt += 1
         # 回去
-        while 1:
-            self.screenshot()
-            if self.appear(self.I_GUILD_SHRINE):
-                break
-            if self.appear_then_click(self.I_GUILD_CLOSE_RED, interval=1):
-                continue
-            if self.appear_then_click(self.I_UI_BACK_YELLOW, interval=1):
-                continue
+        self.goto_page(page_shirin)
+
+    def _guild_honor_gift(self):
+        # 功勋礼包
+        logger.hr('Guild honor gift', 2)
+        self.screenshot()
+        if not self.buy_check_money(self.O_GUILD_TOTAL, 210):
+            return False
+        number = self.check_remain(self.I_GUILD_HONOR_GIFT)
+        if number == 0:
+            logger.warning('No mystery amulet can buy')
+            return False
+        self.buy_more(self.I_GUILD_HONOR_GIFT)
+        time.sleep(0.5)
+        return True
 
     def _guild_mystery_amulet(self):
         # 蓝票
@@ -109,13 +116,13 @@ class Guild(Buy, GameUi, RichManAssets):
         self.O_GUILD_REMAIN.roi[0] = image.roi_front[0] - 38
         self.O_GUILD_REMAIN.roi[1] = image.roi_front[1] + 83
         logger.info(f'Image roi {image.roi_front}')
-        logger.info(f'Image roi {self.O_GUILD_REMAIN.roi}')
+        logger.info(f'GUILD REMAIN roi {self.O_GUILD_REMAIN.roi}')
         self.screenshot()
         result = self.O_GUILD_REMAIN.ocr(self.device.image)
         logger.warning(result)
         result = result.replace('？', '2').replace('?', '2').replace(':', '；')
         try:
-            result = re.findall(r'本周剩余数量(\d+)', result)[0]
+            result = re.findall(r'本周[剩刺][余条]数量(\d+)', result)[0]
             result = int(result)
         except:
             result = 0
@@ -127,10 +134,10 @@ if __name__ == '__main__':
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config('oas1')
+    c = Config('日常1')
     d = Device(c)
     t = Guild(c, d)
 
     # t._guild_skin_ticket(5)
-    t.execute_guild(con=c.rich_man.guild_store)
+    t._guild_honor_gift()
 

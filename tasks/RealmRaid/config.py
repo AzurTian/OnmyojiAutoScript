@@ -9,25 +9,16 @@ from tasks.Component.GeneralBattle.config_general_battle import GeneralBattleCon
 from tasks.Component.config_base import ConfigBase
 from tasks.Component.SwitchSoul.switch_soul_config import SwitchSoulConfig
 
-class RaidMode(str, Enum):
-    NORMAL = 'retreat_four_attack_nine'
-    ATTACK_ALL = 'attack_all'
-
 class AttackNumber(str, Enum):
     NINE = 'nine'
     ALL = 'all'
 
 class WhenAttackFail(str, Enum):
-    EXIT: str = 'Exit'
-    CONTINUE: str = 'Continue'
-    REFRESH: str = 'Refresh'
+    EXIT = 'Exit'
+    CONTINUE = 'Continue'
+    REFRESH = 'Refresh'
 
 class RaidConfig(BaseModel):
-    # raid_mode: RaidMode = Field(title='Raid Mode', default=RaidMode.NORMAL,
-    #                             description='raid_mode_help')
-    # attack_number: AttackNumber = Field(title='Attack Number', default=AttackNumber.ALL,
-    #                                     description='')
-
     number_attack: int = Field(title='Number Attack', default=30, le=30, ge=1, description='number_attack_help')
     number_base: int = Field(title='Number Base', default=0, le=20, ge=0, description='number_base_help')
     exit_four: bool = Field(title='Exit Four', default=True, description='exit_four_help')

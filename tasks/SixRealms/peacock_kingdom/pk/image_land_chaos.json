@@ -1,0 +1,29 @@
+[
+  {
+    "itemName": "pk_chaos_box",
+    "imageName": "pk_pk_chaos_box.png",
+    "roiFront": "680,298,90,98",
+    "roiBack": "662,274,133,143",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "幸运宝箱"
+  },
+  {
+    "itemName": "pk_chaos_exit",
+    "imageName": "pk_pk_chaos_exit.png",
+    "roiFront": "1158,632,54,53",
+    "roiBack": "1158,632,54,53",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "混沌之屿离开"
+  },
+  {
+    "itemName": "pk_chaos_elite_flag",
+    "imageName": "pk_pk_chaos_elite_flag.png",
+    "roiFront": "684,531,97,99",
+    "roiBack": "684,531,97,99",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "精英标志"
+  }
+]

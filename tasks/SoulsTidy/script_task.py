@@ -108,10 +108,18 @@ class ScriptTask(GameUi, SoulsTidyAssets):
                 self.screenshot()
                 if self.appear(self.I_ST_ABANDONED_SELECTED):
                     break
+                # 防止因为好友消息导致误点击到好友聊天界面
+                if self.appear(self.I_UI_BACK_RED):
+                    self.click(self.I_UI_BACK_RED, interval=0.8)
+                    continue
                 self.click(self.I_ST_ABANDONED_SELECTED, interval=1.5)
             # 确保是按照等级来排序的
             while 1:
                 self.screenshot()
+                # 防止因为好友消息导致误点击到好友聊天界面
+                if self.appear(self.I_UI_BACK_RED):
+                    self.click(self.I_UI_BACK_RED, interval=0.8)
+                    continue
                 if self.ocr_appear(self.O_ST_SORT_LEVEL_1):
                     break
                 if self.ocr_appear_click(self.O_ST_SORT_LEVEL_2, interval=0.6):

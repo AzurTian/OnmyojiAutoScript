@@ -291,19 +291,20 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         rcl = area_map[index].get("rule_click")
         # 塔塔开！
         click_failure_count = 0
+        self.device.click_record_clear()
         while True:
             self.screenshot()
             if self.is_in_battle(False):
                 logger.info("Start attach area [%s]" % str(index + 1))
                 return self.run_general_battle(config=self.config.ryou_toppa.general_battle_config)
-            if click_failure_count >= 4:
+            if click_failure_count >= 5:
                 logger.warning("Click failure, check your click position")
                 return False
             if self.appear_then_click(RealmRaidAssets.I_FIRE, interval=2, threshold=0.8):
                 click_failure_count += 1
                 continue
             if self.click(rcl, interval=5):
-                self.device.click_record_clear()
+                click_failure_count += 1
                 continue
 
 

@@ -1,0 +1,92 @@
+[
+  {
+    "itemName": "pk_skill_roaring_thunder",
+    "imageName": "pk_pk_skill_roaring_thunder.png",
+    "roiFront": "734,174,62,55",
+    "roiBack": "113,145,960,119",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "六道轰雷技能"
+  },
+  {
+    "itemName": "pk_skill_refresh",
+    "imageName": "pk_pk_skill_refresh.png",
+    "roiFront": "1189,622,50,52",
+    "roiBack": "1168,602,92,88",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "技能刷新"
+  },
+  {
+    "itemName": "pk_skill_power",
+    "imageName": "pk_pk_skill_power.png",
+    "roiFront": "273,246,39,54",
+    "roiBack": "202,220,871,102",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "力量强化"
+  },
+  {
+    "itemName": "pk_skill_charm",
+    "imageName": "pk_pk_skill_charm.png",
+    "roiFront": "982,245,39,54",
+    "roiBack": "202,220,871,102",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "魅力强化"
+  },
+  {
+    "itemName": "pk_skill_strange_power",
+    "imageName": "pk_pk_skill_strange_power.png",
+    "roiFront": "923,175,62,55",
+    "roiBack": "113,145,960,119",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "怪力乱神"
+  },
+  {
+    "itemName": "pk_select_0",
+    "imageName": "pk_pk_select_0.png",
+    "roiFront": "245,500,91,41",
+    "roiBack": "245,500,91,41",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "pk_select_1",
+    "imageName": "pk_pk_select_1.png",
+    "roiFront": "600,498,91,41",
+    "roiBack": "600,498,91,41",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "pk_select_2",
+    "imageName": "pk_pk_select_2.png",
+    "roiFront": "955,499,91,41",
+    "roiBack": "955,499,91,41",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "pk_select_3",
+    "imageName": "pk_pk_select_3.png",
+    "roiFront": "423,498,91,41",
+    "roiBack": "423,498,91,41",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "pk_select_4",
+    "imageName": "pk_pk_select_4.png",
+    "roiFront": "779,499,91,41",
+    "roiBack": "779,499,91,41",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  }
+]

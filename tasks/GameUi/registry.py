@@ -68,7 +68,7 @@ class PageRegistry:
 
     @classmethod
     def load_all_pages(cls) -> None:
-        """扫描并导入 `tasks/*/page.py` 与 `tasks/*/inner_page.py`。
+        """扫描并导入 `tasks/*/page.py`
 
         该方法只会执行一次，用于构建静态页面注册表。
         """
@@ -79,7 +79,7 @@ class PageRegistry:
         for task_dir in base_dir.iterdir():
             if not task_dir.is_dir():
                 continue
-            for module_name in ("page", "inner_page"):
+            for module_name in ("page"):
                 module_file = task_dir / f"{module_name}.py"
                 if not module_file.exists():
                     continue

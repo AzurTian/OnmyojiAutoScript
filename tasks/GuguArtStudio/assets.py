@@ -10,15 +10,20 @@ from module.atom.list import RuleList
 class GuguArtStudioAssets: 
 
 
-	# List Rule Assets
-	# 前往呱呱画室列表 
-	L_GOTO_GUGU_ACT = RuleList(folder="./tasks/GuguArtStudio/gas", direction="vertical", mode="ocr", roi_back=(241,119,49,486), size=(44, 79), 
-					 array=["画室"])
+	# Click Rule Assets
+	#  
+	C_GAS_REWARD_1 = RuleClick(roi_front=(658,579,57,55), roi_back=(658,579,57,55), name="gas_reward_1")
+	#  
+	C_GAS_REWARD_2 = RuleClick(roi_front=(753,580,57,55), roi_back=(753,580,57,55), name="gas_reward_2")
+	#  
+	C_GAS_REWARD_3 = RuleClick(roi_front=(850,577,57,55), roi_back=(850,577,57,55), name="gas_reward_3")
+	#  
+	C_GAS_REWARD_4 = RuleClick(roi_front=(945,580,57,55), roi_back=(945,580,57,55), name="gas_reward_4")
+	#  
+	C_GAS_REWARD_5 = RuleClick(roi_front=(1041,578,57,55), roi_back=(1041,578,57,55), name="gas_reward_5")
 
 
 	# Image Rule Assets
-	# 活动列表页呱呱画室标志 
-	I_CHECK_ACT_LIST_GUGU_ACT = RuleImage(roi_front=(577,175,440,117), roi_back=(499,119,595,296), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_check_act_list_gugu_act.png")
 	# 呱呱画室主页面 
 	I_CHECK_GUGU_ACT = RuleImage(roi_front=(1069,20,33,40), roi_back=(1052,10,74,59), threshold=0.7, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_check_gugu_act.png")
 	# 获取颜料 
@@ -33,12 +38,15 @@ class GuguArtStudioAssets:
 	I_GOTO_OBTAIN = RuleImage(roi_front=(696,400,126,63), roi_back=(688,391,141,85), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_goto_obtain.png")
 	# 不能挑战标志 
 	I_GAS_CANNOT_FIRE = RuleImage(roi_front=(1100,577,100,100), roi_back=(1078,563,142,128), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_gas_cannot_fire.png")
-
-
-	# Ocr Rule Assets
-	# 总颜料 
-	O_TOTAL_PAINT = RuleOcr(roi=(1128,25,79,29), area=(1126,23,82,35), mode="Digit", method="Default", keyword="", name="total_paint")
-	# 剩余可获得颜料 
-	O_REMAIN_GET_PAINT = RuleOcr(roi=(127,591,42,26), area=(124,587,48,32), mode="Digit", method="Default", keyword="", name="remain_get_paint")
+	# 庭院前往呱呱画室按钮 
+	I_GAS_MAIN_TO_GUGU = RuleImage(roi_front=(1183,381,44,32), roi_back=(1167,108,81,475), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_gas_main_to_gugu.png")
+	# 奖励已领取 
+	I_GAS_ALREADY_GET_REWARD = RuleImage(roi_front=(666,599,39,15), roi_back=(517,536,594,125), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_gas_already_get_reward.png")
+	# 奖励锁定中不能领取 
+	I_GAS_REWARD_LOCK = RuleImage(roi_front=(790,582,14,15), roi_back=(517,536,594,125), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_gas_reward_lock.png")
+	# 解锁阵容状态 
+	I_GAS_UNLOCK = RuleImage(roi_front=(885,659,16,21), roi_back=(845,637,224,79), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_gas_unlock.png")
+	# 锁定阵容状态 
+	I_GAS_LOCK = RuleImage(roi_front=(885,659,16,21), roi_back=(845,637,224,79), threshold=0.8, method="Template matching", file="./tasks/GuguArtStudio/gas/gas_gas_lock.png")
 
 

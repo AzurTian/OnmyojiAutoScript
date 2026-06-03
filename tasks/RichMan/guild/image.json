@@ -18,15 +18,6 @@
     "description": "功勋商店"
   },
   {
-    "itemName": "guild_close_red",
-    "imageName": "guild_guild_close_red.png",
-    "roiFront": "1029,120,53,57",
-    "roiBack": "1029,120,53,57",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "description"
-  },
-  {
     "itemName": "guild_blue",
     "imageName": "guild_guild_blue.png",
     "roiFront": "794,186,74,73",
@@ -70,5 +61,23 @@
     "method": "Template matching",
     "threshold": 0.6,
     "description": "购买黑碎检查"
+  },
+  {
+    "itemName": "guild_honor_gift",
+    "imageName": "guild_guild_honor_gift.png",
+    "roiFront": "569,212,74,73",
+    "roiBack": "315,164,584,370",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "功勋礼包"
+  },
+  {
+    "itemName": "rm_check_guild_store",
+    "imageName": "guild_rm_check_guild_store.png",
+    "roiFront": "519,66,193,38",
+    "roiBack": "483,34,257,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "寮商店标志"
   }
 ]

@@ -50,6 +50,8 @@ from tasks.GameUi.default_pages import (
     page_travel,
     page_shirin,
     random_click,
+    page_battle_team,
+    page_battle_team_exit
 )
 from tasks.GameUi.matcher import AllMatcher, AnyMatcher, AtomMatcher, Matcher, NotMatcher, all_of, any_of, ensure_matcher, not_
 from tasks.GameUi.page_definition import Page, Transition
@@ -114,4 +116,6 @@ __all__ = [
     "page_shirin",
     "random_click",
     "sequence",
+    "page_battle_team",
+    "page_battle_team_exit"
 ]

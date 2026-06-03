@@ -20,7 +20,7 @@
   {
     "itemName": "climb_mode_pass",
     "imageName": "as_climb_mode_pass.png",
-    "roiFront": "1152,638,21,21",
+    "roiFront": "1141,544,21,21",
     "roiBack": "1118,510,119,186",
     "method": "Template matching",
     "threshold": 0.8,
@@ -29,7 +29,7 @@
   {
     "itemName": "climb_mode_ap",
     "imageName": "as_climb_mode_ap.png",
-    "roiFront": "1190,673,22,25",
+    "roiFront": "1163,544,22,25",
     "roiBack": "1055,495,202,219",
     "method": "Template matching",
     "threshold": 0.8,
@@ -38,7 +38,7 @@
   {
     "itemName": "climb_mode_switch",
     "imageName": "as_climb_mode_switch.png",
-    "roiFront": "1237,532,29,26",
+    "roiFront": "1232,545,29,26",
     "roiBack": "1174,511,104,82",
     "method": "Template matching",
     "threshold": 0.8,
@@ -74,10 +74,19 @@
   {
     "itemName": "act_fire",
     "imageName": "as_act_fire.png",
-    "roiFront": "1135,597,92,42",
+    "roiFront": "1132,602,84,45",
     "roiBack": "1080,530,192,190",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "活动通用挑战图标"
+  },
+  {
+    "itemName": "as_boss_fire",
+    "imageName": "as_as_boss_fire.png",
+    "roiFront": "1130,590,92,47",
+    "roiBack": "1080,530,192,190",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "boss挑战标志"
   }
 ]

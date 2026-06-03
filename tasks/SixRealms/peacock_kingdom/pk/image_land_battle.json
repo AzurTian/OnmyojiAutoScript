@@ -1,0 +1,20 @@
+[
+  {
+    "itemName": "pk_battle_common",
+    "imageName": "pk_pk_battle_common.png",
+    "roiFront": "719,223,35,40",
+    "roiBack": "703,210,66,72",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "普通怪物"
+  },
+  {
+    "itemName": "pk_battle_fire",
+    "imageName": "pk_pk_battle_fire.png",
+    "roiFront": "1120,578,97,94",
+    "roiBack": "1120,578,97,94",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "挑战"
+  }
+]

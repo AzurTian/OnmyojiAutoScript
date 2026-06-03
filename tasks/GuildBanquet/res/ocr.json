@@ -1,0 +1,11 @@
+[
+  {
+    "itemName": "banquet_shikigami_num",
+    "roiFront": "960,122,72,31",
+    "roiBack": "960,122,72,31",
+    "mode": "DigitCounter",
+    "method": "Default",
+    "keyword": "",
+    "description": "寮宴会上阵式神数量"
+  }
+]

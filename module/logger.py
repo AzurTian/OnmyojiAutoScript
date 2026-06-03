@@ -5,6 +5,7 @@ import sys
 
 import logging
 import os
+import re
 import shutil
 from datetime import datetime, timedelta, date
 from io import TextIOBase
@@ -120,9 +121,139 @@ logger.addHandler(console_hdlr)
 # ======================================================================================================================
 #            Set file
 # ======================================================================================================================
+_UNSAFE_LOG_NAME_RE = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+
+def normalize_log_name(name: str) -> str:
+    """标准化日志文件中的脚本名。
+
+    Args:
+        name: 脚本配置名或外部传入的日志名。
+
+    Returns:
+        去掉运行时后缀并移除路径危险字符后的日志名。
+    """
+    name = str(name or "").strip()
+    if '_' in name:
+        name = name.split('_', 1)[0]
+    name = _UNSAFE_LOG_NAME_RE.sub("_", name).replace("..", "_").strip(" .")
+    return name or "script"
+
+
 class RichFileHandler(RichHandler):
-    # Rename
-    pass
+    """支持跨天自动轮转的 Rich 文件日志处理器。
+
+    Args:
+        script_name: 当前 handler 绑定的脚本名, 用于生成 `log/YYYY-MM-DD_<script>.txt`。
+        log_date: 当前 handler 绑定的日志日期; 写入前会和当天日期比较。
+        log_file: 当前日志文件路径字符串, 会同步到 `logger.log_file`。
+        file: 当前 Rich Console 正在写入的文件对象。
+        *args: 传给 RichHandler 的位置参数。
+        **kwargs: 传给 RichHandler 的关键字参数。
+    """
+
+    def __init__(self, *args, script_name: str = "", log_date: date = None, log_file: str = "", file=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.script_name = normalize_log_name(script_name)
+        self.log_date = log_date or date.today()
+        self.log_file = log_file
+        self._file = file
+        self._last_saved_content: str | None = None
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """写入日志记录, 写入前检查是否需要跨天切换文件。
+
+        Args:
+            record: Python logging 生成的日志记录。
+        """
+        self._rotate_if_needed()
+        content = self._record_content(record)
+        if self._is_duplicate_content(content):
+            return
+        super().emit(record)
+        self._last_saved_content = content
+
+    def close(self) -> None:
+        """关闭 handler 并释放当前日志文件句柄。"""
+        self._close_file()
+        super().close()
+
+    def _rotate_if_needed(self) -> None:
+        """当本地日期变化时切换到当天脚本日志文件。"""
+        today = date.today()
+        if today == self.log_date:
+            return
+
+        log_path = Path("./log")
+        log_path.mkdir(parents=True, exist_ok=True)
+        log_file = f'./log/{today}_{self.script_name}.txt'
+        new_file = open(log_file, mode='a', encoding='utf-8')
+        old_file = self._file
+        self.console.file = new_file
+        self._file = new_file
+        self.log_date = today
+        self.log_file = log_file
+        logger.log_file = log_file
+        self._last_saved_content = None
+
+        try:
+            if old_file is not None:
+                old_file.flush()
+                old_file.close()
+        except Exception:
+            pass
+
+    def _close_file(self) -> None:
+        """刷新并关闭当前 handler 持有的文件对象。"""
+        if self._file is None:
+            return
+        try:
+            self._file.flush()
+            self._file.close()
+        except Exception:
+            pass
+        self._file = None
+
+    def _record_content(self, record: logging.LogRecord) -> str:
+        """提取用于文件日志去重的正文内容。
+
+        Args:
+            record: Python logging 生成的日志记录。
+
+        Returns:
+            不包含时间戳、源码位置和级别的日志正文; 异常日志会把 traceback 纳入比较,
+            避免不同异常现场因为同一条 message 被误删。
+        """
+        content = f"{record.levelname}|{record.getMessage()}"
+        if record.exc_info and self.formatter is not None:
+            content = f"{content}\n{self.formatter.formatException(record.exc_info)}"
+        return content
+
+    def _is_duplicate_content(self, content: str) -> bool:
+        """判断当前日志正文是否与上一条已保存日志重复。
+
+        Args:
+            content: 当前准备写入文件的日志正文。
+
+        Returns:
+            True 表示该日志与上一条已保存日志相同, 本次不再写入文件。
+        """
+        return content == self._last_saved_content
+
+    def save_print_content(self, content: str) -> bool:
+        """记录 Rich print 输出并判断是否需要保存。
+
+        Args:
+            content: 通过 `logger.print()` 写入文件前提取出的展示文本。
+
+        Returns:
+            True 表示内容不是上一条已保存内容, 调用方应继续写入文件。
+        """
+        # print 输出没有 logging record, 这里按最终展示文本做连续去重。
+        if self._is_duplicate_content(content):
+            return False
+        self._last_saved_content = content
+        return True
 
 
 # Add file logger
@@ -130,9 +261,15 @@ pyw_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
 
 
 def set_file_logger(name=pyw_name, *, do_cleanup=False):
-    if '_' in name:
-        name = name.split('_', 1)[0]
-    log_file = f'./log/{date.today()}_{name}.txt'
+    """设置当前进程的脚本文件日志。
+
+    Args:
+        name: 脚本配置名, 会用于生成 `log/YYYY-MM-DD_<name>.txt`。
+        do_cleanup: 是否在设置文件日志后清理过期日志和错误目录。
+    """
+    name = normalize_log_name(name)
+    today = date.today()
+    log_file = f'./log/{today}_{name}.txt'
     try:
         file = open(log_file, mode='a', encoding='utf-8')
     except FileNotFoundError:
@@ -156,11 +293,20 @@ def set_file_logger(name=pyw_name, *, do_cleanup=False):
         tracebacks_extra_lines=3,
         tracebacks_width=160,
         highlighter=NullHighlighter(),
+        script_name=name,
+        log_date=today,
+        log_file=log_file,
+        file=file,
     )
     hdlr.setFormatter(file_formatter)
 
-    logger.handlers = [h for h in logger.handlers if not isinstance(
-        h, (logging.FileHandler, RichFileHandler))]
+    for h in list(logger.handlers):
+        if isinstance(h, (logging.FileHandler, RichFileHandler)):
+            logger.removeHandler(h)
+            try:
+                h.close()
+            except Exception:
+                pass
     logger.addHandler(hdlr)
     logger.log_file = log_file
 
@@ -268,6 +414,11 @@ def print(*objects: ConsoleRenderable, **kwargs):
             for renderable in _get_renderables(hdlr.console, *objects, **kwargs):
                 hdlr.console.file._func(str(renderable))
         elif isinstance(hdlr, RichHandler):
+            if isinstance(hdlr, RichFileHandler):
+                hdlr._rotate_if_needed()
+                content = "".join(str(renderable) for renderable in _get_renderables(hdlr.console, *objects, **kwargs))
+                if not hdlr.save_print_content(content):
+                    continue
             hdlr.console.print(*objects)
 
 

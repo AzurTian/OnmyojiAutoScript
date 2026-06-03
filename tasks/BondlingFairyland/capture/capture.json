@@ -48,7 +48,7 @@
     "itemName": "cap_failure",
     "imageName": "capture_cap_failure.png",
     "roiFront": "1192,608,30,39",
-    "roiBack": "1192,608,30,39",
+    "roiBack": "1142,556,132,137",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"

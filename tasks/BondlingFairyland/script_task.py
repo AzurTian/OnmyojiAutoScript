@@ -80,7 +80,9 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, GeneralBattle, SwitchSoul, 
             self.ui_click(self.I_MALL_SCCALES, self.I_MALL_SCCALES_CHECK)
             self.ui_click(self.I_MALL_BONDLINGS_SURE, self.I_MALL_BONDLINGS_ON)
             MAX_COUNT = cong.bondling_config.limit_num
-            cu, re, total = self.O_BL_CHECK_MONEY.ocr(self.device.image)
+            cu, re, total = self.O_BL_CHECK_MONEY.ocr_digit_counter(self.device.image)
+            if cu > 10000:  # 识别出现问题进行补正
+                cu = int(str(cu)[1:])
             if cu >= MAX_COUNT:
                 logger.info(f'契忆数量: {cu} 大于 {MAX_COUNT}')
                 self.goto_page(page_main)
@@ -680,20 +682,6 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, GeneralBattle, SwitchSoul, 
             self.exit_room()
 
         return success
-
-    def exit_team(self) -> bool:
-        """
-        在组队界面 退出组队的界面， 返回到庭院或者是你一开始进入的入口
-        :return:
-        """
-        if self.appear(self.I_CHECK_TEAM):
-            logger.info('Exit team ui')
-            while 1:
-                self.screenshot()
-                if not self.appear(self.I_CHECK_TEAM):
-                    return True
-                if self.appear_then_click(self.I_GR_BACK_YELLOW, interval=0.5):
-                    continue
 
     def in_catch_ui(self, screenshot=False) -> bool:
         """

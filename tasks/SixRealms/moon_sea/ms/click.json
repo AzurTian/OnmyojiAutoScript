@@ -1,0 +1,26 @@
+[
+  {
+    "itemName": "npc_fire_left",
+    "roiFront": "465,258,102,123",
+    "roiBack": "465,258,102,123",
+    "description": "左边的"
+  },
+  {
+    "itemName": "npc_fire_right",
+    "roiFront": "792,278,90,129",
+    "roiBack": "792,278,90,129",
+    "description": "description"
+  },
+  {
+    "itemName": "npc_fire_center",
+    "roiFront": "668,211,110,171",
+    "roiBack": "668,211,110,171",
+    "description": "中间的精英"
+  },
+  {
+    "itemName": "island_enter",
+    "roiFront": "1,0,101,101",
+    "roiBack": "1,0,101,101",
+    "description": "默认的"
+  }
+]

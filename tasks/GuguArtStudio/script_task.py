@@ -1,63 +1,73 @@
 # This Python file uses the following encoding: utf-8
-# @author runhey
-# github https://github.com/runhey
+# @author AzurTian
+import time
 
 import random
+from module.base.timer import Timer
 from module.exception import TaskEnd
 from module.logger import logger
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.Component.SwitchSoul.switch_soul import SwitchSoul
 from tasks.GameUi.game_ui import GameUi
-import tasks.GameUi.page as pages
 from tasks.GuguArtStudio.assets import GuguArtStudioAssets
 from tasks.GuguArtStudio.config import GuguArtStudio
-
-""" 呱呱画室 """
+import tasks.GuguArtStudio.page as pages
 
 
 class ScriptTask(GeneralBattle, GameUi, SwitchSoul, GuguArtStudioAssets):
+    """ 呱呱画室 """
+
     conf: GuguArtStudio = None
     page_act_list_gugu_act = None
-    page_gugu_act = None
-
-    def before_run(self):
-        self.conf = self.config.gugu_art_studio
-        # 初始化页面, 下列页面只会在当前任务存在
-        page_main = self.navigator.resolve_page(pages.page_main)
-        page_act_list = self.navigator.resolve_page(pages.page_act_list)
-        if page_main is None or page_act_list is None:
-            raise RuntimeError("GuguArtStudio 页面 session 初始化失败")
-
-        self.page_act_list_gugu_act = self.navigator.add_page(
-            pages.Page(
-                self.I_CHECK_ACT_LIST_GUGU_ACT,
-                key="page_act_list_gugu_act",
-                name="page_act_list_gugu_act",
-                register=False,
-            )
-        )
-        self.page_gugu_act = self.navigator.add_page(
-            pages.Page(self.I_CHECK_GUGU_ACT, key="page_gugu_act", name="page_gugu_act", register=False)
-        )
-        page_act_list.connect(
-            self.page_act_list_gugu_act,
-            self.L_GOTO_GUGU_ACT,
-            key="page_act_list->page_act_list_gugu_act",
-        )
-        self.page_act_list_gugu_act.connect(
-            self.page_gugu_act,
-            self.I_ACT_LIST_GOTO_ACT,
-            key="page_act_list_gugu_act->page_gugu_act",
-        )
-        self.page_gugu_act.connect(page_main, self.I_UI_BACK_YELLOW, key="page_gugu_act->page_main")
 
     def run(self):
-        self.before_run()
+        self.conf = self.config.gugu_art_studio
         self.switch_soul()
-        self.goto_page(self.page_gugu_act)
-        self.get_paint()
-        self.submit_paint()
-        self.after_run()
+        self.goto_page(pages.page_gugu_fire)
+        unknown_page_seconds = 8
+        unknown_page_timer = Timer(unknown_page_seconds)
+        max_submit = random.randint(2, 3)
+        while True:
+            self.screenshot()
+            if max_submit <= 0:
+                logger.info('Submit paint success, exit')
+                break
+            current_page = self.get_current_page()
+            match current_page:
+                case None:
+                    time.sleep(0.5)
+                case pages.page_gugu:
+                    unknown_page_timer = Timer(unknown_page_seconds)
+                    if self.appear_then_click(self.I_SUBMIT_PAINT, interval=0.8):
+                        max_submit -= 1
+                        self.get_reward()
+                case pages.page_gugu_fire:
+                    unknown_page_timer = Timer(unknown_page_seconds)
+                    if self.appear_then_click(self.I_GOTO_SUBMIT):
+                        logger.info('Get paint finish, go to submit paint')
+                        continue
+                    if self.appear(self.I_GAS_CANNOT_FIRE):  # 无法挑战则退出到提交颜料页面
+                        logger.info('Cannot fire, go to submit paint')
+                        self.goto_page(pages.page_gugu)
+                        continue
+                    self.switch_lock()
+                    if self.appear_then_click(self.I_GAS_CAN_FIRE, interval=1.2):  # 点击挑战
+                        self.run_general_battle(config=self.conf.general_battle_config, exit_matcher=pages.page_gugu_fire)
+                case _:
+                    if not unknown_page_timer.started():
+                        unknown_page_timer.start()
+                    if unknown_page_timer.reached():
+                        self.goto_page(pages.page_gugu_fire)
+                        unknown_page_timer = Timer(unknown_page_seconds)
+        self.goto_page(pages.page_main)
+        self.set_next_run(task='GuguArtStudio', success=True, finish=True)
+        raise TaskEnd
+
+    def switch_lock(self):
+        if self.conf.general_battle_config.lock_team_enable:
+            self.ui_click(self.I_GAS_UNLOCK, self.I_GAS_LOCK)
+            return
+        self.ui_click(self.I_GAS_LOCK, self.I_GAS_UNLOCK)
 
     def switch_soul(self):
         """切换御魂"""
@@ -69,51 +79,23 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, GuguArtStudioAssets):
             self.run_switch_soul_by_name(self.conf.switch_soul_config.group_name,
                                          self.conf.switch_soul_config.team_name)
 
-    def get_paint(self):
-        can_fire = False
-        while True:
+    def get_reward(self):
+        logger.hr('Get gugu reward', 3)
+        reward_click = [self.C_GAS_REWARD_1, self.C_GAS_REWARD_2, self.C_GAS_REWARD_3, self.C_GAS_REWARD_4, self.C_GAS_REWARD_5]
+        for click in reward_click:
+            self.I_GAS_REWARD_LOCK.roi_back = click.roi_back
+            self.I_GAS_ALREADY_GET_REWARD.roi_back = click.roi_back
             self.screenshot()
-            if self.appear(self.I_GAS_CANNOT_FIRE, interval=0.8):  # 无法挑战直接退出
+            if self.appear(self.I_GAS_REWARD_LOCK):
+                logger.info(f'Skip {click.name} on lock')
                 break
-            if self.appear(self.I_GAS_CAN_FIRE, interval=0.8):  # 可以挑战
-                can_fire = True
-                break
-            self.ui_click_until_disappear(self.I_OBTAIN_PAINT, interval=1.2)  # 点击获取颜料跳转到挑战页面
-        logger.info(f'Ensure can fire: {can_fire}')
-        if not can_fire:
-            logger.info('Cannot fire, not need to get paint')
-            return
-        while True:
-            self.screenshot()
-            if self.appear(self.I_SUBMIT_PAINT, interval=0.8):  # 在提交颜料页面则退出
-                break
-            if self.appear_then_click(self.I_GOTO_SUBMIT, interval=0.8):  # 点击前往提交按钮去提交颜料页面
-                logger.info('Get paint finish, go to submit paint')
+            if self.appear(self.I_GAS_ALREADY_GET_REWARD):
+                logger.info(f'Skip {click.name} on already get')
                 continue
-            if self.appear(self.I_GAS_CANNOT_FIRE, interval=0.8):  # 无法挑战则退出到提交颜料页面
-                logger.info('Cannot fire, go to submit paint')
-                self.ui_click(self.I_UI_BACK_YELLOW, self.I_SUBMIT_PAINT, interval=2.5)
-                continue
-            if self.appear_then_click(self.I_GAS_CAN_FIRE, interval=0.8):  # 点击挑战
-                self.run_general_battle()
-
-    def submit_paint(self):
-        self.goto_page(self.page_gugu_act, skip_first_screenshot=False)
-        cnt, submit_cnt = 0, random.randint(2, 3)
-        while True:
-            if cnt >= submit_cnt:
-                logger.attr(cnt, 'Submit paint success, exit')
-                break
-            self.screenshot()
-            if self.appear_then_click(self.I_SUBMIT_PAINT, interval=0.8):
-                cnt += 1
-                continue
-
-    def after_run(self):
-        """运行结束之后的操作"""
-        self.goto_page(pages.page_main)
-        self.set_next_run(task='GuguArtStudio', success=True, finish=True)
-        raise TaskEnd('GuguArtStudio')
+            logger.info(f'Get {click.name}')
+            self.ui_get_reward(click, click_interval=2.5)
+            break
+        logger.info('Get gugu reward done')
 
 
 if __name__ == '__main__':
@@ -126,4 +108,3 @@ if __name__ == '__main__':
     t.screenshot()
 
     t.run()
-

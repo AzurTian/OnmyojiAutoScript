@@ -1,0 +1,11 @@
+[
+  {
+    "itemName": "star_danger",
+    "imageName": "ms_star_danger.png",
+    "roiFront": "715,231,36,38",
+    "roiBack": "686,205,100,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "星之子标志"
+  }
+]

@@ -54,6 +54,7 @@ class FrameEntry:
     """单张已注册截图在服务端缓存中的条目。"""
 
     frame_id: str
+    config_name: str
     image: np.ndarray
     created_at: float
     last_access_at: float
@@ -143,6 +144,8 @@ class ImageRuntime:
         self._lock = threading.RLock()
         # 短生命周期截图缓存：按 frame_id 复用同一张截图的多次匹配请求。
         self._frames: dict[str, FrameEntry] = {}
+        # 每个脚本配置当前有效的截图帧；新截图注册时会替换同配置旧帧。
+        self._config_frames: dict[str, str] = {}
         # 长生命周期模板缓存：按文件指纹复用模板图与派生数据。
         self._templates: dict[str, TemplateEntry] = {}
         self._scheduler = ImageTaskScheduler(self.settings.worker_count)
@@ -152,6 +155,7 @@ class ImageRuntime:
             "frame_hits": 0,
             "frame_misses": 0,
             "frame_evictions": 0,
+            "frame_replacements": 0,
             "template_hits": 0,
             "template_misses": 0,
             "template_evictions": 0,
@@ -181,12 +185,14 @@ class ImageRuntime:
         """返回当前缓存配置、缓存计数、调度器状态和命中统计。"""
         with self._lock:
             frame_count = len(self._frames)
+            frame_config_count = len(self._config_frames)
             template_count = len(self._templates)
             cache_stats = dict(self._cache_stats)
         return {
             "frame_cache_expire_seconds": self.settings.frame_cache_expire_seconds,
             "frame_cache_max_count": self.settings.frame_cache_max_count,
             "frame_cache_count": frame_count,
+            "frame_config_count": frame_config_count,
             "template_cache_expire_seconds": self.settings.template_cache_expire_seconds,
             "template_cache_max_count": self.settings.template_cache_max_count,
             "template_cache_count": template_count,
@@ -194,31 +200,40 @@ class ImageRuntime:
             "cache_stats": cache_stats,
         }
 
-    def register_frame(self, image_bytes: bytes) -> dict[str, Any]:
+    def register_frame(self, image_bytes: bytes, config_name: str = "unknown") -> dict[str, Any]:
         """
         注册一张截图到帧缓存，并返回服务端生成的 `frame_id`。
 
         Args:
             image_bytes: 客户端序列化后的 numpy 数组字节流。
+            config_name: 截图所属脚本配置名；同配置新帧会替换旧帧。
         """
         image = pickle.loads(image_bytes)
         if not isinstance(image, np.ndarray):
             raise TypeError("register_frame expects numpy.ndarray payload")
 
+        config_name = self._normalize_config_name(config_name)
         frame_id = uuid.uuid4().hex
         now = time.time()
         entry = FrameEntry(
             frame_id=frame_id,
+            config_name=config_name,
             image=image,
             created_at=now,
             last_access_at=now,
         )
         with self._lock:
+            old_frame_id = self._config_frames.get(config_name)
+            if old_frame_id is not None and old_frame_id != frame_id:
+                if self._delete_frame(old_frame_id):
+                    self._cache_stats["frame_replacements"] += 1
             self._frames[frame_id] = entry
+            self._config_frames[config_name] = frame_id
             self._cleanup_frames(now, reason="register")
-        logger.debug(f"Register frame {frame_id} shape={entry.shape}")
+        logger.debug(f"Register frame {frame_id} config={config_name} shape={entry.shape}")
         return {
             "frame_id": frame_id,
+            "config_name": config_name,
             "shape": list(entry.shape),
         }
 
@@ -227,6 +242,7 @@ class ImageRuntime:
         entry = self._get_frame_entry(frame_id)
         return {
             "frame_id": entry.frame_id,
+            "config_name": entry.config_name,
             "shape": list(entry.shape),
             "created_at": entry.created_at,
             "last_access_at": entry.last_access_at,
@@ -456,6 +472,23 @@ class ImageRuntime:
             with self._lock:
                 self._cleanup_frames(now, reason="timer")
                 self._cleanup_templates(now, reason="timer")
+
+    @staticmethod
+    def _normalize_config_name(config_name: str | None) -> str:
+        """规整脚本配置名，避免空配置名导致帧索引不可复用。"""
+        normalized = str(config_name or "").strip()
+        return normalized or "unknown"
+
+    def _delete_frame(self, frame_id: str) -> bool:
+        """删除指定截图帧，并同步维护 config_name 到当前 frame_id 的索引。"""
+        entry = self._frames.pop(frame_id, None)
+        if entry is None:
+            return False
+
+        if self._config_frames.get(entry.config_name) == frame_id:
+            self._config_frames.pop(entry.config_name, None)
+        self._cache_stats["frame_evictions"] += 1
+        return True
 
     def _get_frame_entry(self, frame_id: str) -> FrameEntry:
         """
@@ -868,8 +901,7 @@ class ImageRuntime:
             if entry.last_access_at < expire_before
         ]
         for frame_id in expired:
-            self._frames.pop(frame_id, None)
-            self._cache_stats["frame_evictions"] += 1
+            self._delete_frame(frame_id)
         if expired:
             logger.debug(f"Evict {len(expired)} expired frames ({reason})")
 
@@ -880,8 +912,7 @@ class ImageRuntime:
                 key=lambda item: item.last_access_at,
             )
             for entry in sorted_entries[:overflow]:
-                self._frames.pop(entry.frame_id, None)
-                self._cache_stats["frame_evictions"] += 1
+                self._delete_frame(entry.frame_id)
             logger.debug(f"Evict {overflow} overflow frames ({reason})")
 
     def _cleanup_templates(self, now: float, reason: str) -> None:

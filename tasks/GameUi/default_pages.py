@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
+from tasks.Component.GeneralInvite.assets import GeneralInviteAssets
 from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
 from tasks.Exploration.assets import ExplorationAssets
-from tasks.GameUi.action import conditional_action
+from tasks.GameUi.action import conditional_action, sequence
 from typing import Union
 
 """GameUi 全局页面定义。"""
@@ -16,7 +17,7 @@ from tasks.Component.Login.service import LoginService
 from tasks.DailyTrifles.assets import DailyTriflesAssets
 from tasks.GlobalGame.assets import GlobalGameAssets
 from tasks.GameUi.assets import GameUiAssets
-from tasks.GameUi.matcher import any_of
+from tasks.GameUi.matcher import any_of, all_of
 from tasks.GameUi.page_definition import Page
 from tasks.KekkaiUtilize.assets import KekkaiUtilizeAssets
 from tasks.Restart.assets import RestartAssets
@@ -33,7 +34,7 @@ def random_click(
     Args:
         low: 当需要返回点击序列时，序列长度的最小值。
         high: 当需要返回点击序列时，序列长度的最大值。
-        ltrb: 允许参与随机的区域开关，依次对应左、偏左、偏右、右区域。
+        ltrb: 允许参与随机的区域开关，依次对应左、上、右、下区域。
 
     Returns:
         单个 `RuleClick`，或一个由多个 `RuleClick` 组成的列表。
@@ -56,18 +57,16 @@ def handle_login_page(task) -> bool:
 page_login = Page(SwitchAccountAssets.I_CHECK_LOGIN_FORM, category="global")
 page_login.add_enter_success_hooks(handle_login_page)
 
-# 庭院主页。
+# 庭院主页(此处通过提高阈值来处理部分探索章节会识别成原始庭院的问题, 后续有其他更好方法需改善)
 page_main = Page(GameUiAssets.I_CHECK_MAIN, category="global")
 page_main.add_enter_success_hooks(
-    GameUiAssets.I_AD_CLOSE_RED,
-    GlobalGameAssets.I_UI_BACK_RED,
-    RestartAssets.I_CANCEL_BATTLE,
+    GameUiAssets.I_AD_CLOSE_RED, GlobalGameAssets.I_UI_BACK_RED, RestartAssets.I_CANCEL_BATTLE,
     conditional_action(RestartAssets.I_LOGIN_COURTYARD, RestartAssets.C_LOGIN_SCROLL_CLOSE_AREA),
 )
 
 # 庭院区域页面。
 page_shikigami_records = Page(GameUiAssets.I_CHECK_RECORDS, category="global")
-page_shikigami_records.add_enter_success_hooks(GameUiAssets.I_AD_DISAPPEAR, GameUiAssets.I_RECORDS_CLOSE, GlobalGameAssets.I_UI_CANCEL_SAMLL)
+page_shikigami_records.add_enter_success_hooks(GlobalGameAssets.I_UI_CANCEL_SAMLL)
 page_shikigami_records.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_shikigami_records->page_main")
 page_main.connect(page_shikigami_records, GameUiAssets.I_MAIN_GOTO_SHIKIGAMI_RECORDS, key="page_main->page_shikigami_records")
 
@@ -81,6 +80,9 @@ page_friends.add_leave_failure_hooks(GlobalGameAssets.I_UI_BACK_RED)
 page_main.connect(page_friends, GameUiAssets.I_MAIN_GOTO_FRIENDS, key="page_main->page_friends")
 
 page_daily = Page(GameUiAssets.I_CHECK_DAILY, category="global")
+page_daily.add_enter_failure_hooks(conditional_action(
+    condition=lambda task: not task.appear(GameUiAssets.I_CHECK_MAIN),
+    action=lambda task: task.click(random_click(ltrb=(False, False, False, True)), interval=0.6)))
 page_daily.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_daily->page_main")
 page_main.connect(page_daily, GameUiAssets.I_MAIN_GOTO_DAILY, key="page_main->page_daily")
 
@@ -123,10 +125,10 @@ page_travel.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_trav
 page_main.connect(page_travel, GameUiAssets.I_MAIN_GOTO_TRAVEL, key="page_main->page_travel")
 
 # 活动列表页。
-page_act_list = Page(GameUiAssets.I_CHECK_ACT_LIST, category="global")
+page_act_list = Page(GameUiAssets.I_CHECK_ACT_LIST, category="global", priority=25)
 page_act_list.add_enter_success_hooks(GameUiAssets.I_PAPER_DOLL_CLOSE)
 page_main.connect(page_act_list, GameUiAssets.I_ACT_LIST_EXPAND, key="page_main->page_act_list")
-page_act_list.connect(page_main, GlobalGameAssets.I_UI_BACK_RED, key="page_act_list->page_main")
+page_act_list.connect(page_main, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_act_list->page_main")
 
 # 召唤页。
 page_summon = Page(GameUiAssets.I_CHECK_SUMMON, category="global")
@@ -143,7 +145,7 @@ page_duel = Page(GameUiAssets.I_CHECK_DUEL, category="global")
 page_duel.connect(page_town, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_duel->page_town")
 page_town.connect(page_duel, GameUiAssets.I_TOWN_GOTO_DUEL, key="page_town->page_duel")
 
-page_demon_encounter = Page(GameUiAssets.I_CHECK_DEMON_ENCOUNTER, category="global")
+page_demon_encounter = Page(GameUiAssets.I_CHECK_DEMON_ENCOUNTER_2, category="global")
 page_demon_encounter.connect(page_town, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_demon_encounter->page_town")
 page_town.connect(page_demon_encounter, GameUiAssets.I_TOWN_GOTO_DEMON_ENCOUNTER, key="page_town->page_demon_encounter")
 
@@ -214,9 +216,24 @@ page_heian_kitan = Page(GameUiAssets.I_CHECK_HEIAN_KITAN, category="global")
 page_heian_kitan.connect(page_exploration, GameUiAssets.I_CHECK_HEIAN_KITAN, key="page_heian_kitan->page_exploration")
 page_exploration.connect(page_heian_kitan, GameUiAssets.I_EXPLORATION_GOTO_HEIAN_KITAN, key="page_exploration->page_heian_kitan")
 
-page_six_gates = Page(GameUiAssets.I_CHECK_SIX_GATES, category="global")
-page_six_gates.connect(page_exploration, GameUiAssets.I_SIX_GATES_GOTO_EXPLORATION, key="page_six_gates->page_exploration")
-page_exploration.connect(page_six_gates, GameUiAssets.I_EXPLORATION_GOTO_SIX_GATES, key="page_exploration->page_six_gates")
+
+def exploration_to_six_gates(task) -> bool:
+    """探索前往六道之门, 处理不同入口情况"""
+    if task.appear_then_click(GameUiAssets.I_EXPLORATION_TO_MOON_SEA) or \
+            task.appear_then_click(GameUiAssets.I_EXPLORATION_TO_INCENSE_REALM) or \
+            task.appear_then_click(GameUiAssets.I_EXPLORATION_TO_SEASONRIFT_FOREST) or \
+            task.appear_then_click(GameUiAssets.I_EXPLORATION_TO_PURE_BUDDHA_REALM) or \
+            task.appear_then_click(GameUiAssets.I_EXPLORATION_TO_MANTRA_TOWER) or \
+            task.appear_then_click(GameUiAssets.I_EXPLORATION_TO_PEACOCK_KINGDOM):
+        return True
+    return False
+
+page_six_gates = Page(any_of(GameUiAssets.I_CHECK_MOON_SEA, GameUiAssets.I_CHECK_INCENSE_REALM,
+                             GameUiAssets.I_CHECK_SEASONRIFT_FOREST, GameUiAssets.I_CHECK_PURE_BUDDHA_REALM,
+                             GameUiAssets.I_CHECK_MANTRA_TOWER, GameUiAssets.I_CHECK_PEACOCK_KINGDOM),
+                      category="global", priority=25)
+page_six_gates.connect(page_exploration, GlobalGameAssets.I_UI_BACK_BLUE, key="page_six_gates->page_exploration")
+page_exploration.connect(page_six_gates, action=exploration_to_six_gates, key="page_exploration->page_six_gates")
 
 page_bondling_fairyland = Page(GameUiAssets.I_CHECK_BONDLING_FAIRYLAND, category="global")
 page_bondling_fairyland.connect(page_exploration, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_bondling_fairyland->page_exploration")
@@ -276,6 +293,8 @@ page_battle_result.add_enter_success_hooks(lambda _task: random_click())
 page_reward = Page(
     any_of(
         GeneralBattleAssets.I_REWARD,
+        GeneralBattleAssets.I_GB_SKIN_CONFIRM,
+        GeneralBattleAssets.I_REWARD_STATISTICS,
         GeneralBattleAssets.I_REWARD_GOLD,
         GeneralBattleAssets.I_REWARD_EXP_SOUL_4,
         GeneralBattleAssets.I_REWARD_GOLD_SNAKE_SKIN,
@@ -288,3 +307,10 @@ page_reward = Page(
     priority=25
 )
 page_reward.add_enter_success_hooks(lambda _task: random_click())
+
+page_battle_team_exit = Page(GeneralBattleAssets.I_GB_CHECK_TEAM_EXIT, priority=75)
+page_battle_team = Page(any_of(GeneralInviteAssets.I_GI_EMOJI_1, GeneralInviteAssets.I_GI_EMOJI_2,
+                               GeneralInviteAssets.I_FIRE),
+                        category="global", priority=25)
+page_battle_team_exit.connect(page_battle_team, GlobalGameAssets.I_UI_CANCEL, key="page_battle_team_exit->page_battle_team")
+page_battle_team.connect(page_battle_team_exit, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_battle_team->page_battle_team_exit")

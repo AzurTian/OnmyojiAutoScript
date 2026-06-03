@@ -42,6 +42,7 @@ class ScriptTask(GameUi, GeneralBattle, HeroTestAssets, SwitchSoul):
             }
             if mode_wait_dict.get(self.conf.herotest.layer, None) is not None:
                 mode_wait_dict[self.conf.herotest.layer]()
+            return BattleAction.CONTINUE
         return super()._handle_result(context, config)
 
     def _exit_matcher(self) -> ExitMatcher | None:

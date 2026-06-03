@@ -25,6 +25,7 @@ class ActivationConfig(BaseModel):
     min_fish_num: int = Field(default=16, description='挂卡斗鱼每小时最少收益,低于则不挂卡')
     exchange_before: bool = Field(default=True, description='exchange_before_help')
     exchange_max: bool = Field(default=True, description='exchange_max_help')
+    auto_fill: bool = Field(default=False, description='auto_fill_help')
     shikigami_class: ShikigamiClass = Field(default=ShikigamiClass.N, description='shikigami_class_help')
     card_not_found_count: int = Field(default=0, description='未发现卡次数')
 

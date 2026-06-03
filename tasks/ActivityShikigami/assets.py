@@ -29,11 +29,11 @@ class ActivityShikigamiAssets:
 	# 还未上锁图片 
 	I_UNLOCK = RuleImage(roi_front=(884,648,28,25), roi_back=(686,610,313,92), threshold=0.7, method="Template matching", file="./tasks/ActivityShikigami/as/as_unlock.png")
 	# 活动爬塔标志 
-	I_CLIMB_MODE_PASS = RuleImage(roi_front=(1152,638,21,21), roi_back=(1118,510,119,186), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_pass.png")
+	I_CLIMB_MODE_PASS = RuleImage(roi_front=(1141,544,21,21), roi_back=(1118,510,119,186), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_pass.png")
 	# 体力爬塔标志 
-	I_CLIMB_MODE_AP = RuleImage(roi_front=(1190,673,22,25), roi_back=(1055,495,202,219), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_ap.png")
+	I_CLIMB_MODE_AP = RuleImage(roi_front=(1163,544,22,25), roi_back=(1055,495,202,219), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_ap.png")
 	# 切换按键 
-	I_CLIMB_MODE_SWITCH = RuleImage(roi_front=(1237,532,29,26), roi_back=(1174,511,104,82), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_switch.png")
+	I_CLIMB_MODE_SWITCH = RuleImage(roi_front=(1232,545,29,26), roi_back=(1174,511,104,82), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_switch.png")
 	# 100体爬塔标志 
 	I_CLIMB_MODE_AP100 = RuleImage(roi_front=(1186,665,22,25), roi_back=(1055,495,202,219), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_climb_mode_ap100.png")
 	# 体力爬塔阵容解锁 
@@ -41,7 +41,9 @@ class ActivityShikigamiAssets:
 	# 体力爬塔阵容锁定 
 	I_AP_LOCK = RuleImage(roi_front=(788,656,22,25), roi_back=(686,610,313,92), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_ap_lock.png")
 	# 活动通用挑战图标 
-	I_ACT_FIRE = RuleImage(roi_front=(1135,597,92,42), roi_back=(1080,530,192,190), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_act_fire.png")
+	I_ACT_FIRE = RuleImage(roi_front=(1132,602,84,45), roi_back=(1080,530,192,190), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_act_fire.png")
+	# boss挑战标志 
+	I_AS_BOSS_FIRE = RuleImage(roi_front=(1130,590,92,47), roi_back=(1080,530,192,190), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_as_boss_fire.png")
 
 
 	# Image Rule Assets
@@ -73,9 +75,9 @@ class ActivityShikigamiAssets:
 	# 挑战 
 	O_FIRE = RuleOcr(roi=(962,529,308,171), area=(964,530,309,171), mode="Full", method="Default", keyword="挑战", name="fire")
 	# 体力的数量检测 
-	O_REMAIN_AP = RuleOcr(roi=(726,25,95,34), area=(726,25,95,34), mode="DigitCounter", method="Default", keyword="", name="remain_ap")
+	O_REMAIN_AP = RuleOcr(roi=(556,14,95,34), area=(556,14,95,34), mode="DigitCounter", method="Default", keyword="", name="remain_ap")
 	# 活动体力的剩余检测 
-	O_REMAIN_PASS = RuleOcr(roi=(1117,26,88,31), area=(1117,26,88,31), mode="DigitCounter", method="Default", keyword="", name="remain_pass")
+	O_REMAIN_PASS = RuleOcr(roi=(756,17,88,31), area=(756,17,88,31), mode="DigitCounter", method="Default", keyword="", name="remain_pass")
 	# 还有多少次购买体力的机会 
 	O_REMAIN_BUY = RuleOcr(roi=(808,531,39,42), area=(808,531,39,42), mode="DigitCounter", method="Default", keyword="", name="remain_buy")
 	# 活动票数（没有百分比） 
@@ -101,17 +103,17 @@ class ActivityShikigamiAssets:
 
 	# Image Rule Assets
 	# 庭院进入活动 
-	I_MAIN_GOTO_ACT = RuleImage(roi_front=(1185,303,44,25), roi_back=(1164,134,83,393), threshold=0.7, method="Template matching", file="./tasks/ActivityShikigami/as/as_main_goto_act.png")
+	I_MAIN_GOTO_ACT = RuleImage(roi_front=(1188,382,35,28), roi_back=(1164,134,83,393), threshold=0.7, method="Template matching", file="./tasks/ActivityShikigami/as/as_main_goto_act.png")
 	# 右上跳过按钮 
 	I_SKIP_BUTTON = RuleImage(roi_front=(1159,37,51,22), roi_back=(1141,27,86,43), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_skip_button.png")
 	# 进入主要的战斗界面 
-	I_TO_BATTLE_MAIN = RuleImage(roi_front=(444,223,39,139), roi_back=(367,166,238,269), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_to_battle_main.png")
+	I_TO_BATTLE_MAIN = RuleImage(roi_front=(402,308,39,139), roi_back=(367,166,155,370), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_to_battle_main.png")
 	# 点击进入boss战斗页面 
-	I_TO_BATTLE_BOSS = RuleImage(roi_front=(1076,181,37,136), roi_back=(971,91,234,327), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_to_battle_boss.png")
+	I_TO_BATTLE_BOSS = RuleImage(roi_front=(1084,278,37,136), roi_back=(984,188,234,327), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_to_battle_boss.png")
 	# boss界面标志 
 	I_CHECK_BATTLE_BOSS = RuleImage(roi_front=(42,316,47,35), roi_back=(0,216,156,224), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_check_battle_boss.png")
 	# 从main进入到式神录 
-	I_BATTLE_MAIN_TO_RECORDS = RuleImage(roi_front=(1027,557,39,42), roi_back=(674,539,439,157), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_battle_main_to_records.png")
+	I_BATTLE_MAIN_TO_RECORDS = RuleImage(roi_front=(1015,560,39,42), roi_back=(674,539,439,157), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_battle_main_to_records.png")
 	# 进入门票活动的按钮 
 	I_AS_TO_PASS = RuleImage(roi_front=(624,505,38,35), roi_back=(273,141,759,475), threshold=0.65, method="Template matching", file="./tasks/ActivityShikigami/as/as_as_to_pass.png")
 	# 确认跳过 
@@ -128,36 +130,5 @@ class ActivityShikigamiAssets:
 	I_AS_CLOSE_EYE = RuleImage(roi_front=(1197,297,63,57), roi_back=(1146,253,134,217), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_as_close_eye.png")
 	# 活动主界面进入体力爬塔标志 
 	I_TO_BATTLE_AP = RuleImage(roi_front=(825,321,39,139), roi_back=(720,255,238,269), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/as/as_to_battle_ap.png")
-
-
-	# Image Rule Assets
-	# description 
-	I_PASS_1 = RuleImage(roi_front=(359,295,100,53), roi_back=(68,203,1138,369), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_1.png")
-	# description 
-	I_PASS_2 = RuleImage(roi_front=(645,224,92,57), roi_back=(98,205,1076,366), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_2.png")
-	# description 
-	I_PASS_3 = RuleImage(roi_front=(648,227,91,55), roi_back=(103,162,1077,416), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_3.png")
-	# description 
-	I_PASS_4 = RuleImage(roi_front=(586,424,100,58), roi_back=(99,194,1080,398), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_4.png")
-	# 箱子 
-	I_PASS_5 = RuleImage(roi_front=(946,415,65,48), roi_back=(97,194,1036,398), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_5.png")
-	# 印记 
-	I_PASS_6 = RuleImage(roi_front=(668,221,54,50), roi_back=(107,159,1012,394), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_6.png")
-	# description 
-	I_PASS_7 = RuleImage(roi_front=(329,233,51,51), roi_back=(95,180,1056,394), threshold=0.65, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_7.png")
-	# 印记选中间的 
-	I_PASS_8 = RuleImage(roi_front=(579,276,100,100), roi_back=(577,296,100,100), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_8.png")
-	# description 
-	I_PASS_9 = RuleImage(roi_front=(558,643,160,44), roi_back=(480,601,306,100), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_9.png")
-	# 印记选左边的 
-	I_PASS_10 = RuleImage(roi_front=(279,309,100,100), roi_back=(291,305,100,100), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_10.png")
-	# 印记选右边的 
-	I_PASS_11 = RuleImage(roi_front=(918,304,100,100), roi_back=(914,308,100,100), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_11.png")
-	# 击败魇兽将直接前往下一层 
-	I_PASS12 = RuleImage(roi_front=(870,356,100,50), roi_back=(104,169,1109,425), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass12.png")
-	# 魇兽将的战斗图片 
-	I_PASS_13 = RuleImage(roi_front=(1018,570,100,100), roi_back=(984,538,261,167), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_pass_13.png")
-	#  
-	I_RICH_MAN_FIRE = RuleImage(roi_front=(983,555,82,78), roi_back=(924,479,225,213), threshold=0.8, method="Template matching", file="./tasks/ActivityShikigami/fire/fire_rich_man_fire.png")
 
 

@@ -1,0 +1,32 @@
+[
+  {
+    "itemName": "gas_reward_1",
+    "roiFront": "658,579,57,55",
+    "roiBack": "658,579,57,55",
+    "description": ""
+  },
+  {
+    "itemName": "gas_reward_2",
+    "roiFront": "753,580,57,55",
+    "roiBack": "753,580,57,55",
+    "description": ""
+  },
+  {
+    "itemName": "gas_reward_3",
+    "roiFront": "850,577,57,55",
+    "roiBack": "850,577,57,55",
+    "description": ""
+  },
+  {
+    "itemName": "gas_reward_4",
+    "roiFront": "945,580,57,55",
+    "roiBack": "945,580,57,55",
+    "description": ""
+  },
+  {
+    "itemName": "gas_reward_5",
+    "roiFront": "1041,578,57,55",
+    "roiBack": "1041,578,57,55",
+    "description": ""
+  }
+]

@@ -1,14 +1,5 @@
 [
   {
-    "itemName": "check_act_list_gugu_act",
-    "imageName": "gas_check_act_list_gugu_act.png",
-    "roiFront": "577,175,440,117",
-    "roiBack": "499,119,595,296",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "活动列表页呱呱画室标志"
-  },
-  {
     "itemName": "check_gugu_act",
     "imageName": "gas_check_gugu_act.png",
     "roiFront": "1069,20,33,40",
@@ -70,5 +61,50 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "不能挑战标志"
+  },
+  {
+    "itemName": "gas_main_to_gugu",
+    "imageName": "gas_gas_main_to_gugu.png",
+    "roiFront": "1183,381,44,32",
+    "roiBack": "1167,108,81,475",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "庭院前往呱呱画室按钮"
+  },
+  {
+    "itemName": "gas_already_get_reward",
+    "imageName": "gas_gas_already_get_reward.png",
+    "roiFront": "666,599,39,15",
+    "roiBack": "517,536,594,125",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "奖励已领取"
+  },
+  {
+    "itemName": "gas_reward_lock",
+    "imageName": "gas_gas_reward_lock.png",
+    "roiFront": "790,582,14,15",
+    "roiBack": "517,536,594,125",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "奖励锁定中不能领取"
+  },
+  {
+    "itemName": "gas_unlock",
+    "imageName": "gas_gas_unlock.png",
+    "roiFront": "885,659,16,21",
+    "roiBack": "845,637,224,79",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "解锁阵容状态"
+  },
+  {
+    "itemName": "gas_lock",
+    "imageName": "gas_gas_lock.png",
+    "roiFront": "885,659,16,21",
+    "roiBack": "845,637,224,79",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "锁定阵容状态"
   }
 ]

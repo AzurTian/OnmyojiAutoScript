@@ -32,6 +32,8 @@ from module.server.i18n import I18n
 from module.image.rpc import ensure_image_server_ready
 from module.ocr.rpc import ensure_ocr_server_ready
 from module.script import ScriptRuntimeController, ScriptRuntimeDecision
+from tasks.Restart.server_update import delay_pending_tasks_for_server_update, is_server_update_window
+from module.server.log_service import build_error_log_dir_name
 
 _log_switch_lock = threading.Lock()#线程锁
 
@@ -90,8 +92,15 @@ class Script:
 
     def save_error_log(self):
         """
-        Save last 60 screenshots in ./log/error/<timestamp>
-        Save logs to ./log/error/<timestamp>/log.txt
+        保存错误现场到 ./log/error/<script_name>_<timestamp_ms>。
+
+        保存内容包括:
+        - 最近一段截图, 文件名为时间戳 PNG。
+        - 当前脚本日志的截取内容, 文件名为 log.txt。
+
+        说明:
+        - 新错误目录名会带上脚本名, 便于前端区分不同脚本产生的错误。
+        - 目录名和脚本名都会经过统一净化, 避免路径注入。
         """
         from module.base.utils import save_image
         from module.handler.sensitive_info import (handle_sensitive_image,
@@ -99,7 +108,9 @@ class Script:
         if self.config.script.error.save_error:
             if not os.path.exists('./log/error'):
                 os.mkdir('./log/error')
-            folder = f'./log/error/{int(time.time() * 1000)}'
+            # 用统一规则生成错误目录名, 目录格式为 <script_name>_<timestamp_ms>。
+            folder_name = build_error_log_dir_name(self.config_name, int(time.time() * 1000))
+            folder = f'./log/error/{folder_name}'
             logger.warning(f'Saving error: {folder}')
             os.mkdir(folder)
             for data in self.device.screenshot_deque:
@@ -334,24 +345,44 @@ class Script:
         if 'config' in self.__dict__:
             self.config.task_runtime_outcome = None
 
+    def _set_task_runtime_outcome(self, task: str, status: str, wait_until: datetime | None = None) -> None:
+        outcome = {
+            'task': task,
+            'status': status,
+        }
+        if wait_until is not None:
+            outcome['wait_until'] = wait_until
+        self.last_task_runtime_outcome = outcome
+        if 'config' in self.__dict__:
+            self.config.task_runtime_outcome = outcome
+
     def _capture_task_runtime_outcome(self, command: str) -> None:
         outcome = getattr(self.config, 'task_runtime_outcome', None)
         self.last_task_runtime_outcome = outcome if isinstance(outcome, dict) else None
-
-        if command != 'Restart' or self.last_task_runtime_outcome is None:
+        if self.last_task_runtime_outcome is None:
             return
-
         status = self.last_task_runtime_outcome.get('status')
         if status == 'server_update_delayed':
             wait_until = self.last_task_runtime_outcome.get('wait_until')
-            logger.info(f'Restart runtime outcome: server_update_delayed (wait_until={wait_until})')
+            logger.info(f'{command} runtime outcome: server_update_delayed (wait_until={wait_until})')
+            if isinstance(wait_until, datetime):
+                self.runtime.server_update_wait_until = wait_until
+                self.runtime.server_update_wait_log_until = None
             return
-
+        if command != 'Restart':
+            return
         if status == 'recovered':
             logger.info('Restart runtime outcome: recovered')
             return
-
         logger.info(f'Restart runtime outcome: {status}')
+
+    def _delay_tasks_for_server_update(self, task: str, reason: str) -> bool:
+        if not is_server_update_window():
+            return False
+
+        delay_target = delay_pending_tasks_for_server_update(self.config, reason=reason)
+        self._set_task_runtime_outcome(task=task, status='server_update_delayed', wait_until=delay_target)
+        return True
 
     def run(self, command: str) -> bool:
         """
@@ -365,65 +396,13 @@ class Script:
         try:
             self.device.screenshot()
             module_name = 'script_task'
-            module_path = str(Path.cwd() / 'tasks' / command / (module_name+'.py'))
+            module_path = str(Path.cwd() / 'tasks' / command / (module_name + '.py'))
             logger.info(f'module_path: {module_path}, module_name: {module_name}')
             task_module = load_module(module_name, module_path)
             task_module.ScriptTask(config=self.config, device=self.device).run()
-        except TaskEnd:
-            self._capture_task_runtime_outcome(command)
-            return True
-        except GameNotRunningError as e:
-            logger.warning(e)
-            self.exception_handler(e=e, command=command)
-            self.config.task_call('Restart')
-            return True
-        except (GameStuckError, GameTooManyClickError) as e:
-            logger.error(e)
-            self.save_error_log()
-            self.exception_handler(e=e, command=command)
-            logger.warning(f'Game stuck, {self.device.package} will be restarted in 10 seconds')
-            logger.warning('If you are playing by hand, please stop Alas')
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GameStuckError or GameTooManyClickError")
-            self.config.task_call('Restart')
-            self.device.sleep(10)
-            return False
-        except GameBugError as e:
-            logger.warning(e)
-            self.save_error_log()
-            self.exception_handler(e=e, command=command)
-            logger.warning('An error has occurred in Azur Lane game client, Alas is unable to handle')
-            logger.warning(f'Restarting {self.device.package} to fix it')
-            self.config.task_call('Restart')
-            self.device.sleep(10)
-            return False
-        except GamePageUnknownError as e:
-            logger.info('Game server may be under maintenance or network may be broken, check server status now')
-            # 这个还不重要 留着坑填
-            logger.critical('Game page unknown')
-            self.save_error_log()
-            self.exception_handler(e=e, command=command)
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GamePageUnknownError")
-            self.config.task_call('Restart')
-            self.device.sleep(10)
-            return False
-        except ScriptError as e:
-            logger.critical(e)
-            self.exception_handler(e=e, command=command)
-            logger.critical('This is likely to be a mistake of developers, but sometimes just random issues')
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> ScriptError")
-            exit(1)
-        except RequestHumanTakeover as e:
-            logger.critical(e)
-            self.exception_handler(e=e, command=command)
-            logger.critical('Request human takeover')
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> RequestHumanTakeover")
-            exit(1)
         except Exception as e:
-            logger.exception(e)
-            self.exception_handler(e=e, command=command)
-            self.save_error_log()
-            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> Exception occured")
-            exit(1)
+            return self._handle_task_exception(e, command)
+        return False
 
     def loop(self):
         """
@@ -451,34 +430,24 @@ class Script:
                 with _log_switch_lock:
                     logger.set_file_logger(self.config_name, do_cleanup=True)
                 start_day = date.today()
-            # Check update event from GUI
-            # if self.stop_event is not None:
-            #     if self.stop_event.is_set():
-            #         logger.info("Update event detected")
-            #         logger.info(f"Alas [{self.config_name}] exited.")
-            #         break
 
-            # Check game server maintenance
-            # self.checker.wait_until_available()
-            # if self.checker.is_recovered():
-            #     # There is an accidental bug hard to reproduce
-            #     # Sometimes, config won't be updated due to blocking
-            #     # even though it has been changed
-            #     # So update it once recovered
-            #     del_cached_property(self, 'config')
-            #     logger.info('Server or network is recovered. Restart game client')
-            #     self.config.task_call('Restart')
-
-            # Get task
-            task = self.get_next_task()
-            # Skip first restart
-            if self.is_first_task and task == 'Restart':
-                logger.info('Skip task `Restart` at scheduler start')
-                self.config.task_delay(task='Restart', success=True, server=True)
+            task = ""
+            try:
+                # Get task
+                task = self.get_next_task()
+                # Skip first restart
+                if self.is_first_task and task == 'Restart':
+                    logger.info('Skip task `Restart` at scheduler start')
+                    self.config.task_delay(task='Restart', success=True, server=True)
+                    del_cached_property(self, 'config')
+                    continue
+                decision = self.runtime.prepare_task_execution(task)
+            except Exception as e:
+                self._handle_task_exception(e, task)
+                # 本轮 prepare 失败,重新调度
                 del_cached_property(self, 'config')
                 continue
 
-            decision = self.runtime.prepare_task_execution(task)
             if decision == ScriptRuntimeDecision.RESCHEDULE:
                 logger.info(f'Runtime preparation for `{task}` requested reschedule, reload config and retry scheduling')
                 del_cached_property(self, 'config')
@@ -532,6 +501,98 @@ class Script:
                 continue
             else:
                 break
+
+    def _handle_task_exception(self, e: Exception, command: str) -> bool:
+        """
+        统一处理任务执行 / 准备阶段抛出的异常。
+        Returns:
+            True  -> 视为正常结束或已自动恢复 (例如已 task_call('Restart')),
+                     调度器继续推进
+            False -> 视为失败,脚本继续运行
+        对致命异常 (ScriptError / RequestHumanTakeover / 未识别 Exception)
+        在内部直接 exit(1)。
+        """
+        if isinstance(e, TaskEnd):
+            self._capture_task_runtime_outcome(command)
+            return True
+
+        if isinstance(e, GameNotRunningError):
+            logger.warning(e)
+            self.exception_handler(e=e, command=command)
+            self.config.task_call('Restart')
+            return True
+
+        if isinstance(e, (GameStuckError, GameTooManyClickError)):
+            logger.error(e)
+            self.save_error_log()
+            self.exception_handler(e=e, command=command)
+            logger.warning(f'Game stuck, {self.device.package} will be restarted in 10 seconds')
+            logger.warning('If you are playing by hand, please stop Alas')
+            self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}',
+                                      content=f"<{self.config_name}> GameStuckError or GameTooManyClickError")
+            self.config.task_call('Restart')
+            self.device.sleep(10)
+            return False
+
+        if isinstance(e, GameBugError):
+            logger.warning(e)
+            self.save_error_log()
+            self.exception_handler(e=e, command=command)
+            logger.warning('An error has occurred in Azur Lane game client, Alas is unable to handle')
+            logger.warning(f'Restarting {self.device.package} to fix it')
+            self.config.task_call('Restart')
+            self.device.sleep(10)
+            return False
+
+        if isinstance(e, GamePageUnknownError):
+            logger.info('Game server may be under maintenance or network may be broken, check server status now')
+            if command == 'GotoMain' and self._delay_tasks_for_server_update(
+                    task=command,
+                    reason='failed to goto main during morning server update window',
+            ):
+                logger.info('GotoMain failed during server update window, delayed pending tasks and reschedule')
+                return False
+            logger.critical('Game page unknown')
+            self.save_error_log()
+            self.exception_handler(e=e, command=command)
+            self.config.notifier.push(
+                title=f'{I18n.trans_zh_cn(command)}{command}',
+                content=f"<{self.config_name}> GamePageUnknownError",
+            )
+            self.config.task_call('Restart')
+            self.device.sleep(10)
+            return False
+
+        if isinstance(e, ScriptError):
+            logger.critical(e)
+            self.exception_handler(e=e, command=command)
+            logger.critical('This is likely to be a mistake of developers, but sometimes just random issues')
+            self.config.notifier.push(
+                title=f'{I18n.trans_zh_cn(command)}{command}',
+                content=f"<{self.config_name}> ScriptError",
+            )
+            exit(1)
+
+        if isinstance(e, RequestHumanTakeover):
+            logger.critical(e)
+            self.exception_handler(e=e, command=command)
+            logger.critical('Request human takeover')
+            self.config.notifier.push(
+                title=f'{I18n.trans_zh_cn(command)}{command}',
+                content=f"<{self.config_name}> RequestHumanTakeover",
+            )
+            exit(1)
+
+        # generic
+        logger.exception(e)
+        self.exception_handler(e=e, command=command)
+        self.save_error_log()
+        self.config.notifier.push(
+            title=f'{I18n.trans_zh_cn(command)}{command}',
+            content=f"<{self.config_name}> Exception occured",
+        )
+        exit(1)
+        return False
 
     def start_loop(self) -> None:
         """

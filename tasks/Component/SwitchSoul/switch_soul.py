@@ -52,8 +52,7 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
                 break
             if self.appear(self.I_SOU_TEAM_PRESENT):
                 break
-            if self.appear(self.I_SOUL_PRESET):
-                self.click(self.I_SOUL_PRESET, interval=3)
+            if self.appear_then_click(self.I_SOUL_PRESET, interval=2):
                 continue
         logger.info('Click preset in switch soul')
 

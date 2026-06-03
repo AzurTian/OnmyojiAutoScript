@@ -255,7 +255,7 @@ class ScriptTask(BaseTask):
 
     def _check_adb_connection(self):
         try:
-            serial = str(self.config.script.device.serial)
+            serial = str(self.config.script.device.serial).strip()
             if serial and serial != 'auto':
                 logger.info(f'专用ADB连接到 {serial}...')
                 result = self._adb_cmd(['connect', serial], timeout=10)
@@ -301,7 +301,7 @@ class ScriptTask(BaseTask):
     def _is_frida_server_running(self):
         try:
             output = self._adb_shell(['ps | grep frida-server'])
-            if 'frida-server' not in output:
+            if output == '' or 'frida-server' not in output:
                 return False
             # 确保是以 root 身份运行，否则无法 attach 进程
             for line in output.strip().split('\n'):
@@ -311,7 +311,7 @@ class ScriptTask(BaseTask):
             # frida-server 存在但不是 root 运行，杀掉重启
             logger.warning('Frida Server未以root运行，正在重启...')
             try:
-                self._adb_shell(['killall', 'frida-server'])
+                self._adb_shell(['su -c "killall frida-server"'])
             except Exception:
                 pass
             return False
@@ -321,7 +321,7 @@ class ScriptTask(BaseTask):
     def _is_frida_server_installed(self):
         try:
             output = self._adb_shell(['ls', '-l', FRIDA_SERVER_REMOTE])
-            return 'No such file' not in output and FRIDA_SERVER_REMOTE in output
+            return output != '' and 'No such file' not in output and FRIDA_SERVER_REMOTE in output
         except Exception:
             return False
 
@@ -349,7 +349,7 @@ class ScriptTask(BaseTask):
         try:
             # 先删除旧文件（如果存在）
             try:
-                self._adb_shell(['rm', '-f', FRIDA_SERVER_REMOTE])
+                self._adb_shell([f'su -c "rm -f {FRIDA_SERVER_REMOTE}"'])
             except:
                 pass
 
@@ -360,7 +360,7 @@ class ScriptTask(BaseTask):
             local_size = os.path.getsize(FRIDA_SERVER_LOCAL)
             remote_check = self._adb_shell(['ls', '-l', FRIDA_SERVER_REMOTE])
 
-            if 'No such file' in remote_check:
+            if remote_check == '' or 'No such file' in remote_check:
                 logger.error('推送失败: 文件未找到')
                 return False
 

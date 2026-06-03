@@ -2,7 +2,7 @@
 # @author runhey
 # github https://github.com/runhey
 from enum import Enum
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from pydantic import BaseModel, ValidationError, validator, Field
 
 from tasks.Component.config_base import Time, MultiLine
@@ -22,6 +22,12 @@ class InviteConfig(BaseModel):
     @property
     def friend_list_v(self) -> list[str]:
         return [line.strip() for line in self.friend_list.split('\n') if line.strip()]
+
+    @property
+    def wait_time_v(self) -> timedelta:
+        if isinstance(self.wait_time, time):
+            return timedelta(hours=self.wait_time.hour, minutes=self.wait_time.minute, seconds=self.wait_time.second)
+        return self.wait_time
 
 
 if __name__ == "__main__":

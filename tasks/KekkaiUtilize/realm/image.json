@@ -88,5 +88,23 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "寮结界卡界面"
+  },
+  {
+    "itemName": "auto_fill",
+    "imageName": "realm_auto_fill.png",
+    "roiFront": "1146,505,47,51",
+    "roiBack": "1114,478,115,107",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "智能放入"
+  },
+  {
+    "itemName": "remove_all",
+    "imageName": "realm_remove_all.png",
+    "roiFront": "1146,505,47,51",
+    "roiBack": "1114,478,115,107",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "一键卸下"
   }
 ]

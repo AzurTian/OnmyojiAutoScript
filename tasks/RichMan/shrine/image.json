@@ -126,21 +126,12 @@
     "description": "description"
   },
   {
-    "itemName": "center1",
-    "imageName": "shrine_center1.png",
-    "roiFront": "1101,621,48,51",
-    "roiBack": "1072,596,100,100",
+    "itemName": "s_summon_to_shrine",
+    "imageName": "shrine_s_summon_to_shrine.png",
+    "roiFront": "1235,353,16,38",
+    "roiBack": "864,210,413,337",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "description"
-  },
-  {
-    "itemName": "center2",
-    "imageName": "shrine_center2.png",
-    "roiFront": "76,590,79,75",
-    "roiBack": "65,575,100,100",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "description"
+    "description": "召唤页面前往神龛标志"
   }
 ]

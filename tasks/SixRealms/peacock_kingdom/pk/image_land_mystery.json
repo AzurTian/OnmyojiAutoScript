@@ -1,0 +1,11 @@
+[
+  {
+    "itemName": "pk_mystery_imitate",
+    "imageName": "pk_pk_mystery_imitate.png",
+    "roiFront": "1154,607,81,89",
+    "roiBack": "1133,591,129,125",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "仿造"
+  }
+]

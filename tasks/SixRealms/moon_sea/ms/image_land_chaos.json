@@ -1,0 +1,20 @@
+[
+  {
+    "itemName": "chaos_box_exit",
+    "imageName": "ms_chaos_box_exit.png",
+    "roiFront": "1161,597,69,70",
+    "roiBack": "1161,597,69,70",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "description"
+  },
+  {
+    "itemName": "chaos_elite_flag",
+    "imageName": "ms_chaos_elite_flag.png",
+    "roiFront": "543,601,100,100",
+    "roiBack": "543,601,100,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "动画完了就有这个东西"
+  }
+]

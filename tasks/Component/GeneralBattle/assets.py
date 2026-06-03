@@ -78,30 +78,16 @@ class GeneralBattleAssets:
 	I_PRESET_ENSURE = RuleImage(roi_front=(352,643,141,50), roi_back=(305,625,236,83), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_preset_ensure.png")
 	# 选择buff 
 	I_BUFF = RuleImage(roi_front=(115,670,39,36), roi_back=(107,668,55,49), threshold=0.7, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff.png")
-	# 觉醒加成 
-	I_BUFF_AWAKEN = RuleImage(roi_front=(373,126,383,53), roi_back=(373,126,383,53), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff_awaken.png")
-	# 御魂加成 
-	I_BUFF_SOUL = RuleImage(roi_front=(377,192,371,56), roi_back=(377,192,371,56), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff_soul.png")
-	# 金币加成50 
-	I_BUFF_GOLD_50 = RuleImage(roi_front=(375,259,373,56), roi_back=(375,259,373,56), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff_gold_50.png")
-	# 金币加成100 
-	I_BUFF_GOLD_100 = RuleImage(roi_front=(371,329,389,54), roi_back=(371,329,389,54), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff_gold_100.png")
-	# 经验加成50 
-	I_BUFF_EXP_50 = RuleImage(roi_front=(378,400,370,50), roi_back=(378,400,370,50), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff_exp_50.png")
-	# 经验加成100 
-	I_BUFF_EXP_100 = RuleImage(roi_front=(372,463,386,50), roi_back=(372,463,386,50), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_buff_exp_100.png")
 	# 左下角的位置指针 
 	I_LOCAL = RuleImage(roi_front=(25,563,30,34), roi_back=(25,563,30,34), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_local.png")
-	# description 
-	I_STATISTICS = RuleImage(roi_front=(61,644,33,28), roi_back=(61,644,33,28), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_statistics.png")
 	# 左上角的退出 
 	I_EXIT = RuleImage(roi_front=(14,12,43,41), roi_back=(0,0,91,83), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_exit.png")
 	# 退出确认 
 	I_EXIT_ENSURE = RuleImage(roi_front=(674,388,135,63), roi_back=(674,388,135,63), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_exit_ensure.png")
 	# 左上角好友图标 
 	I_FRIENDS = RuleImage(roi_front=(89,14,36,36), roi_back=(89,14,36,36), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_friends.png")
-	# 结算时左下角统计图标 
-	I_REWARD_STATISTICS = RuleImage(roi_front=(51,629,54,59), roi_back=(51,629,54,59), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_reward_statistics.png")
+	# 结算时的统计图标 
+	I_REWARD_STATISTICS = RuleImage(roi_front=(59,49,34,35), roi_back=(24,23,111,684), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_reward_statistics.png")
 	# 结算金币 
 	I_REWARD_GOLD = RuleImage(roi_front=(268,178,97,69), roi_back=(254,163,797,261), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_reward_gold.png")
 	# 结算紫蛇皮 
@@ -118,10 +104,8 @@ class GeneralBattleAssets:
 	I_DE_WIN = RuleImage(roi_front=(472,49,100,100), roi_back=(239,36,399,133), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_de_win.png")
 	# description 
 	I_PRESENT_LESS_THAN_5 = RuleImage(roi_front=(222,648,418,43), roi_back=(222,648,418,43), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_present_less_than_5.png")
-	# 封魔的金币 
-	I_DE_GOLD = RuleImage(roi_front=(61,52,30,25), roi_back=(45,33,65,64), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_de_gold.png")
 	# 绿标 
-	I_GREEN_MARKER = RuleImage(roi_front=(0,0,1280,720), roi_back=(0,0,1280,720), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_green_marker.png")
+	I_GREEN_MARKER = RuleImage(roi_front=(0,0,1279,714), roi_back=(0,0,1279,714), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_green_marker.png")
 	# 绿标-左上角部分 
 	I_GREEN_MARKER_LEFT_TOP = RuleImage(roi_front=(0,0,1280,720), roi_back=(0,0,1280,720), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_green_marker_left_top.png")
 	# 绿标-下半部分 
@@ -132,6 +116,10 @@ class GeneralBattleAssets:
 	I_BATTLE_INFO = RuleImage(roi_front=(230,12,37,39), roi_back=(210,1,147,72), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_battle_info.png")
 	# 战斗数据统计 
 	I_BATTLE_STATE_INFO = RuleImage(roi_front=(725,51,67,31), roi_back=(483,18,337,102), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_battle_state_info.png")
+	# 皮肤碎片确定按钮 
+	I_GB_SKIN_CONFIRM = RuleImage(roi_front=(594,447,90,55), roi_back=(594,447,90,55), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_gb_skin_confirm.png")
+	# 战斗组队退出页面标志 
+	I_GB_CHECK_TEAM_EXIT = RuleImage(roi_front=(507,288,270,54), roi_back=(411,233,452,247), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_gb_check_team_exit.png")
 
 
 	# Image Rule Assets

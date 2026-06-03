@@ -1,0 +1,38 @@
+[
+  {
+    "itemName": "coin_num",
+    "roiFront": "1171,23,59,31",
+    "roiBack": "1171,23,59,31",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "有多少钱"
+  },
+  {
+    "itemName": "remain_turns",
+    "roiFront": "1071,229,67,28",
+    "roiBack": "1071,229,67,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "剩余回合"
+  },
+  {
+    "itemName": "extra_coin_num",
+    "roiFront": "591,331,109,101",
+    "roiBack": "591,331,109,101",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "获取的额外钱币数量"
+  },
+  {
+    "itemName": "store_refresh_time",
+    "roiFront": "538,661,110,27",
+    "roiBack": "538,661,110,27",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店刷新次数"
+  }
+]

@@ -1,23 +1,5 @@
 [
   {
-    "itemName": "wt_shikiagmi",
-    "imageName": "collect_wt_shikiagmi.png",
-    "roiFront": "280,620,920,100",
-    "roiBack": "280,620,920,100",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "点击“式神”"
-  },
-  {
-    "itemName": "wt_scroll",
-    "imageName": "collect_wt_scroll.png",
-    "roiFront": "1128,615,77,67",
-    "roiBack": "1128,615,77,67",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "点击式神绘卷"
-  },
-  {
     "itemName": "wt_collect",
     "imageName": "collect_wt_collect.png",
     "roiFront": "1170,606,78,83",
@@ -61,5 +43,14 @@
     "method": "Template matching",
     "threshold": 0.65,
     "description": "二维码"
+  },
+  {
+    "itemName": "wt_share",
+    "imageName": "collect_wt_share.png",
+    "roiFront": "331,282,60,53",
+    "roiBack": "133,243,270,120",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "式神图鉴头像旁边的分享按钮"
   }
 ]

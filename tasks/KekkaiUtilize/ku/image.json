@@ -41,7 +41,7 @@
     "roiFront": "483,314,22,22",
     "roiBack": "290,224,894,345",
     "method": "Template matching",
-    "threshold": 0.8,
+    "threshold": 0.9,
     "description": "寮体力"
   },
   {

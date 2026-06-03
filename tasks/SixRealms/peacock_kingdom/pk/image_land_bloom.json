@@ -1,0 +1,11 @@
+[
+  {
+    "itemName": "pk_bloom_exit",
+    "imageName": "pk_pk_bloom_exit.png",
+    "roiFront": "1153,630,62,60",
+    "roiBack": "1141,615,84,98",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "绽放之屿离开"
+  }
+]

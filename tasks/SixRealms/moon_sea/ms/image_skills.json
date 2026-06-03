@@ -1,0 +1,83 @@
+[
+  {
+    "itemName": "skill101",
+    "imageName": "ms_skill101.png",
+    "roiFront": "440,181,100,69",
+    "roiBack": "139,167,722,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "柔风"
+  },
+  {
+    "itemName": "skill102",
+    "imageName": "ms_skill102.png",
+    "roiFront": "456,186,76,63",
+    "roiBack": "136,151,709,128",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "description"
+  },
+  {
+    "itemName": "skill_refresh",
+    "imageName": "ms_skill_refresh.png",
+    "roiFront": "1196,625,44,39",
+    "roiBack": "1171,586,100,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "description"
+  },
+  {
+    "itemName": "select_0",
+    "imageName": "ms_select_0.png",
+    "roiFront": "152,572,132,44",
+    "roiBack": "140,542,163,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "第一个选择按钮"
+  },
+  {
+    "itemName": "select_1",
+    "imageName": "ms_select_1.png",
+    "roiFront": "424,573,137,46",
+    "roiBack": "382,544,196,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "第2个选择按钮"
+  },
+  {
+    "itemName": "select_2",
+    "imageName": "ms_select_2.png",
+    "roiFront": "696,572,140,47",
+    "roiBack": "666,546,196,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "第三个选择按钮"
+  },
+  {
+    "itemName": "select_3",
+    "imageName": "ms_select_3.png",
+    "roiFront": "1016,581,145,43",
+    "roiBack": "1000,550,173,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "最右边的恢复生命"
+  },
+  {
+    "itemName": "coin",
+    "imageName": "ms_coin.png",
+    "roiFront": "575,348,43,48",
+    "roiBack": "405,229,561,270",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "六道的金币"
+  },
+  {
+    "itemName": "skill105",
+    "imageName": "ms_skill105.png",
+    "roiFront": "178,187,80,69",
+    "roiBack": "112,149,779,151",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "洞察之力"
+  }
+]

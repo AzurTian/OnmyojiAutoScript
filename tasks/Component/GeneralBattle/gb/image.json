@@ -72,60 +72,6 @@
     "description": "选择buff"
   },
   {
-    "itemName": "buff_awaken",
-    "imageName": "gb_buff_awaken.png",
-    "roiFront": "373,126,383,53",
-    "roiBack": "373,126,383,53",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "觉醒加成"
-  },
-  {
-    "itemName": "buff_soul",
-    "imageName": "gb_buff_soul.png",
-    "roiFront": "377,192,371,56",
-    "roiBack": "377,192,371,56",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "御魂加成"
-  },
-  {
-    "itemName": "buff_gold_50",
-    "imageName": "gb_buff_gold_50.png",
-    "roiFront": "375,259,373,56",
-    "roiBack": "375,259,373,56",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "金币加成50"
-  },
-  {
-    "itemName": "buff_gold_100",
-    "imageName": "gb_buff_gold_100.png",
-    "roiFront": "371,329,389,54",
-    "roiBack": "371,329,389,54",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "金币加成100"
-  },
-  {
-    "itemName": "buff_exp_50",
-    "imageName": "gb_buff_exp_50.png",
-    "roiFront": "378,400,370,50",
-    "roiBack": "378,400,370,50",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "经验加成50"
-  },
-  {
-    "itemName": "buff_exp_100",
-    "imageName": "gb_buff_exp_100.png",
-    "roiFront": "372,463,386,50",
-    "roiBack": "372,463,386,50",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "经验加成100"
-  },
-  {
     "itemName": "local",
     "imageName": "gb_local.png",
     "roiFront": "25,563,30,34",
@@ -133,15 +79,6 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "左下角的位置指针"
-  },
-  {
-    "itemName": "statistics",
-    "imageName": "gb_statistics.png",
-    "roiFront": "61,644,33,28",
-    "roiBack": "61,644,33,28",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "description"
   },
   {
     "itemName": "exit",
@@ -173,11 +110,11 @@
   {
     "itemName": "reward_statistics",
     "imageName": "gb_reward_statistics.png",
-    "roiFront": "51,629,54,59",
-    "roiBack": "51,629,54,59",
+    "roiFront": "59,49,34,35",
+    "roiBack": "24,23,111,684",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "结算时左下角统计图标"
+    "description": "结算时的统计图标"
   },
   {
     "itemName": "reward_gold",
@@ -252,19 +189,10 @@
     "description": "description"
   },
   {
-    "itemName": "de_gold",
-    "imageName": "gb_de_gold.png",
-    "roiFront": "61,52,30,25",
-    "roiBack": "45,33,65,64",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "封魔的金币"
-  },
-  {
     "itemName": "green_marker",
     "imageName": "gb_green_marker.png",
-    "roiFront": "0,0,1280,720",
-    "roiBack": "0,0,1280,720",
+    "roiFront": "0,0,1279,714",
+    "roiBack": "0,0,1279,714",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "绿标"
@@ -313,5 +241,23 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "战斗数据统计"
+  },
+  {
+    "itemName": "gb_skin_confirm",
+    "imageName": "gb_gb_skin_confirm.png",
+    "roiFront": "594,447,90,55",
+    "roiBack": "594,447,90,55",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "皮肤碎片确定按钮"
+  },
+  {
+    "itemName": "gb_check_team_exit",
+    "imageName": "gb_gb_check_team_exit.png",
+    "roiFront": "507,288,270,54",
+    "roiBack": "411,233,452,247",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "战斗组队退出页面标志"
   }
 ]
