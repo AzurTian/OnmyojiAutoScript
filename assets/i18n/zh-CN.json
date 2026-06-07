@@ -150,5 +150,6 @@
   "enable_switch_ap100": "是否切换100体爬塔御魂",
   "ap100_group_team": "100体组号,队伍号",
   "enable_switch_ap100_by_name": "是否通过ocr切换100体御魂",
-  "ap100_group_team_name": "100体组名,队伍名"
+  "ap100_group_team_name": "100体组名,队伍名",
+  "card_star": "星级"
 }

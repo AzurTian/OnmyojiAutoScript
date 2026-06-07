@@ -11,7 +11,11 @@ from tasks.Utils.config_enum import ShikigamiClass
 class CardType(str, Enum):
     FISH = '斗鱼'
     TAIKO = '太鼓'
-    
+
+class CardStar(str, Enum):
+    SIX = '六星'
+    FIVE = '五星'
+
 
 class ActivationScheduler(Scheduler):
     priority: int = Field(default=2, description='priority_help')
@@ -21,6 +25,8 @@ class ActivationScheduler(Scheduler):
 
 class ActivationConfig(BaseModel):
     card_type: CardType = Field(default=CardType.TAIKO, description='card_rule_help')
+    card_star: CardStar = Field(default=CardStar.SIX, description='六星：六星及以下、五星：五星及以下')
+    swipe_retry_limit: int = Field(default=3, description='最多滑动X次后触发未找到符合条件的卡')
     min_taiko_num: int = Field(default=8, description='挂卡太鼓每小时最少收益,低于则不挂卡')
     min_fish_num: int = Field(default=16, description='挂卡斗鱼每小时最少收益,低于则不挂卡')
     exchange_before: bool = Field(default=True, description='exchange_before_help')
