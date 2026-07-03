@@ -38,6 +38,8 @@ class ScriptTask(BaseExploration):
             pages.page_exploration: self.run_on_exp,
             pages.page_battle_prepare: self.run_on_battle,
             pages.page_battle: self.run_on_battle,
+            pages.page_battle_result: self.run_on_battle,
+            pages.page_reward: lambda : self.click(pages.random_click(), interval=0.8),
             pages.page_battle_team: self.run_on_battle_team
         }
 
@@ -104,18 +106,20 @@ class ScriptTask(BaseExploration):
                 self.device.stuck_record_clear()
 
     def run_on_exp(self):
-        self.collect_treasure_box()
         self.fire_monster_type = ''  # 入口处重置怪物类型
         self.need_exit = False
         match self.user_status:
             case UserStatus.LEADER:
+                # TODO: 队长宝箱收集(游戏问题导致邀请和宝箱出现时间不一致, 一旦先点中宝箱就会出现卡死), 当前先取消队长在探索界面的宝箱收集
                 if self.check_and_invite(self._config.invite_config.default_invite):
                     return
                 if datetime.now() - self.wait_start_time >= timedelta(seconds=10) or self.current_count == 0:
                     self.goto_page(pages.page_exp_entrance)
             case UserStatus.ALONE:
+                self.collect_treasure_box()
                 self.goto_page(pages.page_exp_main)
             case UserStatus.MEMBER:
+                self.collect_treasure_box()
                 self.check_then_accept()
                 self.device.stuck_record_clear()
 

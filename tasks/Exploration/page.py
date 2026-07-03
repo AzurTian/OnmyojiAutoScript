@@ -1,7 +1,7 @@
 from tasks.Component.GeneralInvite.general_invite import GeneralInvite
 from tasks.Exploration.assets import ExplorationAssets
 from tasks.GameUi.page import (all_of, any_of, page_battle, page_battle_prepare, page_battle_team, page_exploration,
-                               page_main, page_shikigami_records, page_reward, page_battle_team_exit)
+                               page_main, page_shikigami_records, page_reward, page_battle_team_exit, random_click, page_battle_result)
 from tasks.GameUi.page_definition import Page
 from tasks.GlobalGame.assets import GlobalGameAssets
 

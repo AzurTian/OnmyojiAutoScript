@@ -38,8 +38,8 @@
   {
     "itemName": "check_battle_boss",
     "imageName": "as_check_battle_boss.png",
-    "roiFront": "42,316,47,35",
-    "roiBack": "0,216,156,224",
+    "roiFront": "151,18,129,46",
+    "roiBack": "141,0,151,85",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "boss界面标志"

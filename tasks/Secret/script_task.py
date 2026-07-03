@@ -47,6 +47,7 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, SecretAssets):
         battle_result.recognizer = any_of(self.I_SE_BATTLE_WIN, battle_result.recognizer)
 
     def run(self):
+        self.before_run()
         self.check_time()
         secret: Secret = self.config.secret
         con = secret.secret_config

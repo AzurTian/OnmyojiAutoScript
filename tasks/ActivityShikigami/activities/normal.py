@@ -33,9 +33,16 @@ class NormalClimbAct(BaseAct):
 
     def lock_team(self, battle_conf: GeneralBattleConfig):
         enable = battle_conf.lock_team_enable
+        match self.climb_type:
+            case 'boss':
+                lock_rule = self.I_LOCK
+                unlock_rule = self.I_UNLOCK
+            case _:
+                lock_rule = self.I_AP_LOCK
+                unlock_rule = self.I_AP_UNLOCK
         if enable:
             logger.info(f'Lock {self.climb_type} team')
-            self.ui_click(self.I_AP_UNLOCK, stop=self.I_AP_LOCK, interval=1.5)
+            self.ui_click(unlock_rule, stop=lock_rule, interval=1.5)
             return
         logger.info(f'Unlock {self.climb_type} team')
-        self.ui_click(self.I_AP_LOCK, stop=self.I_AP_UNLOCK, interval=1.5)
+        self.ui_click(lock_rule, stop=unlock_rule, interval=1.5)

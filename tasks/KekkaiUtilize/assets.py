@@ -121,7 +121,7 @@ class KekkaiUtilizeAssets:
 	# 右上，右数第一个 
 	I_U_ADD_1 = RuleImage(roi_front=(1144,59,86,69), roi_back=(1144,59,86,69), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/utilize/utilize_u_add_1.png")
 	# 右上，右数第二个 
-	I_U_ADD_2 = RuleImage(roi_front=(979,52,76,69), roi_back=(979,52,76,69), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/utilize/utilize_u_add_2.png")
+	I_U_ADD_2 = RuleImage(roi_front=(979,52,76,69), roi_back=(979,52,76,69), threshold=0.7, method="Template matching", file="./tasks/KekkaiUtilize/utilize/utilize_u_add_2.png")
 	# description 
 	I_U_CONFIRM_SMALL = RuleImage(roi_front=(672,513,131,60), roi_back=(672,513,131,60), threshold=0.8, method="Template matching", file="./tasks/KekkaiUtilize/utilize/utilize_u_confirm_small.png")
 	# description 

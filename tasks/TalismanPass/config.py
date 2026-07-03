@@ -18,6 +18,7 @@ class LevelReward(str, Enum):
     THREE = '体力/樱饼'
 
 class TalismanConfig(BaseModel):
+    get_flower: bool = Field(default=False, description='收取花合战等级奖励')
     level_reward: LevelReward = Field(default=LevelReward.TWO)
     harvest_soul: bool = Field(default=False, description='收获1500签御魂')
 

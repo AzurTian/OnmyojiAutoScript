@@ -11,8 +11,8 @@
   {
     "itemName": "red_point_task",
     "imageName": "tp_red_point_task.png",
-    "roiFront": "1226,312,23,24",
-    "roiBack": "1226,312,23,24",
+    "roiFront": "1218,286,45,45",
+    "roiBack": "1218,286,45,45",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "任务 的右上方红点"
@@ -20,8 +20,8 @@
   {
     "itemName": "red_point_day",
     "imageName": "tp_red_point_day.png",
-    "roiFront": "632,157,23,26",
-    "roiBack": "632,157,23,26",
+    "roiFront": "633,153,35,35",
+    "roiBack": "633,153,35,35",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "今日 的右上方红点"
@@ -29,8 +29,8 @@
   {
     "itemName": "red_point_week",
     "imageName": "tp_red_point_week.png",
-    "roiFront": "795,156,24,25",
-    "roiBack": "795,156,24,25",
+    "roiFront": "795,153,35,35",
+    "roiBack": "795,153,35,35",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "本周 的右上方红点"
@@ -38,8 +38,8 @@
   {
     "itemName": "red_point_level",
     "imageName": "tp_red_point_level.png",
-    "roiFront": "1222,174,21,22",
-    "roiBack": "1214,165,40,43",
+    "roiFront": "1215,154,45,45",
+    "roiBack": "1215,154,45,45",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "等级奖励"
@@ -124,5 +124,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "六星御魂标志"
+  },
+  {
+    "itemName": "red_point_month",
+    "imageName": "tp_red_point_month.png",
+    "roiFront": "966,162,17,17",
+    "roiBack": "966,162,17,17",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "本月 的右上方红点（截点用）"
   }
 ]

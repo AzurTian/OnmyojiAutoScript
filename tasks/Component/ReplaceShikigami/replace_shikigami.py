@@ -102,16 +102,12 @@ class ReplaceShikigami(BaseTask, ReplaceShikigamiAssets):
             # 恢复点击操作
             if click_interval_timer.reached_and_reset():
                 clicked = False
-            
             self.screenshot()
-
-            if not self.appear(stop_image):
-                break
-
             if self.appear_then_click(self.I_U_CONFIRM_SMALL, interval=0.5):
                 clicked = False  # 点击了确认, 恢复选式神的操作
                 continue
-
+            if not self.appear(stop_image):
+                break
             # 与下方点击第7个式神操作互斥, 防止确认按钮还没有出现被下方取消掉
             if not clicked and self.click(click_match, interval=1.5):
                 clicked = True

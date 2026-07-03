@@ -81,7 +81,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, GoryouRealmAssets):
             if click_max_cnt <= 0:
                 logger.info('Maybe tickets not enough, exit')
                 break
-            if self.appear_then_click(self.I_GR_FIRE, interval=0.8):
+            if self.appear_then_click(self.I_GR_FIRE, interval=2):
                 click_max_cnt -= 1
                 continue
         return False

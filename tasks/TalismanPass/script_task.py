@@ -19,11 +19,12 @@ class ScriptTask(GameUi, TalismanPassAssets):
         self.goto_page(page_daily)
         con: TalismanConfig = self.config.talisman_pass.talisman
 
-        # 收取全部奖励
+        # 收取任务全部奖励
         if self.in_task():
             self.get_all()
         # 收取花合战等级奖励
-        self.get_flower(con.level_reward)
+        if con.get_flower:
+            self.get_flower(con.level_reward)
         # 收取1500签御魂
         if con.harvest_soul:
             self.goto_page(page_main)
@@ -91,6 +92,11 @@ class ScriptTask(GameUi, TalismanPassAssets):
         self.screenshot()
         if self.appear(self.I_TP_GOTO) or self.appear(self.I_TP_EXP):
             return True
+        if self.appear(self.I_RED_POINT_TASK):
+            self.click(self.I_RED_POINT_TASK)
+            logger.info('Appear task reward')
+            return True
+        logger.info('No any task reward')
         return False
     
     def harvest_soul(self):

@@ -151,5 +151,10 @@
   "enable_switch_ap100": "是否切换100体爬塔御魂",
   "ap100_group_team": "100体组号,队伍号",
   "enable_switch_ap100_by_name": "是否通过ocr切换100体御魂",
-  "ap100_group_team_name": "100体组名,队伍名"
+  "ap100_group_team_name": "100体组名,队伍名",
+  "enable_orochi_ten_once": "攻击一次御魂十层",
+  "pets_feast": "快速喂养",
+  "costume_main_15": "茨心乐园",
+  "get_flower": "启用收取等级奖励",
+  "costume_main_16": "琦梦茨庭"
 }

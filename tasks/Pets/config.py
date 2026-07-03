@@ -8,10 +8,10 @@ from tasks.Component.config_scheduler import Scheduler
 from tasks.Component.config_base import ConfigBase
 
 class PetsConfig(ConfigBase):
-    # 其乐融融
-    # pets_happy: bool = Field(default=True)
     # 快速喂养
     pets_feast: bool = Field(default=True)
+    enable_orochi_ten_once: bool = Field(default=False)
+    enable_switch_layer_soul: bool = Field(default=False, description='enable_switch_layer_soul_help')
 
 class Pets(ConfigBase):
     scheduler: Scheduler = Field(default_factory=Scheduler)

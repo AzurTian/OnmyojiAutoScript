@@ -158,7 +158,7 @@
     "roiFront": "979,52,76,69",
     "roiBack": "979,52,76,69",
     "method": "Template matching",
-    "threshold": 0.8,
+    "threshold": 0.7,
     "description": "右上，右数第二个"
   },
   {

@@ -32,6 +32,9 @@ class BondlingNumberMax(Exception):
 class ScriptTask(GameUi, GeneralInvite, GeneralRoom, GeneralBattle, SwitchSoul, BondlingFairylandAssets, RichManAssets):
     """ 契灵 """
 
+    last_plate_count: int = None  # 上一次识别到的契灵盘子数量
+    plate_interval: int = None  # 契灵盘子数量间隔(一般为1)
+
     def _exit_matcher(self) -> ExitMatcher | None:
         return any_of(self.I_BALL_FIRE, self.I_CHECK_BONDLING_FAIRYLAND, self.I_GI_EMOJI_1, self.I_GI_EMOJI_2)
 
@@ -439,9 +442,18 @@ class ScriptTask(GameUi, GeneralInvite, GeneralRoom, GeneralBattle, SwitchSoul, 
                     return False
             self.screenshot()
             cu, res, total = target_plate.ocr(self.device.image)
+            # TODO: 优化此处, 仅用上一次识别结果来判断, 可能还会继续引起偏差, 但是用有限队列存储则强制需要多个正确识别结果, 要求较高
             if cu == 0 and cu + res == total:
+                # 识别成0, 但是和上次数据之间波动较大, 认为当前这次识别出错
+                if self.plate_interval and self.last_plate_count and cu != self.last_plate_count - self.plate_interval:
+                    logger.warning(f'Plate number maybe recognize error, continue fire. last plate number:{self.last_plate_count}')
+                    self.last_plate_count = self.last_plate_count - self.plate_interval  # 计算本次真实值
+                    return True
                 logger.warning(f'No plate number, exit')
                 return False
+            if self.last_plate_count and not self.plate_interval:
+                self.plate_interval = self.last_plate_count - cu
+            self.last_plate_count = cu
             return True
 
         def check_ball_number():

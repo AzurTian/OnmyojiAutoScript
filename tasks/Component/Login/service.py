@@ -38,26 +38,18 @@ class LoginService(BaseTask, RestartAssets, GameUiAssets):
             if self.appear_then_click(self.I_CANCEL_BATTLE, interval=0.8):
                 logger.info('Cancel continue battle')
                 continue
-            if self.appear(self.I_LOGIN_COURTYARD, interval=0.2):
+            if self.appear(self.I_CHECK_MAIN, interval=0.2) and not self.appear(self.I_MAIN_GOTO_SHIKIGAMI_RECORDS):
+                logger.info('The main had already appeared, but shikigami records had not yet appeared')
                 if self.click(self.C_LOGIN_SCROLL_CLOSE_AREA, interval=2):
-                    logger.info('Click scroll close area because courtyard appears')
-                    self.screenshot()
                     continue
             if self.appear(self.I_MAIN_GOTO_SHIKIGAMI_RECORDS, interval=0.2):
                 if confirm_timer.reached():
                     logger.info('Login to main confirm (shikigami records button appears)')
                     break
-            elif self.appear(self.I_LOGIN_SCROOLL_OPEN, interval=0.2):
-                if confirm_timer.reached():
-                    logger.info('Login to main confirm (scroll open)')
-                    break
             else:
                 confirm_timer.reset()
             if self.appear(self.I_MAIN_GOTO_SHIKIGAMI_RECORDS, interval=0.5):
                 logger.info('Login success: shikigami records button appears')
-                login_success = True
-            elif self.appear(self.I_LOGIN_SCROOLL_OPEN, interval=0.5):
-                logger.info('Login success: scroll open')
                 login_success = True
             if self.appear(self.I_HARVEST_ZIDU, interval=1):
                 self.I_HARVEST_ZIDU.roi_front[0] -= 200

@@ -18,15 +18,6 @@
     "description": "爪印"
   },
   {
-    "itemName": "pet_happy",
-    "imageName": "pet_pet_happy.png",
-    "roiFront": "853,614,67,70",
-    "roiBack": "853,614,67,70",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "其乐融融"
-  },
-  {
     "itemName": "pet_feast",
     "imageName": "pet_pet_feast.png",
     "roiFront": "849,624,69,49",
@@ -34,15 +25,6 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "快速喂养"
-  },
-  {
-    "itemName": "pet_play",
-    "imageName": "pet_pet_play.png",
-    "roiFront": "788,500,75,75",
-    "roiBack": "788,500,75,75",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "玩耍"
   },
   {
     "itemName": "pet_feed",
@@ -61,14 +43,5 @@
     "method": "Template matching",
     "threshold": 0.65,
     "description": "跳过"
-  },
-  {
-    "itemName": "pet_exit",
-    "imageName": "pet_pet_exit.png",
-    "roiFront": "30,25,39,33",
-    "roiBack": "30,25,39,33",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "退出"
   }
 ]
