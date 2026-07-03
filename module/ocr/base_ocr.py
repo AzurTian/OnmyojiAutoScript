@@ -5,7 +5,7 @@ import time
 import cv2
 import numpy as np
 
-from ppocronnx.predict_system import BoxedResult
+from module.ocr.ppocr import BoxedResult
 from enum import Enum
 
 

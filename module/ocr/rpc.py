@@ -345,6 +345,10 @@ def shutdown_ocr_server(timeout: float = 2.0) -> bool:
 
 
 def run_ocr_server(host: str, port: int, settings: dict[str, Any] | None = None) -> None:
+    # Import onnxruntime BEFORE zerorpc initializes gevent.
+    # gevent's monkey-patching interferes with onnxruntime's C extension
+    # DLL initialization on Windows, causing ImportError.
+    import onnxruntime as _ort  # noqa: F401
     runtime = OcrRuntime(settings=settings)
     server = zerorpc.Server(runtime)
     try:
@@ -384,7 +388,7 @@ class ModelProxy:
     ):
         payload = pickle.dumps(image, protocol=4)
         results = self.client.detect_and_ocr(payload, drop_score, unclip_ratio, box_thresh, vertical)
-        from ppocronnx.predict_system import BoxedResult
+        from module.ocr.ppocr import BoxedResult
         return [
             BoxedResult(np.array(item["box"]), None, item["ocr_text"], item["score"])
             for item in results

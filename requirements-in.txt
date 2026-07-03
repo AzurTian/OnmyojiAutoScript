@@ -1,5 +1,5 @@
 # Image processing
-numpy==1.24.3
+numpy>=1.24.4,<2
 opencv-python==4.7.0.72
 
 # Device connection
@@ -11,7 +11,7 @@ psutil==6.1.1
 pywin32==306
 
 # OCR
-ppocr-onnx==0.0.3.9
+paddleocr>=3.0,<4.0
 cn2an==0.5.23
 
 # Web
@@ -25,7 +25,7 @@ pydantic==2.10.0
 
 # Utils
 rich==13.3.5
-pyyaml==6.0
+pyyaml==6.0.2
 tqdm==4.65.0
 anytree==2.8.0
 cryptography>=42.0.7
