@@ -1,7 +1,98 @@
+import os
+import time
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
+import cv2
 import numpy as np
 from paddleocr import PaddleOCR
+
+from module.logger import logger
+
+
+class OcrLogger:
+    """OCR 识别日志记录器。
+
+    每次 OCR 调用会保存：
+    - 识别图片到 ``log/ocr/images/<YYYY-MM-DD>/``
+    - 识别文本与置信度到 ``log/ocr/text/<YYYY-MM-DD>.txt``
+    """
+
+    LOG_DIR = Path("./log/ocr")
+    IMG_DIR = LOG_DIR / "images"
+    TXT_DIR = LOG_DIR / "text"
+
+    @classmethod
+    def _init_dirs(cls) -> None:
+        """确保 images/ 和 text/ 目录存在。"""
+        cls.IMG_DIR.mkdir(parents=True, exist_ok=True)
+        cls.TXT_DIR.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def _day_img_dir(cls, date_str: str) -> Path:
+        """返回并创建当日的图片子目录。"""
+        d = cls.IMG_DIR / date_str
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    @classmethod
+    def _log_file(cls, date_str: str) -> Path:
+        """返回当日文本日志文件路径。"""
+        return cls.TXT_DIR / f"{date_str}.txt"
+
+    @classmethod
+    def save(
+        cls,
+        image: np.ndarray,
+        method: str,
+        text: str,
+        score: float,
+        extra: str = "",
+    ) -> None:
+        """保存一次 OCR 识别日志。
+
+        Args:
+            image: 输入图片 (numpy array)。
+            method: 调用方法名，如 ``ocr_single_line`` 或 ``detect_and_ocr``。
+            text:   识别出的文本。
+            score:  置信度。
+            extra:  附加信息（如检测框数量等）。
+        """
+        cls._init_dirs()
+        now = datetime.now()
+        date_str = now.strftime("%Y-%m-%d")
+        ts = now.strftime("%H%M%S.%f")[:10]  # HHMMSS.ffffff
+
+        # 用序号代替文本作为图片名，避免中文乱码
+        # 在同秒内自增序号保证不重名
+        seq = getattr(cls, f"_seq_{ts}", 0)
+        setattr(cls, f"_seq_{ts}", seq + 1)
+        filename = f"{ts}_{seq:03d}.png"
+
+        # ---- 1. 保存图片到 images/ 目录 ----
+        img_dir = cls._day_img_dir(date_str)
+        img_path = img_dir / filename
+        try:
+            cv2.imwrite(str(img_path), image)
+        except Exception as e:
+            logger.warning(f"OCR log save image failed: {e}")
+
+        # ---- 2. 写文本日志到 text/ 目录 ----
+        log_path = cls._log_file(date_str)
+        try:
+            with open(log_path, "a", encoding="utf-8-sig") as f:
+                line = (
+                    f"{now.strftime('%H:%M:%S.%f')[:12]}"
+                    f" | {method}"
+                    f" | {text}"
+                    f" | {score:.6f}"
+                )
+                if extra:
+                    line += f" | {extra}"
+                f.write(line + "\n")
+        except Exception as e:
+            logger.warning(f"OCR log write failed: {e}")
 
 
 class BoxedResult:
@@ -68,10 +159,15 @@ class TextSystem:
         """Recognize a single line of text from a cropped image."""
         result = list(self._ocr.predict(img, use_textline_orientation=self._use_angle_cls))
         if not result or not result[0].get('rec_texts'):
+            OcrLogger.save(img, "ocr_single_line", "", 0.0, extra="no_text_detected")
             return "", 0.0
         page = result[0]
         if page['rec_texts']:
-            return page['rec_texts'][0], float(page['rec_scores'][0])
+            text = page['rec_texts'][0]
+            score = float(page['rec_scores'][0])
+            OcrLogger.save(img, "ocr_single_line", text, score)
+            return text, score
+        OcrLogger.save(img, "ocr_single_line", "", 0.0, extra="no_text_detected")
         return "", 0.0
 
     def detect_and_ocr(self, img: np.ndarray, drop_score=0.5, unclip_ratio=None, box_thresh=None):
@@ -89,9 +185,11 @@ class TextSystem:
 
         # If text_recognizer is monkey-patched, use custom recognition pipeline
         if self.text_recognizer is not None:
-            return self._detect_and_ocr_custom_rec(
+            results = self._detect_and_ocr_custom_rec(
                 img, drop_score, unclip_ratio, box_thresh
             )
+            self._log_detect_results(img, results)
+            return results
 
         result = list(self._ocr.predict(
             img,
@@ -99,9 +197,23 @@ class TextSystem:
             **kwargs,
         ))
         if not result:
+            OcrLogger.save(img, "detect_and_ocr", "", 0.0, extra="no_result")
             return []
         page = result[0]
-        return self._build_results(page, drop_score)
+        items = self._build_results(page, drop_score)
+        self._log_detect_results(img, items)
+        return items
+
+    def _log_detect_results(self, img: np.ndarray, items: list) -> None:
+        """记录 detect_and_ocr 的全部识别结果。"""
+        if not items:
+            OcrLogger.save(img, "detect_and_ocr", "", 0.0, extra="no_text_found")
+            return
+        # 把所有识别文本合并记录，便于查看
+        all_text = " | ".join(f"{r.ocr_text}({r.score:.3f})" for r in items)
+        extra = f"count={len(items)} | texts=[{all_text}]"
+        # 只保存第一张图 + 汇总信息，避免重复存图
+        OcrLogger.save(img, "detect_and_ocr", items[0].ocr_text, items[0].score, extra=extra)
 
     def _detect_and_ocr_custom_rec(self, img, drop_score, unclip_ratio, box_thresh):
         """Run detection with OCR pipeline, then use custom recognizer."""
@@ -122,11 +234,13 @@ class TextSystem:
             **kwargs,
         ))
         if not result:
+            OcrLogger.save(img, "detect_and_ocr(custom)", "", 0.0, extra="no_result")
             return []
         page = result[0]
 
         dt_polys = page.get('dt_polys', []) or []
         if not dt_polys:
+            OcrLogger.save(img, "detect_and_ocr(custom)", "", 0.0, extra="no_polys")
             return []
 
         # Crop each detected region from the original image
@@ -152,6 +266,7 @@ class TextSystem:
                 if score >= drop_score:
                     box = np.array(poly, dtype=np.float32)
                     items.append(BoxedResult(box, None, text, score))
+        self._log_detect_results(img, items)
         return items
 
     @staticmethod
