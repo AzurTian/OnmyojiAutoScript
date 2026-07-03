@@ -139,9 +139,9 @@ class TextSystem:
         self._use_angle_cls = use_angle_cls
 
         self._ocr = PaddleOCR(
-            text_detection_model_name='PP-OCRv6_medium_det' if det_model_path is None else None,
+            text_detection_model_name='PP-OCRv6_tiny_det' if det_model_path is None else None,
             text_detection_model_dir=det_model_path,
-            text_recognition_model_name='PP-OCRv6_medium_rec' if rec_model_path is None else None,
+            text_recognition_model_name='PP-OCRv6_tiny_rec' if rec_model_path is None else None,
             text_recognition_model_dir=rec_model_path,
             engine='onnxruntime',
             use_doc_orientation_classify=False,
