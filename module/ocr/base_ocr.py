@@ -220,7 +220,7 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
-        image = enlarge_canvas(image)
+        # image = enlarge_canvas(image)
 
         # ocr
         boxed_results: list[BoxedResult] = self.model.detect_and_ocr(image, **kwargs)
@@ -300,7 +300,7 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
-        image = enlarge_canvas(image)
+        # image = enlarge_canvas(image)
         # ocr
         boxed_results: list[BoxedResult] = self.model.detect_and_ocr(image)
         results = ''
