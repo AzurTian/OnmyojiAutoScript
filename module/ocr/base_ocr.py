@@ -175,7 +175,7 @@ class BaseCor:
             result = ""
         # after proces
         result = self.after_process(result)
-        # logger.info("ocr result score: %s%s" % (result,score))
+        logger.info("ocr result score: %s%s" % (result,score))
         logger.attr(name='%s %ss' % (self.name, float2str(time.time() - start_time)),
                     text=f'[{result}]')
         return result
@@ -205,7 +205,7 @@ class BaseCor:
             result = ""
         # after proces
         result = self.after_process(result)
-        # logger.info("ocr result score: %s" % score)
+        logger.info("ocr result score: %s" % score)
         logger.attr(name='%s %ss' % (self.name, float2str(time.time() - start_time)),
                     text=f'[{result}]')
         return result
@@ -220,14 +220,14 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
-        # image = enlarge_canvas(image)
+        image = enlarge_canvas(image)
 
         # ocr
         boxed_results: list[BoxedResult] = self.model.detect_and_ocr(image, **kwargs)
         results = []
         # after proces
         for result in boxed_results:
-            # logger.info("ocr result score: %s" % result.score)
+            logger.info("ocr result score: %s" % result.score)
             if result.score < self.score:
                 continue
             result.ocr_text = self.after_process(result.ocr_text)
@@ -300,13 +300,13 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
-        # image = enlarge_canvas(image)
+        image = enlarge_canvas(image)
         # ocr
         boxed_results: list[BoxedResult] = self.model.detect_and_ocr(image)
         results = ''
         # after proces
         for result in boxed_results:
-            # logger.info("ocr result score: %s" % result.score)
+            logger.info("ocr result score: %s" % result.score)
             if result.score < self.score:
                 continue
             results += result.ocr_text
