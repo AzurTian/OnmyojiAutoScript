@@ -169,6 +169,7 @@ class BaseCor:
         # pre process
         start_time = time.time()
         image = self.pre_process(image)
+        image = enlarge_canvas(image)
         # ocr
         result, score = self.model.ocr_single_line(image)
         if score < self.score:
@@ -191,6 +192,7 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
+        image = enlarge_canvas(image)
         # ocr
         result, score = self.model.ocr_single_line(image)
         contains_digit = any(char.isdigit() for char in result)

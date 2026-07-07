@@ -156,31 +156,17 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, SecretAssets):
             :param roi:
             :return:
             """
-            # print(f'检测到的未通过ROI: {roi}')
-            # print(f'检测到的勾玉数量ROI: {ocr_target.roi}')
             jade_num = ocr_target.ocr(self.device.image)
-            if isinstance(jade_num, str):
-                logger.warning(f'OCR failed, try again {jade_num}')
-                return None
-            elif not isinstance(jade_num, int):
-                logger.warning(f'OCR failed, try again {jade_num}')
-                return None
-            if jade_num < 7:
-                # 第一个的时候可能是没有检测到
-                gold_number = self.O_SE_GOLD.ocr(self.device.image)
-                if isinstance(gold_number, int) and (gold_number == 10000 or gold_number == 18000):
-                    logger.info(f'No find jade number, but find gold number {gold_number}')
-                    return 1
-                return None
-            elif jade_num > 70:
-                logger.warning(f'OCR failed, try again {jade_num}')
-                return None
-            # 勾玉数量 = 层数 * 7
-            try:
-                lr = jade_num // 7
-                return lr
-            except TypeError:
-                logger.warning(f'OCR failed, try again {jade_num}')
+            if jade_num != 0:
+                return jade_num / 7
+            else:
+                _, y, _, _ = roi
+                if y > self.O_SE_LAYER_10.roi[1]:
+                    return 10
+                elif y > self.O_SE_LAYER_9.roi[1]:
+                    return 9
+                elif y > self.O_SE_LAYER_8.roi[1]:
+                    return 8
                 return None
 
         if screenshot:
@@ -204,18 +190,12 @@ class ScriptTask(GameUi, GeneralBattle, SwitchSoul, SecretAssets):
             if last_text_pos != (0, 0, 0, 0):
                 # 如果是后面找得到
                 layer = confirm_layer(self.O_SE_JADE, last_text_pos)
-
-                # 有个bug 十层的发现不了
-                if not layer and last_text_pos[1] > 520:
-                    layer = 10
-
                 if layer:
                     self.C_SE_CLICK_LAYER.roi_front = last_text_pos
                     self.click(self.C_SE_CLICK_LAYER, interval=1)
                     return layer
                 else:
                     return None
-
             else:
                 # 如果不是就一直滑动
                 self.swipe(self.S_SE_DOWN_SEIPE, interval=3)
