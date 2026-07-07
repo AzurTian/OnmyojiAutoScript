@@ -25,28 +25,12 @@ def enlarge_canvas(image):
     Enlarge image into a square fill with black background. In the structure of PaddleOCR,
     image with w:h=1:1 is the best while 3:1 rectangles takes three times as long.
     Also enlarge into the integer multiple of 32 cause PaddleOCR will downscale images to 1/32.
-
-    改进逻辑：
-    1. 将宽高分别补到最近的 32 的倍数
-    2. 在四周各加上 32 像素的黑边
     """
     height, width = image.shape[:2]
-
-    # 1. 宽高分别补到最近的 32 的倍数
-    new_width = int((width + 31) // 32 * 32)
-    new_height = int((height + 31) // 32 * 32)
-
-    # 2. 四周各加 32px 黑边（下和右同时包含补32倍数的余量）
-    pad_top = 32
-    pad_bottom = 32 + (new_height - height)
-    pad_left = 32
-    pad_right = 32 + (new_width - width)
-
-    image = cv2.copyMakeBorder(
-        image,
-        pad_top, pad_bottom, pad_left, pad_right,
-        borderType=cv2.BORDER_CONSTANT, value=(0, 0, 0)
-    )
+    length = int(max(width, height) // 32 * 32 + 32)
+    border = (0, length - height, 0, length - width)
+    if sum(border) > 0:
+        image = cv2.copyMakeBorder(image, *border, borderType=cv2.BORDER_CONSTANT, value=(0, 0, 0))
     return image
 
 
@@ -249,9 +233,6 @@ class BaseCor:
             if result.score < self.score:
                 continue
             result.ocr_text = self.after_process(result.ocr_text)
-            # enlarge_canvas 在四周加了 32px 黑边，需要把坐标偏移回去
-            result.box[:, 0] -= 32  # x
-            result.box[:, 1] -= 32  # y
             results.append(result)
         if logDisplay:
             logger.attr(name='%s %ss' % (self.name, float2str(time.time() - start_time)),
