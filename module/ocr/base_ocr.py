@@ -169,7 +169,7 @@ class BaseCor:
         # pre process
         start_time = time.time()
         image = self.pre_process(image)
-        image = enlarge_canvas(image)
+        # image = enlarge_canvas(image)
         # ocr
         result, score = self.model.ocr_single_line(image)
         if score < self.score:
@@ -222,7 +222,7 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
-        image = enlarge_canvas(image)
+        # image = enlarge_canvas(image)
 
         # ocr
         boxed_results: list[BoxedResult] = self.model.detect_and_ocr(image, **kwargs)
@@ -251,7 +251,7 @@ class BaseCor:
         else:
             return self.keyword == result
 
-    def filter(self, boxed_results: list[BoxedResult], keyword: str=None) -> list or None:
+    def filter(self, boxed_results: list[BoxedResult], keyword: str=None) -> list:
         """
         使用ocr获取结果后和keyword进行匹配. 返回匹配的index list
         :param keyword: 如果不指定默认适用对象的keyword
@@ -302,7 +302,7 @@ class BaseCor:
         start_time = time.time()
         image = self.crop(image, self.roi)
         image = self.pre_process(image)
-        image = enlarge_canvas(image)
+        # image = enlarge_canvas(image)
         # ocr
         boxed_results: list[BoxedResult] = self.model.detect_and_ocr(image)
         results = ''
