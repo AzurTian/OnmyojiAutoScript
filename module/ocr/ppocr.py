@@ -49,23 +49,25 @@ class OcrLogger:
         text: str,
         score: float,
         extra: str = "",
+        *,
+        pairs: list[tuple[str, float]] | None = None,
     ) -> None:
         """保存一次 OCR 识别日志。
 
         Args:
             image: 输入图片 (numpy array)。
             method: 调用方法名，如 ``ocr_single_line`` 或 ``detect_and_ocr``。
-            text:   识别出的文本。
-            score:  置信度。
-            extra:  附加信息（如检测框数量等）。
+            text:   识别出的文本（首个文本）。
+            score:  置信度（首个文本的置信度）。
+            extra:  附加信息（已弃用，保留兼容）。
+            pairs:  所有 (text, score) 对的列表，展开写入日志。
         """
         cls._init_dirs()
         now = datetime.now()
         date_str = now.strftime("%Y-%m-%d")
-        ts = now.strftime("%H%M%S.%f")[:10]  # HHMMSS.ffffff
+        ts = now.strftime("%H%M%S") + now.strftime("%f")[:3]  # HHMMSSfff
 
-        # 用序号代替文本作为图片名，避免中文乱码
-        # 在同秒内自增序号保证不重名
+        # 用序号作为图片名，避免中文乱码
         seq = getattr(cls, f"_seq_{ts}", 0)
         setattr(cls, f"_seq_{ts}", seq + 1)
         filename = f"{ts}_{seq:03d}.png"
@@ -80,16 +82,25 @@ class OcrLogger:
 
         # ---- 2. 写文本日志到 text/ 目录 ----
         log_path = cls._log_file(date_str)
+        parts = [
+            now.strftime("%Y-%m-%d %H:%M:%S.%f")[:23],   # 日期时间
+            str(cls.IMG_DIR / date_str / filename),       # 图片相对路径
+            method,                                        # 识别模式
+        ]
+        # 展开所有 (text, score) 对
+        if pairs:
+            for t, s in pairs:
+                parts.append(str(t))
+                parts.append(f"{s:.6f}")
+        else:
+            # 兼容旧调用: 只有单个 text/score
+            parts.append(str(text))
+            parts.append(f"{score:.6f}")
+
+        line = " | ".join(parts)
+
         try:
             with open(log_path, "a", encoding="utf-8-sig") as f:
-                line = (
-                    f"{now.strftime('%H:%M:%S.%f')[:12]}"
-                    f" | {method}"
-                    f" | {text}"
-                    f" | {score:.6f}"
-                )
-                if extra:
-                    line += f" | {extra}"
                 f.write(line + "\n")
         except Exception as e:
             logger.warning(f"OCR log write failed: {e}")
@@ -207,13 +218,11 @@ class TextSystem:
     def _log_detect_results(self, img: np.ndarray, items: list) -> None:
         """记录 detect_and_ocr 的全部识别结果。"""
         if not items:
-            OcrLogger.save(img, "detect_and_ocr", "", 0.0, extra="no_text_found")
+            OcrLogger.save(img, "detect_and_ocr", "", 0.0)
             return
-        # 把所有识别文本合并记录，便于查看
-        all_text = " | ".join(f"{r.ocr_text}({r.score:.3f})" for r in items)
-        extra = f"count={len(items)} | texts=[{all_text}]"
-        # 只保存第一张图 + 汇总信息，避免重复存图
-        OcrLogger.save(img, "detect_and_ocr", items[0].ocr_text, items[0].score, extra=extra)
+        pairs = [(r.ocr_text, r.score) for r in items]
+        # 只存第一张图 + 展开所有 text/score 对
+        OcrLogger.save(img, "detect_and_ocr", items[0].ocr_text, items[0].score, pairs=pairs)
 
     def _detect_and_ocr_custom_rec(self, img, drop_score, unclip_ratio, box_thresh):
         """Run detection with OCR pipeline, then use custom recognizer."""
