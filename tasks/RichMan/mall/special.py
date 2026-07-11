@@ -22,7 +22,9 @@ class Special(Buy, MallNavbar):
         if not con.enable:
             logger.info('Special room is not enable')
             return
-        self._enter_special()
+        if not self._enter_special():
+            logger.warning('Enter special mall failed')
+            return
         # 向下滑找到购买的物品
         totem_bought, medium_bought, low_bought = False, False, False
         while 1:

@@ -50,6 +50,7 @@ CLAUDE.md
 openspec/
 .agents/
 skills-lock.json
+.codegraph/
 
 
 # Created by .ignore support plugin (hsz.mobi)

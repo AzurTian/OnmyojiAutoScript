@@ -1,0 +1,33 @@
+{
+  "name": "rm_navbar",
+  "direction": "vertical",
+  "type": "image",
+  "roiBack": "1178,88,60,531",
+  "description": "杂货铺侧边导航",
+  "list": [
+    {
+      "itemName": "special",
+      "roiFront": "1188,88,43,80"
+    },
+    {
+      "itemName": "duel",
+      "roiFront": "1186,191,43,80"
+    },
+    {
+      "itemName": "friendship",
+      "roiFront": "1187,291,43,80"
+    },
+    {
+      "itemName": "medal",
+      "roiFront": "1185,393,43,80"
+    },
+    {
+      "itemName": "charm",
+      "roiFront": "1189,495,43,80"
+    },
+    {
+      "itemName": "honor",
+      "roiFront": "1180,191,59,60"
+    }
+  ]
+}

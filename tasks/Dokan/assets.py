@@ -79,7 +79,7 @@ class DokanAssets:
 	# 馆主战等待中 
 	I_DOKAN_BOSS_WAITING = RuleImage(roi_front=(460,140,370,80), roi_back=(460,140,370,80), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_dokan_boss_waiting.png")
 	# 馆主战 等待 或 进行中时 在寮境中出现的馆主图标 
-	I_RYOU_DOKAN_MASTER_BATTLE = RuleImage(roi_front=(640,0,640,360), roi_back=(640,0,640,360), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_master_battle.png")
+	I_RYOU_DOKAN_MASTER_BATTLE = RuleImage(roi_front=(862,69,41,89), roi_back=(640,0,640,360), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_master_battle.png")
 	# 放弃突破 
 	I_DOKAN_ABANDONED_TOPPA = RuleImage(roi_front=(0,550,180,170), roi_back=(0,550,180,170), threshold=0.8, method="Template matching", file="./tasks/Dokan/res/res_ryou_dokan_abandoned_toppa.png")
 	# 放弃突破 确认按钮 

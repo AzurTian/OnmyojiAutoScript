@@ -32,7 +32,7 @@ class Guild(Buy, GameUi, RichManAssets):
         self.goto_page(page_guild_store)
         logger.info('Enter guild store success')
         time.sleep(0.5)
-        swipe_cnt, max_swipe = 0, random.randint(4, 6)
+        swipe_cnt, max_swipe = 0, random.randint(3, 5)
         mystery_ret, scrap_ret, skin_ret, gift_ret = False, False, False, False
         while swipe_cnt <= max_swipe:
             self.screenshot()

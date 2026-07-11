@@ -58,7 +58,7 @@ class RuleList:
         :param after:
         :return:
         """
-        center: tuple = (self.roi_back[0] + self.roi_back[2]) // 2, (self.roi_back[1] + self.roi_back[3]) // 2
+        center: tuple = self.roi_back[0] + self.roi_back[2] // 2, self.roi_back[1] + self.roi_back[3] // 2
         distance: int = self.size[1] * number if self.is_vertical else self.size[0] * number
         random_start: int = randint(- self.size[0] // 4, self.size[0] // 4) if self.is_vertical else randint(- self.size[1] // 4, self.size[1] // 4)
         random_end: int = randint(- self.size[0] // 4, self.size[0] // 4) if self.is_vertical else randint(- self.size[1] // 4, self.size[1] // 4)

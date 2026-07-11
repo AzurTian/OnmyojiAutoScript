@@ -72,6 +72,7 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
                 self.exp_100()
             self.close_buff()
         self.user_status = self._config.exploration_config.user_status
+        self.wait_start_time = datetime.now()  # 重置等待时间
 
     def post_process(self):
         self.goto_page(pages.page_exploration)

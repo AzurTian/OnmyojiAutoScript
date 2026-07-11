@@ -1,14 +1,5 @@
 [
   {
-    "itemName": "side_sure_special",
-    "imageName": "navbar_side_sure_special.png",
-    "roiFront": "1172,91,70,74",
-    "roiBack": "1172,91,70,74",
-    "method": "Template matching",
-    "threshold": 0.7,
-    "description": "特殊"
-  },
-  {
     "itemName": "side_check_special",
     "imageName": "navbar_side_check_special.png",
     "roiFront": "218,7,42,42",
@@ -16,15 +7,6 @@
     "method": "Template matching",
     "threshold": 0.7,
     "description": "特殊"
-  },
-  {
-    "itemName": "side_suer_honor",
-    "imageName": "navbar_side_suer_honor.png",
-    "roiFront": "1180,191,59,60",
-    "roiBack": "1150,159,103,132",
-    "method": "Template matching",
-    "threshold": 0.7,
-    "description": "荣誉"
   },
   {
     "itemName": "side_check_honor",
@@ -36,15 +18,6 @@
     "description": "荣誉"
   },
   {
-    "itemName": "side_sure_friends",
-    "imageName": "navbar_side_sure_friends.png",
-    "roiFront": "1190,287,43,52",
-    "roiBack": "1163,258,93,126",
-    "method": "Template matching",
-    "threshold": 0.7,
-    "description": "友情点"
-  },
-  {
     "itemName": "side_check_friends",
     "imageName": "navbar_side_check_friends.png",
     "roiFront": "924,8,39,43",
@@ -54,15 +27,6 @@
     "description": "友情点"
   },
   {
-    "itemName": "side_sure_medal",
-    "imageName": "navbar_side_sure_medal.png",
-    "roiFront": "1190,404,39,62",
-    "roiBack": "1156,352,112,128",
-    "method": "Template matching",
-    "threshold": 0.7,
-    "description": "勋章"
-  },
-  {
     "itemName": "side_check_medal",
     "imageName": "navbar_side_check_medal.png",
     "roiFront": "665,6,40,44",
@@ -70,15 +34,6 @@
     "method": "Template matching",
     "threshold": 0.7,
     "description": "勋章"
-  },
-  {
-    "itemName": "side_sure_charisma",
-    "imageName": "navbar_side_sure_charisma.png",
-    "roiFront": "1181,467,59,58",
-    "roiBack": "1158,445,101,142",
-    "method": "Template matching",
-    "threshold": 0.7,
-    "description": "魅力值"
   },
   {
     "itemName": "side_check_charisma",

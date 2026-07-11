@@ -173,7 +173,7 @@
   {
     "itemName": "ryou_dokan_master_battle",
     "imageName": "res_ryou_dokan_master_battle.png",
-    "roiFront": "640,0,640,360",
+    "roiFront": "862,69,41,89",
     "roiBack": "640,0,640,360",
     "method": "Template matching",
     "threshold": 0.8,
