@@ -173,7 +173,7 @@ class SixRealmsAssets:
 	# 有多少钱 
 	O_COIN_NUM = RuleOcr(roi=(1171,23,59,31), area=(1171,23,59,31), mode="Digit", method="Default", keyword="", name="coin_num")
 	# 剩余回合 
-	O_REMAIN_TURNS = RuleOcr(roi=(1071,229,67,28), area=(1071,229,67,28), mode="Single", method="Default", keyword="", name="remain_turns")
+	O_REMAIN_TURNS = RuleOcr(roi=(1066,227,176,31), area=(1066,227,176,31), mode="Single", method="Default", keyword="", name="remain_turns")
 	# 获取的额外钱币数量 
 	O_EXTRA_COIN_NUM = RuleOcr(roi=(591,331,109,101), area=(591,331,109,101), mode="Digit", method="Default", keyword="", name="extra_coin_num")
 	# 商店刷新次数 

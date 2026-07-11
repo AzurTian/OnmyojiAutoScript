@@ -10,8 +10,8 @@
   },
   {
     "itemName": "remain_turns",
-    "roiFront": "1071,229,67,28",
-    "roiBack": "1071,229,67,28",
+    "roiFront": "1066,227,176,31",
+    "roiBack": "1066,227,176,31",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
