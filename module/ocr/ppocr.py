@@ -51,17 +51,79 @@ class OcrLogger:
             extra:  附加信息（已弃用，保留兼容）。
             pairs:  所有 (text, score) 对的列表，展开写入日志。
         """
+LOW_CONF_THRESHOLD = 0.5  # 低于此阈值的图片会被保存
+
+class OcrLogger:
+    """OCR 识别日志记录器。
+
+    日志保存到 ``log/ocr/text/<YYYY-MM-DD>.txt``
+    置信度低于 0.5 的图片保存到 ``log/ocr/images/<YYYY-MM-DD>/``
+    """
+
+    LOG_DIR = Path("./log/ocr")
+    IMG_DIR = LOG_DIR / "images"
+    TXT_DIR = LOG_DIR / "text"
+
+    @classmethod
+    def _init_dirs(cls) -> None:
+        """确保 text/ 目录存在。"""
+        cls.TXT_DIR.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def _day_img_dir(cls, date_str: str) -> Path:
+        """返回并创建当日的图片子目录。"""
+        d = cls.IMG_DIR / date_str
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    @classmethod
+    def _log_file(cls, date_str: str) -> Path:
+        """返回当日文本日志文件路径。"""
+        return cls.TXT_DIR / f"{date_str}.txt"
+
+    @classmethod
+    def save(
+        cls,
+        image: np.ndarray,
+        method: str,
+        text: str,
+        score: float,
+        extra: str = "",
+        *,
+        pairs: list[tuple[str, float]] | None = None,
+    ) -> None:
+        """保存 OCR 识别日志。
+
+        Args:
+            image: 输入图片 (numpy array)。
+            method: 调用方法名。
+            text:   识别出的文本（首个文本）。
+            score:  置信度（首个文本的置信度）。
+            extra:  附加信息（已弃用）。
+            pairs:  所有 (text, score) 对列表。
+        """
         cls._init_dirs()
         now = datetime.now()
         date_str = now.strftime("%Y-%m-%d")
+        ts = now.strftime("%H%M%S") + now.strftime("%f")[:3]
 
-        # 写文本日志到 text/ 目录
+        # 置信度低时保存图片
+        if score < LOW_CONF_THRESHOLD:
+            seq = getattr(cls, f"_seq_{ts}", 0)
+            setattr(cls, f"_seq_{ts}", seq + 1)
+            filename = f"{ts}_{seq:03d}.png"
+            img_dir = cls._day_img_dir(date_str)
+            try:
+                cv2.imwrite(str(img_dir / filename), image)
+            except Exception as e:
+                logger.warning(f"OCR low-conf image save failed: {e}")
+
+        # 写文本日志
         log_path = cls._log_file(date_str)
         parts = [
-            now.strftime("%Y-%m-%d %H:%M:%S.%f")[:23],   # 日期时间
-            method,                                        # 识别模式
+            now.strftime("%Y-%m-%d %H:%M:%S.%f")[:23],
+            method,
         ]
-        # 展开所有 (text, score) 对
         if pairs:
             for t, s in pairs:
                 parts.append(str(t))
@@ -71,15 +133,6 @@ class OcrLogger:
             parts.append(f"{score:.6f}")
 
         line = " | ".join(parts)
-
-        try:
-            with open(log_path, "a", encoding="utf-8-sig") as f:
-                f.write(line + "\n")
-        except Exception as e:
-            logger.warning(f"OCR log write failed: {e}")
-
-
-class BoxedResult:
     """Compatible with ppocronnx.predict_system.BoxedResult"""
     box: np.ndarray
     text_img: Optional[np.ndarray] = None
@@ -123,9 +176,9 @@ class TextSystem:
         self._use_angle_cls = use_angle_cls
 
         self._ocr = PaddleOCR(
-            text_detection_model_name='PP-OCRv6_medium_det' if det_model_path is None else None,
+            text_detection_model_name='PP-OCRv6_tiny_det' if det_model_path is None else None,
             text_detection_model_dir=det_model_path,
-            text_recognition_model_name='PP-OCRv6_medium_rec' if rec_model_path is None else None,
+            text_recognition_model_name='PP-OCRv6_tiny_rec' if rec_model_path is None else None,
             text_recognition_model_dir=rec_model_path,
             engine='onnxruntime',
             use_doc_orientation_classify=False,
