@@ -12,29 +12,18 @@ from module.logger import logger
 
 
 class OcrLogger:
-    """OCR 识别日志记录器。
+    """OCR 识别日志记录器（仅保存文字日志，不保存图片）。
 
-    每次 OCR 调用会保存：
-    - 识别图片到 ``log/ocr/images/<YYYY-MM-DD>/``
-    - 识别文本与置信度到 ``log/ocr/text/<YYYY-MM-DD>.txt``
+    日志保存到 ``log/ocr/text/<YYYY-MM-DD>.txt``
     """
 
     LOG_DIR = Path("./log/ocr")
-    IMG_DIR = LOG_DIR / "images"
     TXT_DIR = LOG_DIR / "text"
 
     @classmethod
     def _init_dirs(cls) -> None:
-        """确保 images/ 和 text/ 目录存在。"""
-        cls.IMG_DIR.mkdir(parents=True, exist_ok=True)
+        """确保 text/ 目录存在。"""
         cls.TXT_DIR.mkdir(parents=True, exist_ok=True)
-
-    @classmethod
-    def _day_img_dir(cls, date_str: str) -> Path:
-        """返回并创建当日的图片子目录。"""
-        d = cls.IMG_DIR / date_str
-        d.mkdir(parents=True, exist_ok=True)
-        return d
 
     @classmethod
     def _log_file(cls, date_str: str) -> Path:
@@ -52,7 +41,7 @@ class OcrLogger:
         *,
         pairs: list[tuple[str, float]] | None = None,
     ) -> None:
-        """保存一次 OCR 识别日志。
+        """保存 OCR 识别日志（仅文字，不保存图片）。
 
         Args:
             image: 输入图片 (numpy array)。
@@ -65,26 +54,11 @@ class OcrLogger:
         cls._init_dirs()
         now = datetime.now()
         date_str = now.strftime("%Y-%m-%d")
-        ts = now.strftime("%H%M%S") + now.strftime("%f")[:3]  # HHMMSSfff
 
-        # 用序号作为图片名，避免中文乱码
-        seq = getattr(cls, f"_seq_{ts}", 0)
-        setattr(cls, f"_seq_{ts}", seq + 1)
-        filename = f"{ts}_{seq:03d}.png"
-
-        # ---- 1. 保存图片到 images/ 目录 ----
-        img_dir = cls._day_img_dir(date_str)
-        img_path = img_dir / filename
-        try:
-            cv2.imwrite(str(img_path), image)
-        except Exception as e:
-            logger.warning(f"OCR log save image failed: {e}")
-
-        # ---- 2. 写文本日志到 text/ 目录 ----
+        # 写文本日志到 text/ 目录
         log_path = cls._log_file(date_str)
         parts = [
             now.strftime("%Y-%m-%d %H:%M:%S.%f")[:23],   # 日期时间
-            str(cls.IMG_DIR / date_str / filename),       # 图片相对路径
             method,                                        # 识别模式
         ]
         # 展开所有 (text, score) 对
@@ -93,7 +67,6 @@ class OcrLogger:
                 parts.append(str(t))
                 parts.append(f"{s:.6f}")
         else:
-            # 兼容旧调用: 只有单个 text/score
             parts.append(str(text))
             parts.append(f"{score:.6f}")
 
