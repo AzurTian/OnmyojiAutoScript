@@ -36,15 +36,14 @@ QIJIAOSHAN_CONFIG = {
     'shikigami_positions': {
         '薰': 1,   # 薰
         '白狼': 2,   # 白狼
-        '御馔津': 3,  # 御馔津
+        '思金神': 3,  # 思金神
         '小松丸': 4,   # 小松丸
         '一目连': 5,   # 一目连
-        '寻森小鹿男': 6,   # 寻森小鹿男
+        '凤凰火': 6,   # 凤凰火
         '萤草': 7,   # 萤草
-        '山风': 8,   # 山风
-        '梦山白藏主': 9,   # 梦山白藏主
+        '寻森小鹿男': 8,   # 寻森小鹿男
+        '山风': 10,   # 山风
     },
-    'hakuzosu_protect_position': 1,
 }
 
 
@@ -88,3 +87,44 @@ DAJIANGSHAN_CONFIG = {
 
 
 DAJIANGSHAN = build_lineup_strategy(DAJIANGSHAN_CONFIG)
+
+
+HUYAO_CONFIG = {
+    'key': 'huyao',
+    'display_name': '狐妖',
+    'shikigami_positions': {
+        '青行灯': 1,
+        '烬天玉藻前': 2,
+        '梦山白藏主': 3,
+        '妖狐': 4,
+        '本真三尾狐': 5,
+        '葛叶': 6,
+        '御馔津': 7,
+        '妖刀姬': 8,
+    },
+    'hakuzosu_protect_position': 1,
+}
+
+
+HUYAO = build_lineup_strategy(HUYAO_CONFIG)
+
+
+MINGFU_CONFIG = {
+    'key': 'mingfu',
+    'display_name': '冥府',
+    'shikigami_positions': {
+        '青行灯': 1,
+        '阎魔': 2,
+        '夜叉': 3,
+        '鬼使黑': 4,
+        '黑童子': 5,
+        '判官': 6,
+        '花鸟卷': 7,
+        '鬼使白': 8,
+        '白童子': 10,
+    },
+    'hakuzosu_protect_position': 1,
+}
+
+
+MINGFU = build_lineup_strategy(MINGFU_CONFIG)

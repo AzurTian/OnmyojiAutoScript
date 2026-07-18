@@ -63,33 +63,6 @@
     "description": ""
   },
   {
-    "itemName": "card_1",
-    "imageName": "c_card_1.png",
-    "roiFront": "614,552,27,26",
-    "roiBack": "179,540,957,158",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "一星手牌标志"
-  },
-  {
-    "itemName": "card_2",
-    "imageName": "c_card_2.png",
-    "roiFront": "565,552,27,26",
-    "roiBack": "179,540,957,158",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "二星手牌标志"
-  },
-  {
-    "itemName": "card_3",
-    "imageName": "c_card_3.png",
-    "roiFront": "614,552,27,26",
-    "roiBack": "179,540,957,158",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "三星手牌标志"
-  },
-  {
     "itemName": "use_soul",
     "imageName": "c_use_soul.png",
     "roiFront": "1005,144,172,47",
@@ -202,6 +175,15 @@
     "imageName": "c_shikigami_specifics.png",
     "roiFront": "1215,106,44,46",
     "roiBack": "1215,106,44,46",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "check_market",
+    "imageName": "c_check_market.png",
+    "roiFront": "1206,319,35,31",
+    "roiBack": "1206,319,35,31",
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""

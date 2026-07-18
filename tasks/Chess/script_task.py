@@ -21,6 +21,7 @@ from tasks.Chess.lineup import (
     LINEUP_REGISTRY as REGISTERED_LINEUP_REGISTRY,
     resolve_lineup_key,
 )
+from tasks.Chess.shikigami_catalog import SHIKIGAMI_BY_ROMAJI
 from tasks.Chess.press_and_drag import Press_and_Drag
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.GameUi.game_ui import GameUi
@@ -32,7 +33,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
     conf: Chess = None
     HAND_AREA = (179, 540, 957, 158)
-    HAND_TEMPLATE_THRESHOLD = 0.8
+    HAND_TEMPLATE_THRESHOLD = 0.7
+    HAND_DEPLOY_TEMPLATE_THRESHOLD = 0.7
+    HAND_DEPLOY_CONFIRM_FRAMES = 1
     SHOP_TEMPLATE_THRESHOLD = 0.7
     SHOP_GLOW_TEMPLATE_THRESHOLD = 0.58
     HAND_DEPLOY_WAIT = 0.6
@@ -41,7 +44,6 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     HAND_CLEANUP_CLEAN_CONFIRM_FRAMES = 3
     HAND_CLEANUP_REFLOW_WAIT = 1.0
     HAND_SELL_WAIT = 0.6
-    POST_BATTLE_OR_HYAKKI_WAIT_RANGE = (3.0, 5.0)
     BOARD_RECALL_INTERVAL = 0.03
     BOARD_RECALL_SETTLE_WAIT = 0.6
     BOARD_RECALL_RETRY_WAIT = 0.2
@@ -49,15 +51,8 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     # 系统自动上阵优先占用棋盘右侧 11、12、9、10 号位。百鬼结束后
     # 只需要依次回收这些候选格；若 9 号位由脚本亲自部署，则保留该格。
     BOARD_RECALL_POSITIONS = (11, 12, 9, 10)
-    # c_card_1/2/3.png 分别是一至三星手牌的左上角标志；完整卡框
-    # 从标志左上角向右下扩展 81x138 像素。
-    HAND_CARD_SIZE = (81, 138)
-    HAND_CARD_MARKER_DEDUP_DISTANCE = 12
-    BOARD_STAR_ROI_OFFSET = (-75, -105, 70, 70)
-    BOARD_STAR_SCALES = (1.10, 1.15, 1.20, 1.25)
-    BOARD_STAR_THRESHOLD = 0.65
-    SET_JADE_EDGE_THRESHOLD = 0.035
-    SET_JADE_STD_THRESHOLD = 18.0
+    # c_card_1/2/3.png 专用于检测棋盘式神头顶的三种勾玉颜色。
+    BOARD_OCCUPANCY_TEMPLATE_THRESHOLD = 0.70
     ROUND_CONFIRM_FRAMES = 2
     RESULT_EMPTY_CONFIRM_FRAMES = 3
     ALIVE_PLAYERS_CONFIRM_FRAMES = 2
@@ -78,9 +73,6 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     BUFF_SELECT_RETRY_INTERVAL = 0.5
     EXPERIENCE_COST = 4
     SHOP_REFRESH_COST = 2
-    ECONOMY_RESERVE_LEVEL_1_TO_5 = 35
-    ECONOMY_RESERVE_LEVEL_6_TO_7 = 25
-    ECONOMY_RESERVE_LEVEL_8 = 15
     HAKUZOSU_PROTECT_NAME = 'hakuzosu_protect'
     HAKUZOSU_PROTECT_DISPLAY_NAME = '守护之印'
     HAKUZOSU_PROTECT_IMAGE = 'c/c_hakuzosu_protect.png'
@@ -169,6 +161,49 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         )
         return strategy
 
+    def _shikigami_display_name(self, name: str | None) -> str:
+        """把内部罗马音转换成日志中更易读的中文名。"""
+        if not name:
+            return '未知'
+        strategy_config = self.get_lineup_strategy()['shikigami'].get(name)
+        if strategy_config is not None:
+            return strategy_config.get('display_name', name)
+        entry = SHIKIGAMI_BY_ROMAJI.get(name)
+        return entry.chinese_name if entry is not None else str(name)
+
+    def _hand_shikigami_summary(self) -> list[str]:
+        """汇总当前手牌中的式神，仅用于每回合摘要日志。"""
+        names = []
+        for card_roi in self._hand_card_rois():
+            result = self.classify_hand_card(card_roi)
+            if result['type'] != 'shikigami':
+                continue
+            names.append(self._shikigami_display_name(result['name']))
+        return names
+
+    def _shop_shikigami_summary(self) -> list[str]:
+        """汇总当前商店五格中已识别出的式神。"""
+        names = []
+        for _, click_rule in self._shop_slots():
+            matched = self._match_shop_shikigami_avatar(
+                click_rule,
+                rules=self.all_shikigami_shop_rules,
+            )
+            names.append(
+                self._shikigami_display_name(matched['name'])
+                if matched is not None
+                else '空/未识别'
+            )
+        return names
+
+    @staticmethod
+    def _soul_category_display(category: str | None) -> str:
+        if category == 'attack':
+            return '输出'
+        if category == 'functional':
+            return '功能'
+        return str(category or '未知')
+
     @property
     def shikigami_deploy_positions(self) -> dict[str, int]:
         return {
@@ -208,13 +243,28 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             )
             rules.append((name, rule))
 
-        logger.info(f'Loaded {len(rules)} Chess {folder} hand templates')
+        logger.debug(f'Loaded {len(rules)} Chess {folder} hand templates')
         return rules
 
     @cached_property
     def shikigami_hand_rules(self) -> list[tuple[str, RuleImage]]:
         """式神资源大全；用于通用手牌分类，不代表当前阵容会使用。"""
         return self._load_hand_template_folder('shikigami/card', prefix='card_')
+
+    @cached_property
+    def board_occupancy_rules(self) -> tuple[RuleImage, ...]:
+        """直接加载三种场上勾玉；不依赖 assets/json 注册项。"""
+        template_dir = Path(__file__).resolve().parent / 'c'
+        return tuple(
+            RuleImage(
+                roi_front=(0, 0, 1, 1),
+                roi_back=(0, 0, 1, 1),
+                threshold=self.BOARD_OCCUPANCY_TEMPLATE_THRESHOLD,
+                method=RuleImage.METHOD_TEMPLATE_MATCH,
+                file=(template_dir / f'c_card_{index}.png').as_posix(),
+            )
+            for index in range(1, 4)
+        )
 
     def _load_strategy_shikigami_rules(
         self,
@@ -252,7 +302,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             image_field='hand_images',
             threshold=self.HAND_TEMPLATE_THRESHOLD,
         )
-        logger.info(
+        logger.debug(
             f'Loaded {len(rules)} active Chess lineup hand templates'
         )
         return rules
@@ -280,7 +330,27 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             image_field='shop_images',
             threshold=self.SHOP_TEMPLATE_THRESHOLD,
         )
-        logger.info(f'Loaded {len(rules)} Chess shop avatar templates')
+        logger.debug(f'Loaded {len(rules)} Chess shop avatar templates')
+        return rules
+
+    @cached_property
+    def all_shikigami_shop_rules(self) -> list[tuple[str, RuleImage]]:
+        """全式神商店模板；只用于日志汇总，不参与购买决策。"""
+        template_dir = Path(__file__).resolve().parent / 'shikigami/store'
+        rules: list[tuple[str, RuleImage]] = []
+        for file in sorted(template_dir.glob('store_*.png')):
+            name = file.stem[len('store_'):]
+            rules.append((
+                name,
+                RuleImage(
+                    roi_front=(self.HAND_AREA[0], self.HAND_AREA[1], 1, 1),
+                    roi_back=self.HAND_AREA,
+                    threshold=self.SHOP_TEMPLATE_THRESHOLD,
+                    method=RuleImage.METHOD_TEMPLATE_MATCH,
+                    file=file.as_posix(),
+                ),
+            ))
+        logger.debug(f'Loaded {len(rules)} all Chess shop avatar templates')
         return rules
 
     @cached_property
@@ -398,14 +468,14 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     - original_center_x
                 ) > 45
             ):
-                logger.info(
+                logger.debug(
                     'Protect unknown Chess hand card: '
                     'card position changed during confirmation'
                 )
                 return None
             soul = self._soul_match_in_card(current_roi)
             if soul is not None:
-                logger.warning(
+                logger.debug(
                     'Protect Chess soul hand card from unknown-card sale: '
                     f'name={soul["text"]}, score={soul["score"]:.3f}, '
                     f'confirmation={confirmation}'
@@ -413,7 +483,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 return None
             protect = self._hakuzosu_protect_match_in_card(current_roi)
             if protect is not None:
-                logger.warning(
+                logger.debug(
                     'Protect Chess Hakuzosu protect card from unknown-card '
                     f'sale: score={protect["score"]:.3f}, '
                     f'confirmation={confirmation}'
@@ -421,21 +491,21 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 return None
             latest = self.classify_hand_card(current_roi)
             if latest['type'] != 'unknown':
-                logger.info(
+                logger.debug(
                     'Protect Chess hand card after repeated classification: '
                     f'type={latest["type"]}, name={latest["name"]}'
                 )
                 return None
             possible = self._possible_lineup_shikigami(current_roi)
             if possible is not None:
-                logger.warning(
+                logger.debug(
                     'Protect possible lineup Chess hand card from sale: '
                     f'name={possible["name"]}, '
                     f'score={possible["score"]:.3f}, '
                     f'confirmation={confirmation}'
                 )
                 return None
-            logger.info(
+            logger.debug(
                 f'Chess unknown hand card confirmation '
                 f'{confirmation}/{self.UNKNOWN_SELL_CONFIRM_FRAMES}: '
                 f'position={latest["position"]}'
@@ -465,92 +535,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'Chess board jade area is not configured: {set_index}'
             ) from exc
 
-    @staticmethod
-    def _hand_card_star_at(
-        position: tuple[int, int],
-        hand_cards: list[dict],
-    ) -> int | None:
-        """按横坐标把式神头像匹配映射到对应手牌星级框。"""
-        card = next((
-            item
-            for item in hand_cards
-            if (
-                item['roi'][0] - 8
-                <= position[0]
-                <= item['roi'][0] + item['roi'][2] + 8
-            )
-        ), None)
-        return None if card is None else int(card['star'])
-
-    def _board_set_star(self, set_index: int) -> int | None:
-        """在 set 左上方的小区域内识别当前场上式神星级。"""
-        center_x, center_y = self._set_position(set_index)
-        offset_x, offset_y, width, height = self.BOARD_STAR_ROI_OFFSET
-        roi_x = max(0, center_x + offset_x)
-        roi_y = max(0, center_y + offset_y)
-        image_height, image_width = self.device.image.shape[:2]
-        roi_width = min(width, image_width - roi_x)
-        roi_height = min(height, image_height - roi_y)
-        if roi_width <= 0 or roi_height <= 0:
-            return None
-        source = self.device.image[
-            roi_y:roi_y + roi_height,
-            roi_x:roi_x + roi_width,
-        ]
-
-        best_star = None
-        best_score = -1.0
-        for star, rule in (
-            (1, self.I_CARD_1),
-            (2, self.I_CARD_2),
-            (3, self.I_CARD_3),
-        ):
-            template = rule.image
-            for scale in self.BOARD_STAR_SCALES:
-                scaled_width = max(1, int(template.shape[1] * scale))
-                scaled_height = max(1, int(template.shape[0] * scale))
-                if (
-                    scaled_width > source.shape[1]
-                    or scaled_height > source.shape[0]
-                ):
-                    continue
-                scaled = cv2.resize(
-                    template,
-                    (scaled_width, scaled_height),
-                    interpolation=cv2.INTER_LINEAR,
-                )
-                result = cv2.matchTemplate(
-                    source,
-                    scaled,
-                    cv2.TM_CCOEFF_NORMED,
-                )
-                _, score, _, _ = cv2.minMaxLoc(result)
-                if score > best_score:
-                    best_score = float(score)
-                    best_star = star
-
-        if best_score < self.BOARD_STAR_THRESHOLD:
-            logger.info(
-                f'Chess board set {set_index} star not detected: '
-                f'best_score={best_score:.3f}'
-            )
-            return None
-        logger.info(
-            f'Chess board set {set_index} star detected: '
-            f'star={best_star}, score={best_score:.3f}'
-        )
-        return best_star
-
     def sell_hand_card(self, source: tuple[int, int]) -> None:
-        """将手牌拖到最近的左侧经验区或右侧商店区售卖。"""
-        if self._is_early_round_layout():
-            logger.info(
-                'Block Chess hand sale: '
-                'alternate layout means round 1-3'
-            )
-            return
-
-        target_rule = self.I_EXPERIENCE if source[0] < 640 else self.I_MARKET
+        """统一拖到左侧售卖区，避免出售动作改变商店开关状态。"""
+        target_rule = self.I_EXPERIENCE
         Press_and_Drag(
             self.device,
             p1=source,
@@ -578,7 +565,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
             self.screenshot()
             if not self.appear(self.I_SHIKIGAMI_SPECIFICS):
-                logger.info(
+                logger.debug(
                     f'Chess shikigami specifics closed, attempts={attempt}'
                 )
                 closed = True
@@ -587,121 +574,26 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             logger.warning('Chess shikigami specifics still visible')
         return closed
 
-    def sell_rightmost_one_star_lineup_card(self) -> dict | None:
-        """紧急腾位时从右向左出售一张未受三星保护的一星阵容卡。"""
-        if self._is_early_round_layout():
-            logger.info(
-                'Skip emergency Chess hand sale: '
-                'alternate layout means round 1-3'
+    def sell_rightmost_hand_card(self) -> dict | None:
+        """手牌满时直接出售最右侧卡牌，不再识别或保护星级。"""
+        hand_cards = self._hand_card_detections()
+        if not hand_cards:
+            logger.warning(
+                'Chess hand is full but no hand-card anchor was detected'
             )
             return None
 
-        hand_cards = self._hand_card_detections()
-        strategy_shikigami = self.get_lineup_strategy()['shikigami']
-        lineup_cards = []
-        for card in hand_cards:
-            result = self.classify_hand_card(card['roi'])
-            if (
-                result['type'] != 'shikigami'
-                or result['name'] not in strategy_shikigami
-            ):
-                # 非阵容卡由常规清理流程处理，那里不施加一星限制。
-                continue
-            x, y, width, height = card['roi']
-            lineup_cards.append({
-                'name': result['name'],
-                'display_name': strategy_shikigami[
-                    result['name']
-                ]['display_name'],
-                'score': result['score'],
-                'star': card['star'],
-                'position': (x + width // 2, y + height // 2),
-            })
-
-        protected_names = set()
-        tracked_board_names = set(
-            getattr(self, '_board_lineup_names', set())
+        target = max(
+            hand_cards,
+            key=lambda card: card['roi'][0] + card['roi'][2] // 2,
         )
-        one_star_names = {
-            card['name']
-            for card in lineup_cards
-            if card['star'] == 1
-        }
-        for name in one_star_names:
-            hand_two_star_count = sum(
-                card['name'] == name and card['star'] == 2
-                for card in lineup_cards
-            )
-            set_index = self.shikigami_deploy_positions[name]
-            board_star = (
-                self._board_set_star(set_index)
-                if name in tracked_board_names
-                else None
-            )
-            if board_star == 3:
-                logger.info(
-                    f'Chess {strategy_shikigami[name]["display_name"]} is '
-                    'already 3-star on board; no build protection is needed'
-                )
-                continue
-
-            total_two_star_count = hand_two_star_count + int(board_star == 2)
-            protection_reason = None
-            if total_two_star_count >= 2:
-                protection_reason = (
-                    f'board_star={board_star}, '
-                    f'hand_2star={hand_two_star_count}, '
-                    f'total_2star={total_two_star_count}'
-                )
-            elif (
-                board_star is None
-                and name in tracked_board_names
-                and hand_two_star_count >= 1
-            ):
-                # 战斗动画可能遮住场上星标。已确认场上存在该式神且手里
-                # 已有二星时保守保护，避免漏算场上二星后卖掉合成材料。
-                protection_reason = (
-                    'board_star=unknown but shikigami is tracked on board, '
-                    f'hand_2star={hand_two_star_count}'
-                )
-
-            if protection_reason is not None:
-                protected_names.add(name)
-                logger.info(
-                    f'Protect all Chess '
-                    f'{strategy_shikigami[name]["display_name"]} cards '
-                    f'from emergency sale: {protection_reason}'
-                )
-
-        # 游戏按价格将不同种类手牌从右向左排列，越靠右通常越便宜。
-        # 仅在阵容卡中寻找一星候选；二三星及冲三星种类绝不进入卖卡。
-        candidates = sorted(
-            (
-                card
-                for card in lineup_cards
-                if card['star'] == 1
-                and card['name'] not in protected_names
-            ),
-            key=lambda card: card['position'][0],
-            reverse=True,
-        )
-        if candidates:
-            target = candidates[0]
-            logger.info(
-                f'Chess hand is full, sell rightmost 1-star lineup card: '
-                f'{target["display_name"]}, score={target["score"]:.3f}, '
-                f'position={target["position"]}'
-            )
-            self.sell_hand_card(target['position'])
-            time.sleep(self.HAND_SELL_WAIT)
-            self.screenshot()
-            return target
-
-        logger.warning(
-            'Chess hand is full but no sellable 1-star lineup card was '
-            'found; keep all 2/3-star and 3-star-building cards'
-        )
-        return None
+        x, y, width, height = target['roi']
+        position = (x + width // 2, y + height // 2)
+        logger.info(f'Sell Chess card: rightmost hand card, position={position}')
+        self.sell_hand_card(position)
+        time.sleep(self.HAND_SELL_WAIT)
+        self.screenshot()
+        return {'type': 'rightmost', 'position': position}
 
     def _hakuzosu_protect_target_position(self) -> int | None:
         """当前阵容中守护之印的目标位置；没有白藏主则禁用。"""
@@ -764,21 +656,21 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             return False
         card = self._find_hakuzosu_protect_hand_card()
         if card is None:
-            logger.info(
+            logger.debug(
                 'Chess Hakuzosu protect card is not in hand after '
                 'Byakuzou deployment'
             )
             return False
         logger.info(
-            f'Equip Chess {card["display_name"]} immediately after '
-            f'Byakuzou deployment: score={card["score"]:.3f}, '
-            f'source={card["position"]}, set={target_position}'
+            f'检测到{card["display_name"]}(功能)，'
+            f'移动到{target_position}号位'
         )
-        self._equip_soul_card(
+        if not self._equip_soul_card(
             source=card['position'],
             set_index=int(target_position),
             operation_name=self.HAKUZOSU_PROTECT_NAME.upper(),
-        )
+        ):
+            return False
         time.sleep(self.SOUL_EQUIP_WAIT)
         self.screenshot()
         return True
@@ -788,10 +680,16 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         source: tuple[int, int],
         set_index: int,
         operation_name: str,
-    ) -> None:
-        """御魂及阵容特殊手牌共用的拖动入口。"""
+    ) -> bool:
+        """御魂及阵容特殊手牌共用入口；拖动前必须关闭商店。"""
+        if not self._ensure_shop_closed():
+            logger.warning(
+                f'Abort Chess soul equipment: shop could not be closed, '
+                f'operation={operation_name}'
+            )
+            return False
         target = self._soul_target_position(set_index)
-        logger.info(
+        logger.debug(
             f'Equip Chess soul-type card {operation_name} to set '
             f'{set_index}: source={source}, target={target}'
         )
@@ -804,6 +702,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             swipe_duration=0.5,
             name=f'CHESS_EQUIP_SOUL_{operation_name}_SET_{set_index}',
         )
+        return True
 
     def deploy_shikigami_hand_card(
         self,
@@ -824,7 +723,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             return False
         count_before = self._read_shikigami_count()
         target_position = self._set_position(set_index)
-        logger.info(
+        logger.debug(
             f'Deploy Chess shikigami {name} to set {set_index}, '
             f'source={source}, target={target_position}'
         )
@@ -845,7 +744,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         if count_before is not None and count_after is not None:
             succeeded = count_after['current'] > count_before['current']
             if succeeded:
-                logger.info(
+                logger.debug(
                     f'Chess shikigami deploy confirmed: {name} -> '
                     f'set {set_index}, '
                     f'{count_before["current"]}/{count_before["total"]} -> '
@@ -882,7 +781,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 )
                 return False
 
-        logger.info(
+        logger.debug(
             f'Chess shikigami deploy accepted by hand-card disappearance: '
             f'{name} -> set {set_index}'
         )
@@ -892,51 +791,60 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self,
         excluded_names: set[str] | None = None,
     ) -> dict | None:
-        """搜索可上阵式神；限定在已定位手牌框内，避免整区误匹配。"""
+        """让阵容头像模板直接扫描整个手牌区，返回最左侧命中卡。"""
         excluded_names = excluded_names or set()
-        hand_cards = self._hand_card_detections()
+        frame_candidates = []
+        for frame_index in range(1, self.HAND_DEPLOY_CONFIRM_FRAMES + 1):
+            if frame_index > 1:
+                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+                self.screenshot()
+            frame_candidates.append(
+                self._scan_lineup_hand_card_candidates_once(excluded_names)
+            )
+
+        merged = {}
+        for candidates in frame_candidates:
+            for candidate in candidates:
+                key = (
+                    candidate['name'],
+                    round(candidate['position'][0] / 12),
+                )
+                item = merged.setdefault(key, {
+                    **candidate,
+                    'scores': [],
+                    'frames': 0,
+                })
+                item['scores'].append(candidate['score'])
+                item['frames'] += 1
+
         candidates = []
-        for card in hand_cards:
-            card_roi = card['roi']
-            best_in_card = None
-            for name, rule in self.lineup_shikigami_hand_rules:
-                if name in excluded_names:
-                    continue
-                matches = rule.match_all_any(
-                    self.device.image,
-                    roi=list(card_roi),
-                    threshold=rule.threshold,
-                    nms_threshold=0.3,
-                    frame_id=self.device.image_frame_id,
+        for item in merged.values():
+            if item['frames'] < self.HAND_DEPLOY_CONFIRM_FRAMES:
+                logger.debug(
+                    'Skip Chess lineup hand card candidate: '
+                    f'name={item["name"]}, frames={item["frames"]}/'
+                    f'{self.HAND_DEPLOY_CONFIRM_FRAMES}'
                 )
-                if not matches:
-                    continue
-                score, x, y, width, height = max(
-                    matches,
-                    key=lambda item: item[0],
-                )
-                if best_in_card is None or score > best_in_card['score']:
-                    best_in_card = {
-                        'name': name,
-                        'score': score,
-                        'position': (x + width // 2, y + height // 2),
-                        'star': card['star'],
-                        'roi': card_roi,
-                    }
-            if best_in_card is None:
                 continue
-            candidates.append(best_in_card)
-            logger.info(
-                'Chess lineup hand card candidate: '
-                f'name={best_in_card["name"]}, '
-                f'star={best_in_card["star"]}, '
-                f'score={best_in_card["score"]:.3f}, '
-                f'roi={best_in_card["roi"]}, '
-                f'position={best_in_card["position"]}'
+            avg_score = sum(item['scores']) / len(item['scores'])
+            item['score'] = avg_score
+            if avg_score < self.HAND_DEPLOY_TEMPLATE_THRESHOLD:
+                logger.debug(
+                    'Skip Chess lineup hand card candidate below threshold: '
+                    f'name={item["name"]}, avg_score={avg_score:.3f}, '
+                    f'threshold={self.HAND_DEPLOY_TEMPLATE_THRESHOLD}'
+                )
+                continue
+            candidates.append(item)
+            logger.debug(
+                'Chess lineup hand card candidate confirmed: '
+                f'name={item["name"]}, '
+                f'avg_score={avg_score:.3f}, '
+                f'position={item["position"]}'
             )
 
         if not candidates:
-            logger.info('No deployable Chess lineup hand card detected')
+            logger.debug('No deployable Chess lineup hand card detected')
             return None
 
         # 同名多张时选最左侧；不同名之间按手牌从左到右处理，避免高分
@@ -944,12 +852,61 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         selected_by_name = {}
         for candidate in sorted(
             candidates,
-            key=lambda item: (item['roi'][0], -item['score']),
+            key=lambda item: (item['position'][0], -item['score']),
         ):
             selected_by_name.setdefault(candidate['name'], candidate)
         return min(
             selected_by_name.values(),
-            key=lambda item: item['roi'][0],
+            key=lambda item: item['position'][0],
+        )
+
+    def _scan_lineup_hand_card_candidates_once(
+        self,
+        excluded_names: set[str],
+    ) -> list[dict]:
+        """单帧：阵容头像模板直接在完整手牌区域内匹配。"""
+        candidates = []
+        for name, rule in self.lineup_shikigami_hand_rules:
+            if name in excluded_names:
+                continue
+            matches = rule.match_all_any(
+                self.device.image,
+                roi=list(self.HAND_AREA),
+                threshold=self.HAND_DEPLOY_TEMPLATE_THRESHOLD,
+                nms_threshold=0.3,
+                frame_id=self.device.image_frame_id,
+            )
+            for score, x, y, width, height in matches:
+                candidate = {
+                    'name': name,
+                    'score': score,
+                    'position': (x + width // 2, y + height // 2),
+                }
+                logger.info(
+                    'Chess deploy hand scan: '
+                    f'best={self._shikigami_display_name(name)}, '
+                    f'score={score:.3f}, position={candidate["position"]}'
+                )
+                candidates.append(candidate)
+
+        # 不同角色模板可能在同一张卡上同时得到较低分命中。按人物中心
+        # 聚类，每个实际卡位只保留最高分结果，避免同一卡被认成两个人。
+        deduplicated = []
+        for candidate in sorted(
+            candidates,
+            key=lambda item: item['score'],
+            reverse=True,
+        ):
+            if any(
+                abs(candidate['position'][0] - kept['position'][0]) <= 32
+                and abs(candidate['position'][1] - kept['position'][1]) <= 40
+                for kept in deduplicated
+            ):
+                continue
+            deduplicated.append(candidate)
+        return sorted(
+            deduplicated,
+            key=lambda item: item['position'][0],
         )
 
     def _soul_category(self, name: str) -> str | None:
@@ -1054,7 +1011,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     'source': 'template',
                     'category': category,
                 })
-                logger.info(
+                logger.debug(
                     f'Chess soul image matched: {self.SOUL_DISPLAY_NAMES[name]}, '
                     f'score={score:.3f}, box={(x, y, width, height)}'
                 )
@@ -1161,7 +1118,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         used = 0
         for _ in range(self.DISCOVER_SOUL_SAFETY_LIMIT):
             if not self._is_preparation_mode():
-                logger.info(
+                logger.debug(
                     'Stop using Chess discover-soul cards: preparation was '
                     'interrupted or has ended'
                 )
@@ -1171,7 +1128,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 break
 
             card = cards[0]
-            logger.info(
+            logger.debug(
                 'Use Chess discover-soul hand card: '
                 f'text={card["text"]}, '
                 f'similarity={card["similarity"]:.3f}, '
@@ -1188,7 +1145,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                 self.screenshot()
                 if not self._is_preparation_mode():
-                    logger.info(
+                    logger.debug(
                         'Stop using Chess discover-soul card: preparation was '
                         'interrupted or has ended'
                     )
@@ -1211,7 +1168,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 break
 
             selected = random.choice(options)
-            logger.info(
+            logger.debug(
                 'Random Chess discover-soul option: '
                 f'{selected.name}, available={[rule.name for rule in options]}'
             )
@@ -1243,7 +1200,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'{self.DISCOVER_SOUL_SAFETY_LIMIT}'
             )
 
-        logger.info(f'Chess discover-soul handling complete, used={used}')
+        logger.debug(f'Chess discover-soul handling complete, used={used}')
         return used
 
     def equip_souls_from_hand(
@@ -1252,7 +1209,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     ) -> list[str]:
         """给已确认角色装备御魂；同一位置失败两次后轮换下一目标。"""
         if not self._is_preparation_mode():
-            logger.info(
+            logger.debug(
                 'Skip equipping Chess souls: preparation was interrupted or '
                 'has ended'
             )
@@ -1262,7 +1219,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self.discover_souls_from_hand()
         verified_names = set(verified_names or set())
         if not verified_names:
-            logger.info(
+            logger.debug(
                 'Keep Chess souls in hand: no shikigami position was '
                 'confirmed on the board'
             )
@@ -1272,7 +1229,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         repeated_attempts = {}
         for _ in range(self.SOUL_EQUIP_SAFETY_LIMIT):
             if not self._is_preparation_mode():
-                logger.info(
+                logger.debug(
                     'Stop equipping Chess souls: '
                     'mode is no longer preparation'
                 )
@@ -1306,17 +1263,16 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
             set_index, _ = selected_target
             logger.info(
-                f'Equip Chess soul {selected["text"]} '
-                f'({selected["category"]}) to set {set_index}: '
-                f'source={selected["position"]}, '
-                f'detector={selected["source"]}, '
-                f'score={selected["score"]:.3f}'
+                f'检测到{selected["text"]}'
+                f'({self._soul_category_display(selected["category"])})，'
+                f'移动到{set_index}号位'
             )
-            self._equip_soul_card(
+            if not self._equip_soul_card(
                 source=selected['position'],
                 set_index=set_index,
                 operation_name=selected['name'].upper(),
-            )
+            ):
+                break
             time.sleep(self.SOUL_EQUIP_WAIT)
             self.screenshot()
 
@@ -1354,7 +1310,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     )
                     full_positions.add(set_index)
                     self._soul_full_positions = full_positions
-                    logger.info(
+                    logger.debug(
                         f'Chess soul target set {set_index} marked full '
                         f'for current game; full_positions='
                         f'{sorted(full_positions)}'
@@ -1362,7 +1318,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 continue
 
             equipped.append(selected['name'])
-            logger.info(
+            logger.debug(
                 f'Chess soul equip confirmed: '
                 f'{selected["text"]} -> set {set_index}'
             )
@@ -1372,7 +1328,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'{self.SOUL_EQUIP_SAFETY_LIMIT}'
             )
 
-        logger.info(f'Chess soul equipment complete, equipped={equipped}')
+        logger.debug(f'Chess soul equipment complete, equipped={equipped}')
         return equipped
 
     def deploy_shikigami_from_hand(self) -> list[str]:
@@ -1380,7 +1336,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         # 场上人数 OCR 只有在商店完全收起后才可见。把约束放在上卡
         # 方法内部，避免其他调用入口绕过外层准备流程后无效拖卡。
         if not self._is_preparation_mode():
-            logger.info(
+            logger.debug(
                 'Skip Chess shikigami deployment: preparation was interrupted '
                 'or has ended'
             )
@@ -1400,10 +1356,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         deployed = []
         deployed_names = set(getattr(self, '_board_lineup_names', set()))
         failed_attempts = {}
-        star_checked_names = set()
         for _ in range(self.HAND_DEPLOY_SAFETY_LIMIT):
             if not self._is_preparation_mode():
-                logger.info(
+                logger.debug(
                     'Stop deploying Chess hand cards: '
                     'mode is no longer preparation'
                 )
@@ -1424,17 +1379,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 break
             count = capacity['count']
             lineup_full = capacity['full']
-            if lineup_full:
-                logger.info(
-                    'Stop deploying Chess hand cards: lineup is full '
-                    f'({capacity["current"]}/{capacity["capacity"]}), '
-                    f'occupied={count.get("occupied_positions", [])}'
-                )
-                break
-
             candidate = self._find_best_shikigami_hand_card(
                 excluded_names=(
-                    star_checked_names
+                    deployed_names
                     | {
                         name
                         for name, attempts in failed_attempts.items()
@@ -1443,48 +1390,65 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 ),
             )
             if candidate is None:
+                logger.info(
+                    'Stop deploying Chess hand cards: no deployable lineup '
+                    'hand card candidate'
+                )
                 break
 
             logger.info(
-                f'Chess hand shikigami detected: {candidate["name"]}, '
-                f'star={candidate["star"]}, '
+                f'Chess deploy candidate: '
+                f'{self._shikigami_display_name(candidate["name"])}, '
                 f'score={candidate["score"]:.3f}, '
                 f'position={candidate["position"]}'
             )
             set_index = self.shikigami_deploy_positions[candidate['name']]
-            board_star = self._board_set_star(set_index)
-            hand_star = candidate['star']
-            if board_star is not None:
-                if hand_star is None or hand_star <= board_star:
-                    logger.info(
-                        f'Skip duplicate Chess deployment: '
-                        f'{candidate["name"]} set={set_index}, '
-                        f'hand_star={hand_star}, board_star={board_star}'
+            if lineup_full:
+                recalled_set = self._recall_one_system_board_card(
+                    preferred_set_index=set_index,
+                )
+                if recalled_set is None:
+                    logger.warning(
+                        'Stop deploying Chess hand cards: lineup is full and '
+                        'no removable system-deployed card was found at '
+                        f'{self.BOARD_RECALL_POSITIONS}'
                     )
-                    star_checked_names.add(candidate['name'])
-                    deployed_names.add(candidate['name'])
-                    self._board_lineup_names = deployed_names
+                    break
+                capacity = self._read_lineup_capacity_status()
+                if capacity is None or capacity['full']:
+                    logger.warning(
+                        'Stop deploying Chess hand cards: system card recall '
+                        f'at set {recalled_set} did not free lineup capacity'
+                    )
+                    break
+
+                # 下阵卡进入手牌后会让整排手牌重新布局。下阵前保存的
+                # candidate.position 已失效，必须基于新截图重新定位同名卡。
+                self.screenshot()
+                candidate_name = candidate['name']
+                candidate = self._find_best_shikigami_hand_card(
+                    excluded_names=(
+                        set(self.shikigami_deploy_positions)
+                        - {candidate_name}
+                    ),
+                )
+                if candidate is None or candidate['name'] != candidate_name:
+                    logger.warning(
+                        'Stop current Chess deployment after system recall: '
+                        f'{self._shikigami_display_name(candidate_name)} '
+                        'could not be relocated in the reflowed hand'
+                    )
+                    failed_attempts[candidate_name] = (
+                        failed_attempts.get(candidate_name, 0) + 1
+                    )
                     continue
+                set_index = self.shikigami_deploy_positions[candidate_name]
                 logger.info(
-                    f'Replace Chess shikigami with higher-star hand card: '
-                    f'{candidate["name"]} set={set_index}, '
-                    f'{board_star} -> {hand_star}'
+                    f'Recall Chess system card at set {recalled_set}, then '
+                    f'deploy {self._shikigami_display_name(candidate["name"])} '
+                    f'to set {set_index}, refreshed_position='
+                    f'{candidate["position"]}'
                 )
-            elif candidate['name'] in deployed_names:
-                logger.warning(
-                    f'Chess board star is unavailable for tracked shikigami '
-                    f'{candidate["name"]} set={set_index}; retry deployment '
-                    'instead of trusting stale board record'
-                )
-            elif lineup_full:
-                logger.info(
-                    f'Skip Chess deployment because lineup is full and '
-                    f'target set {set_index} appears empty: '
-                    f'{capacity["current"]}/{capacity["capacity"]} '
-                    '(current/level)'
-                )
-                star_checked_names.add(candidate['name'])
-                continue
 
             if not self.deploy_shikigami_hand_card(
                 candidate['name'],
@@ -1508,7 +1472,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             )
             player_positions.add(set_index)
             self._player_deployed_positions = player_positions
-            logger.info(
+            logger.debug(
                 'Mark Chess player-deployed position: '
                 f'set={set_index}, name={candidate["name"]}'
             )
@@ -1520,18 +1484,21 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'{self.HAND_DEPLOY_SAFETY_LIMIT}'
             )
 
-        logger.info(f'Chess hand deployment complete, deployed={deployed}')
+        logger.debug(f'Chess hand deployment complete, deployed={deployed}')
         return deployed
 
     def _hand_card_detections(self) -> list[dict]:
-        """用 card 标志定位手牌，并保留每张卡的一至三星信息。"""
-        marker_rules = (
-            (1, self.I_CARD_1),
-            (2, self.I_CARD_2),
-            (3, self.I_CARD_3),
-        )
+        """直接用式神/御魂素材定位已收录手牌，不依赖场上勾玉图。"""
+        template_rules = [
+            rule
+            for _, rule in (
+                list(self.shikigami_hand_rules)
+                + list(self.soul_hand_rules)
+            )
+        ]
+        template_rules.append(self.hakuzosu_protect_rule)
         candidates = []
-        for star, rule in marker_rules:
+        for rule in template_rules:
             matches = rule.match_all_any(
                 self.device.image,
                 roi=list(self.HAND_AREA),
@@ -1540,45 +1507,41 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 frame_id=self.device.image_frame_id,
             )
             for score, x, y, width, height in matches:
-                candidates.append((score, x, y, width, height, star))
+                candidates.append((score, x, y, width, height))
 
-        # 三套模板之间再做一次坐标去重，避免同一卡位被重复扩展。
-        marker_matches = []
-        distance = self.HAND_CARD_MARKER_DEDUP_DISTANCE
+        # 多个素材可能在同一张卡上产生近邻命中；每个实际卡位只保留
+        # 最高分结果。这里保留素材自身矩形，拖动时使用其中心即可。
+        card_matches = []
         for candidate in sorted(candidates, key=lambda item: item[0], reverse=True):
-            _, x, y, _, _, _ = candidate
+            _, x, y, width, height = candidate
+            center_x = x + width // 2
+            center_y = y + height // 2
             if any(
-                abs(x - kept[1]) <= distance
-                and abs(y - kept[2]) <= distance
-                for kept in marker_matches
+                abs(center_x - (kept[1] + kept[3] // 2)) <= 28
+                and abs(center_y - (kept[2] + kept[4] // 2)) <= 40
+                for kept in card_matches
             ):
                 continue
-            marker_matches.append(candidate)
+            card_matches.append(candidate)
 
-        card_width, card_height = self.HAND_CARD_SIZE
-        image_height, image_width = self.device.image.shape[:2]
         detections = []
-        for score, x, y, _, _, star in sorted(
-            marker_matches,
+        for score, x, y, width, height in sorted(
+            card_matches,
             key=lambda item: item[1],
         ):
-            width = min(card_width, image_width - x)
-            height = min(card_height, image_height - y)
             if width <= 0 or height <= 0:
                 continue
             detection = {
                 'roi': (x, y, width, height),
-                'star': star,
                 'score': score,
             }
             detections.append(detection)
-            logger.info(
-                f'Chess hand card marker detected: star={star}, '
-                f'score={score:.3f}, '
-                f'card_roi={detection["roi"]}'
+            logger.debug(
+                f'Chess hand card template detected: score={score:.3f}, '
+                f'roi={detection["roi"]}'
             )
         if not detections:
-            logger.info('Chess hand card marker detector found no cards')
+            logger.debug('Chess hand card templates found no cards')
         return detections
 
     def _hand_card_rois(self) -> list[tuple[int, int, int, int]]:
@@ -1592,7 +1555,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     ) -> list[tuple[int, int]]:
         """独立卖卡环节：循环出售纹章和非阵容卡，直到连续确认干净。"""
         if not emergency and self._is_early_round_layout():
-            logger.info(
+            logger.debug(
                 'Skip Chess hand cleanup: '
                 'alternate layout means round 1-3'
             )
@@ -1601,7 +1564,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         sold = []
         clean_confirm_frames = 0
         strategy = self.get_lineup_strategy()
-        logger.info(
+        logger.debug(
             'Chess hand cleanup lineup protection: '
             f'lineup={strategy["key"]}, '
             f'names={list(strategy["shikigami"].keys())}'
@@ -1610,34 +1573,18 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             self.close_shikigami_specifics_if_open()
             mode = self._read_chess_mode()
             if not self._is_hand_cleanup_allowed(allowed_modes):
-                logger.info(
+                logger.debug(
                     'Stop cleaning Chess hand cards: '
                     f'mode={mode} is outside {allowed_modes}'
                 )
                 break
-
-            # 拖到右侧商店区域出售时，游戏有时会顺带展开商店。商店会
-            # 遮挡并改变手牌布局，必须重新关闭后才能继续可靠扫描。
-            if self._is_shop_open():
-                logger.info(
-                    'Chess shop opened during hand cleanup, close it before '
-                    f'continuing: pass={cleanup_pass}'
-                )
-                if not self._ensure_shop_closed(allowed_modes=allowed_modes):
-                    logger.warning(
-                        'Stop cleaning Chess hand cards: '
-                        'failed to close shop after sale'
-                    )
-                    break
-                time.sleep(self.HAND_CLEANUP_REFLOW_WAIT)
-                self.screenshot()
 
             # 纹章没有式神卡左上角的星级标志，无法进入下面的卡框分类。
             # 直接在 badge_area 中定位“纹章”文本，并从文字所在卡片拖出出售。
             badge_target = self._find_badge_hand_card()
             if badge_target is not None:
                 logger.info(
-                    'Sell Chess badge hand card after deployment: '
+                    'Sell Chess card: '
                     f'text={badge_target["text"]}, '
                     f'position={badge_target["position"]}'
                 )
@@ -1665,7 +1612,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     )
                 ), None)
                 if discover_soul is not None:
-                    logger.warning(
+                    logger.debug(
                         'Keep unused Chess discover-soul card during cleanup: '
                         f'text={discover_soul["text"]}, '
                         f'position={discover_soul["position"]}'
@@ -1673,7 +1620,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     continue
                 soul = self._soul_match_in_card(card_roi, soul_cards)
                 if soul is not None:
-                    logger.info(
+                    logger.debug(
                         'Keep Chess soul hand card during cleanup: '
                         f'name={soul["text"]}, score={soul["score"]:.3f}, '
                         f'position={soul["position"]}'
@@ -1681,7 +1628,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     continue
                 protect = self._hakuzosu_protect_match_in_card(card_roi)
                 if protect is not None:
-                    logger.info(
+                    logger.debug(
                         'Keep Chess Hakuzosu protect card during cleanup: '
                         f'score={protect["score"]:.3f}, '
                         f'position={protect["position"]}'
@@ -1702,7 +1649,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 # 复查阵容头像，防止发光、遮挡等瞬时变化误卖核心卡。
                 possible = self._possible_lineup_shikigami(card_roi)
                 if possible is not None:
-                    logger.warning(
+                    logger.debug(
                         'Protect possible lineup Chess hand card from sale: '
                         f'name={possible["name"]}, '
                         f'score={possible["score"]:.3f}, '
@@ -1723,12 +1670,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     clean_confirm_frames
                     >= self.HAND_CLEANUP_CLEAN_CONFIRM_FRAMES
                 ):
-                    logger.info(
+                    logger.debug(
                         'Chess hand cleanup confirmed clean: '
                         f'frames={clean_confirm_frames}'
                     )
                     break
-                logger.info(
+                logger.debug(
                     'No sellable Chess hand card in current scan, '
                     'wait for layout and verify again: '
                     f'frame={clean_confirm_frames}/'
@@ -1739,8 +1686,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 continue
 
             logger.info(
-                f'Sell non-lineup Chess hand card after deployment: '
-                f'type={sell_target["type"]}, name={sell_target["name"]}, '
+                f'Sell Chess card: '
+                f'type={sell_target["type"]}, '
+                f'name={self._shikigami_display_name(sell_target["name"])}, '
                 f'position={sell_target["position"]}'
             )
             self.sell_hand_card(sell_target['position'])
@@ -1754,7 +1702,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'{self.HAND_CLEANUP_SAFETY_LIMIT}'
             )
 
-        logger.info(f'Chess non-lineup hand cleanup complete, sold={sold}')
+        logger.debug(f'Chess non-lineup hand cleanup complete, sold={sold}')
         return sold
 
     def _is_hand_cleanup_allowed(
@@ -1765,12 +1713,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         return self._read_chess_mode() in allowed_modes
 
     def _free_one_hand_slot_for_purchase(self) -> dict | None:
-        """手牌满时先清杂卡，再按通用规则出售最右侧安全一星卡。"""
-        if self._is_early_round_layout():
-            logger.info(
-                'Cannot free Chess hand slot during alternate round 1-3 layout'
-            )
-            return None
+        """手牌满时直接出售最右侧卡牌，为本次购买腾出一格。"""
 
         mode = self._read_chess_mode()
         if mode not in ('备', '战'):
@@ -1779,23 +1722,14 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             )
             return None
 
-        sold = self.cleanup_non_lineup_hand_cards(
-            allowed_modes=(mode,),
-            emergency=True,
-        )
-        result = None
-        if sold:
-            result = {'type': 'cleanup', 'sold': sold}
-        else:
-            # 非阵容卡已经清空仍然满手时，才进入通用阵容卡兜底。
-            # 只允许出售一星卡，并保护拥有两张二星卡的冲三星种类。
-            result = self.sell_rightmost_one_star_lineup_card()
+        result = self.sell_rightmost_hand_card()
 
         if result is None:
             logger.warning('No safe Chess hand card is available to free a slot')
             return None
 
-        # 独立卖卡会关闭商店；重新打开后原购买格才能继续点击和头像匹配。
+        # 本方法只会在购买失败的恢复路径调用；清理后必须恢复“商店开”
+        # 这一购买前置状态，至于卖卡过程本身不主动切换商店。
         if not self._ensure_shop_open():
             logger.warning(
                 'Emergency Chess hand cleanup succeeded, but shop could not '
@@ -1836,8 +1770,84 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         matches.sort(key=lambda item: item['position'][0])
         return matches[0]
 
+    def _recall_one_system_board_card(
+        self,
+        preferred_set_index: int | None = None,
+    ) -> int | None:
+        """满员上卡时只下阵一个系统卡位，成功则返回对应站位。"""
+        if not self._is_preparation_mode():
+            return None
+        if not self._ensure_shop_closed():
+            logger.warning(
+                'Cannot free Chess lineup slot: shop could not be closed'
+            )
+            return None
+
+        player_positions = set(
+            getattr(self, '_player_deployed_positions', set())
+        )
+        positions = list(self.BOARD_RECALL_POSITIONS)
+        if preferred_set_index in positions:
+            positions.remove(preferred_set_index)
+            positions.insert(0, preferred_set_index)
+
+        hand_target = self._rule_center(
+            RuleClick(
+                roi_front=self.HAND_AREA,
+                roi_back=self.HAND_AREA,
+                name='chess_hand_area',
+            )
+        )
+        time.sleep(self.BOARD_RECALL_SETTLE_WAIT)
+        for set_index in positions:
+            if set_index in player_positions:
+                continue
+            if not self._board_set_has_shikigami(set_index):
+                continue
+
+            source = self._set_position(set_index)
+            for attempt, drag_source in enumerate(
+                (source, (source[0], source[1] - 14)),
+                start=1,
+            ):
+                Press_and_Drag(
+                    self.device,
+                    p1=drag_source,
+                    p2=hand_target,
+                    hold_duration=0.6 if attempt == 2 else 0.5,
+                    point_random=(-2, -2, 2, 2),
+                    swipe_duration=0.5,
+                    name=(
+                        f'CHESS_FREE_SYSTEM_SET_{set_index}'
+                        f'_ATTEMPT_{attempt}'
+                    ),
+                )
+                time.sleep(self.BOARD_RECALL_SETTLE_WAIT)
+                self.screenshot()
+                if not self._board_set_has_shikigami(set_index):
+                    tracked_names = set(
+                        getattr(self, '_board_lineup_names', set())
+                    )
+                    self._board_lineup_names = {
+                        name
+                        for name in tracked_names
+                        if self.shikigami_deploy_positions.get(name)
+                        != set_index
+                    }
+                    logger.debug(
+                        f'Chess system card recalled for deployment: '
+                        f'set={set_index}, attempt={attempt}'
+                    )
+                    return set_index
+        return None
+
     def recall_all_board_cards(self) -> bool:
         """按系统自动上阵顺序，快速回收棋盘右侧四个候选位置。"""
+        if not self._ensure_shop_closed():
+            logger.warning(
+                'Abort Chess board recall: shop could not be closed'
+            )
+            return False
         hand_target = self._rule_center(
             RuleClick(
                 roi_front=self.HAND_AREA,
@@ -1848,7 +1858,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         count = self._read_shikigami_count()
         if count is not None and count['current'] == 0:
-            logger.info('Chess board is already empty; skip recall')
+            logger.debug('Chess board is already empty; skip recall')
             self._board_lineup_names = set()
             self._player_deployed_positions = set()
             return True
@@ -1860,18 +1870,23 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         recall_positions = tuple(
             set_index
             for set_index in self.BOARD_RECALL_POSITIONS
-            if not (set_index == 9 and set_index in player_positions)
+            if set_index not in player_positions
         )
-        if 9 not in recall_positions:
-            logger.info(
-                'Keep Chess set 9 during recall: it was deployed by script'
+        protected_recall_positions = sorted(
+            set(self.BOARD_RECALL_POSITIONS) & player_positions
+        )
+        if protected_recall_positions:
+            logger.debug(
+                'Keep Chess system-set positions during recall: '
+                f'they were deployed by script, positions='
+                f'{protected_recall_positions}'
             )
-        logger.info(
+        logger.debug(
             f'Chess board recall order: {recall_positions}, '
             f'current_count={None if count is None else count["current"]}'
         )
         if not self._is_preparation_mode():
-            logger.info(
+            logger.debug(
                 'Stop recalling Chess board cards: '
                 'mode is no longer preparation'
             )
@@ -1885,7 +1900,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         # 避免每个空位都产生一次截图等待。
         for set_index in recall_positions:
             if not self._board_set_has_shikigami(set_index):
-                logger.info(
+                logger.debug(
                     f'Skip Chess recall set {set_index}: '
                     'jade marker is not detected'
                 )
@@ -1929,7 +1944,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     time.sleep(self.BOARD_RECALL_INTERVAL)
                     self.screenshot()
                     set_11_count = self._read_shikigami_count()
-                    logger.info(
+                    logger.debug(
                         'Chess set 11 recall retry result: '
                         f'{None if set_11_count is None else set_11_count["current"]}'
                         f'/{None if set_11_count is None else set_11_count["total"]}'
@@ -1954,9 +1969,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             self._board_lineup_names = set()
             self._player_deployed_positions = set()
         if count is None:
-            logger.info('Chess board recall completed; count is unavailable')
+            logger.debug('Chess board recall completed; count is unavailable')
         else:
-            logger.info(
+            logger.debug(
                 'Chess board recall completed at positions '
                 f'{self.BOARD_RECALL_POSITIONS}: '
                 f'{count["current"]}/{count["total"]}'
@@ -1980,20 +1995,20 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         selected = random.choice(options)
         deadline = time.monotonic() + self.BUFF_SELECT_TIMEOUT
         attempts = 0
-        logger.info(
+        logger.debug(
             f'Random buff option locked: {selected.name}; '
             'retry until selection panel closes'
         )
         while time.monotonic() < deadline:
             self.screenshot()
             if not self.appear(self.I_SELECT_BUFF):
-                logger.info(
+                logger.debug(
                     'Chess buff selection confirmed: '
                     f'option={selected.name}, attempts={attempts}'
                 )
                 return True
             attempts += 1
-            logger.info(
+            logger.debug(
                 f'Click Chess buff option {selected.name}: '
                 f'attempt={attempts}'
             )
@@ -2002,7 +2017,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         self.screenshot()
         if not self.appear(self.I_SELECT_BUFF):
-            logger.info(
+            logger.debug(
                 'Chess buff selection confirmed at timeout boundary: '
                 f'option={selected.name}, attempts={attempts}'
             )
@@ -2097,7 +2112,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         ocr_rule = self.O_ROUND_2 if use_alternate_layout else self.O_ROUND
         value, round_raw = self._parse_round_number(ocr_rule)
         if use_alternate_layout:
-            logger.info(
+            logger.debug(
                 f'Chess mode primary is numeric [{mode_raw}]; '
                 f'use round_2 [{round_raw}] -> {value}'
             )
@@ -2121,7 +2136,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         return raw or None
 
     def _board_set_has_shikigami(self, set_index: int) -> bool:
-        """检测对应站位是否存在式神：勾玉区域有明显图标特征即视为有人。"""
+        """在对应站位中匹配三种头顶勾玉，任一命中即视为有人。"""
         x, y, width, height = self._set_jade_area(set_index)
         image_height, image_width = self.device.image.shape[:2]
         if (
@@ -2144,16 +2159,17 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             )
             return False
 
-        source = self.device.image[y:y + height, x:x + width]
-        gray = cv2.cvtColor(source, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 50, 150)
-        edge_ratio = float(np.count_nonzero(edges)) / float(edges.size)
-        std = float(np.std(gray))
-        occupied = (
-            edge_ratio >= self.SET_JADE_EDGE_THRESHOLD
-            and std >= self.SET_JADE_STD_THRESHOLD
+        roi = [x, y, width, height]
+        return any(
+            bool(rule.match_all_any(
+                self.device.image,
+                roi=roi,
+                threshold=self.BOARD_OCCUPANCY_TEMPLATE_THRESHOLD,
+                nms_threshold=0.3,
+                frame_id=self.device.image_frame_id,
+            ))
+            for rule in self.board_occupancy_rules
         )
-        return occupied
 
     def _read_board_position_count(self) -> dict:
         """统计 12 个站位勾玉区域中检测到图标的位置数量。"""
@@ -2164,7 +2180,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         ]
         count = len(occupied_positions)
         raw = ','.join(str(index) for index in occupied_positions)
-        logger.info(
+        logger.debug(
             'Chess board position count by jade: '
             f'{count}/12, occupied={occupied_positions}'
         )
@@ -2192,7 +2208,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         current = count['current']
         full = current >= level
-        logger.info(
+        logger.debug(
             'Chess lineup capacity by level: '
             f'current={current}, capacity={level}, full={full}, '
             f'count_ocr=[{count["raw"]}]'
@@ -2212,10 +2228,16 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             'level': self._read_level(),
             'chess_mode': mode or self._read_chess_mode(),
         }
-        logger.info(
+        logger.debug(
             'Chess round snapshot: '
             f'round={snapshot["round"]}, mode={snapshot["chess_mode"]}, '
             f'level={snapshot["level"]}, gold={snapshot["gold"]}'
+        )
+        logger.info(
+            'Chess round update: '
+            f'round={snapshot["round"]}, mode={snapshot["chess_mode"]}, '
+            f'gold={snapshot["gold"]}, level={snapshot["level"]}, '
+            f'hand_shikigami={self._hand_shikigami_summary()}'
         )
         return snapshot
 
@@ -2225,7 +2247,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         digit = re.search(r'([1-9])', raw)
         if digit is not None:
             level = int(digit.group(1))
-            logger.info(f'Chess level: [{raw}] -> {level}')
+            logger.debug(f'Chess level: [{raw}] -> {level}')
             return level
 
         chinese_digits = {
@@ -2241,7 +2263,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         }
         for character, level in chinese_digits.items():
             if character in raw:
-                logger.info(f'Chess level: [{raw}] -> {level}')
+                logger.debug(f'Chess level: [{raw}] -> {level}')
                 return level
 
         logger.warning(f'Chess level OCR invalid: [{raw}]')
@@ -2259,7 +2281,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             logger.warning(f'Chess remaining time OCR invalid: [{raw}]')
             return None
         remaining = int(matched.group(0))
-        logger.info(f'Chess remaining time: [{raw}] -> {remaining}')
+        logger.debug(f'Chess remaining time: [{raw}] -> {remaining}')
         return remaining
 
     def _read_alive_players(self) -> int | None:
@@ -2275,7 +2297,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             logger.warning('Chess alive-player OCR found no health value')
             return None
         alive = max(detected)
-        logger.info(
+        logger.debug(
             'Chess alive players by health OCR: '
             f'alive={alive}, detected={detected}'
         )
@@ -2302,7 +2324,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             self._alive_players_candidate = alive
             self._alive_players_confirmed = 1
 
-        logger.info(
+        logger.debug(
             'Chess early-exit player check: '
             f'alive={alive}, threshold={threshold}, '
             f'confirmed={self._alive_players_confirmed}/'
@@ -2328,12 +2350,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         if remaining is None or remaining > 10:
             return False
 
-        logger.hr(
+        logger.debug(
             'Chess last-seconds lineup check: '
             f'remaining={remaining}'
         )
         if self._read_chess_mode() != '备':
-            logger.info('Skip last-seconds deploy: mode is no longer 备')
+            logger.debug('Skip last-seconds deploy: mode is no longer 备')
             return True
         if not self._ensure_shop_closed():
             logger.warning(
@@ -2343,7 +2365,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         self.screenshot()
         if self._is_early_round_layout() or not self._is_preparation_mode():
-            logger.info(
+            logger.debug(
                 'Skip last-seconds deploy: preparation/layout changed '
                 'while closing shop'
             )
@@ -2356,18 +2378,18 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             )
             return True
         if capacity['full']:
-            logger.info(
+            logger.debug(
                 'Skip last-seconds deploy: lineup is already full '
                 f'({capacity["current"]}/{capacity["capacity"]})'
             )
             return True
 
-        logger.info(
+        logger.debug(
             'Run last-seconds deploy: '
             f'{capacity["current"]}/{capacity["capacity"]}'
         )
         deployed = self.deploy_shikigami_from_hand()
-        logger.info(
+        logger.debug(
             'Chess last-seconds deploy complete: '
             f'deployed={deployed}'
         )
@@ -2384,12 +2406,13 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         ]
 
     def _is_shop_open(self) -> bool:
-        """正常刷新与金币不足刷新任一出现，均表示商店已经打开。"""
-        visible = (
-            self.appear(self.I_REFRESH)
-            or self.appear(self.I_REFRESH_NOT_GOLD)
-            or self._is_shop_price_panel_visible()
-        )
+        """使用刷新按钮判断商店是否展开；禁止在此读取价格 OCR。
+
+        ``check_market`` 是开店确认的辅助标志，不能用于“商店仍展开”
+        的通用判断，否则商店关闭后仍可能命中该图标，导致上卡阶段被
+        误判为商店未关闭。
+        """
+        visible = self._shop_refresh_marker_visible()
         if visible:
             self._shop_assumed_open = True
             return True
@@ -2400,27 +2423,24 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             and getattr(self, '_shop_assumed_open', False)
         )
 
-    def _is_shop_price_panel_visible(self) -> bool:
-        """商店价格区有数字时，视为商店仍展开。"""
-        for index in range(1, 6):
-            rule = getattr(self, f'O_SHIKIGAMI_GOLD_{index}', None)
-            if rule is None:
-                continue
-            raw = self._normalize_ocr_text(rule.ocr(self.device.image))
-            if re.search(r'\d+', raw):
-                logger.info(
-                    'Chess shop panel visible by price OCR: '
-                    f'slot={index}, raw=[{raw}]'
-                )
-                return True
-        return False
+    def _shop_refresh_marker_visible(self) -> bool:
+        """刷新/金币不足刷新任一出现，表示商店明确展开。"""
+        return self.appear(self.I_REFRESH) or self.appear(self.I_REFRESH_NOT_GOLD)
+
+    def _shop_open_confirm_marker_visible(self) -> bool:
+        """开店确认：非战阶段只看 refresh；战阶段追加 check_market。"""
+        if self._shop_refresh_marker_visible():
+            return True
+        return self._read_chess_mode() == '战' and self.appear(
+            self.I_CHECK_MARKET
+        )
 
     def _is_preparation_mode(self) -> bool:
         """只有无 Buff 弹窗的“备”可继续操作；弹窗出现立即中断。"""
         if self._read_chess_mode() != '备':
             return False
         if self.appear(self.I_SELECT_BUFF):
-            logger.info(
+            logger.debug(
                 'Interrupt Chess preparation immediately: buff selection '
                 'panel detected'
             )
@@ -2488,12 +2508,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             logger.warning(f'Chess coin OCR invalid: [{raw}]')
             return None
         if coin['recovered']:
-            logger.info(
+            logger.debug(
                 f'Chess coin OCR recovered: [{raw}] -> '
                 f'{coin["current"]}/{coin["total"]}'
             )
         else:
-            logger.info(
+            logger.debug(
                 f'Chess coin: {coin["current"]}/{coin["total"]}'
             )
         return coin
@@ -2534,7 +2554,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         price = int(matched.group(0))
         affordable = gold >= price
-        logger.info(
+        logger.debug(
             'Chess shop affordability: '
             f'slot={slot_index}, gold={gold}, price={price}, '
             f'affordable={affordable}'
@@ -2544,23 +2564,23 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def _ensure_shop_open(self) -> bool:
         """必要时点击商店图标，并等待刷新按钮确认商店已经展开。"""
         if not self._is_purchase_allowed():
-            logger.info('Stop opening Chess shop: Hyakki mode detected')
+            logger.debug('Stop opening Chess shop: Hyakki mode detected')
             return False
         if getattr(self, '_economy_battle_mode', False):
             return self._ensure_battle_economy_shop_open()
         if self._is_shop_open():
-            logger.info('Chess shop is already open')
+            logger.debug('Chess shop is already open')
             self._shop_assumed_open = True
             return True
 
-        logger.info('Chess shop is closed, click market to open it')
+        logger.debug('Chess shop is closed, click market to open it')
         # C_MARKET 是跨回合反复使用的合法开关；每次新状态转换单独计数。
         self.device.click_record_remove(self.I_MARKET)
         deadline = time.monotonic() + self.SHOP_OPEN_TIMEOUT
         attempts = 0
         while time.monotonic() < deadline:
             if not self._is_purchase_allowed():
-                logger.info('Stop opening Chess shop: Hyakki mode detected')
+                logger.debug('Stop opening Chess shop: Hyakki mode detected')
                 return False
             attempts += 1
             self.click(self.I_MARKET)
@@ -2572,10 +2592,10 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                 self.screenshot()
                 if not self._is_purchase_allowed():
-                    logger.info('Stop opening Chess shop: Hyakki mode detected')
+                    logger.debug('Stop opening Chess shop: Hyakki mode detected')
                     return False
-                if self._is_shop_open():
-                    logger.info(
+                if self._shop_open_confirm_marker_visible():
+                    logger.debug(
                         f'Chess shop opened successfully, attempts={attempts}'
                     )
                     self._shop_assumed_open = True
@@ -2587,17 +2607,17 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def _ensure_battle_economy_shop_open(self) -> bool:
         """战斗中只开一次商店，不以可能被技能遮挡的刷新图标反复切换。"""
         if self._read_chess_mode() != '战':
-            logger.info('Stop battle economy shop open: mode is no longer 战')
+            logger.debug('Stop battle economy shop open: mode is no longer 战')
             return False
         if getattr(self, '_shop_assumed_open', False):
-            logger.info('Chess battle economy shop is assumed open')
+            logger.debug('Chess battle economy shop is assumed open')
             return True
-        if self.appear(self.I_REFRESH) or self.appear(self.I_REFRESH_NOT_GOLD):
+        if self._shop_open_confirm_marker_visible():
             self._shop_assumed_open = True
-            logger.info('Chess battle economy shop is visibly open')
+            logger.debug('Chess battle economy shop is visibly open')
             return True
 
-        logger.info(
+        logger.debug(
             'Open Chess shop once for battle economy; subsequent state is '
             'tracked internally'
         )
@@ -2606,7 +2626,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         time.sleep(self.SHOP_OPEN_ATTEMPT_WAIT)
         self.screenshot()
         if self._read_chess_mode() != '战':
-            logger.info('Battle mode ended while opening economy shop')
+            logger.debug('Battle mode ended while opening economy shop')
             return False
         self._shop_assumed_open = True
         return True
@@ -2617,19 +2637,21 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     ) -> bool:
         """在指定模式内关闭商店；上卡默认仅允许“备”。"""
         if self._read_chess_mode() not in allowed_modes:
-            logger.info(
+            logger.debug(
                 'Stop closing Chess shop: mode is outside '
                 f'{allowed_modes}'
             )
             return False
-        shop_visible = (
-            self.appear(self.I_REFRESH)
-            or self.appear(self.I_REFRESH_NOT_GOLD)
-            or self._is_shop_price_panel_visible()
-        )
+        shop_visible = self._shop_refresh_marker_visible()
         shop_assumed_open = getattr(self, '_shop_assumed_open', False)
         if not shop_visible and not shop_assumed_open:
-            logger.info('Chess shop is already closed')
+            logger.debug('Chess shop is already closed')
+            return True
+        if self._read_chess_mode() != '战' and not shop_visible:
+            # 非战斗画面刷新按钮不会被技能遮挡；看不到即以实际画面为准，
+            # 清除跨阶段遗留的内部状态，禁止误点后把商店反而打开。
+            self._shop_assumed_open = False
+            logger.debug('Chess shop is visibly closed; clear stale state')
             return True
         if (
             self._read_chess_mode() in ('鬼', '待')
@@ -2638,10 +2660,10 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             # 进入鬼/待后游戏会自行收起商店；内部状态可能仍停留在上一帧。
             # 此时不能点击不可用的商店位置，只清除脚本侧状态。
             self._shop_assumed_open = False
-            logger.info('Clear stale Chess shop state in passive mode')
+            logger.debug('Clear stale Chess shop state in passive mode')
             return True
 
-        logger.info('Chess shop is open, click market to close it')
+        logger.debug('Chess shop is open, click market to close it')
         self.device.click_record_remove(self.I_MARKET)
         # 战斗中刷新按钮可能完全被技能遮挡。若商店仅由内部状态确认，
         # 固定点击一次即可关闭，禁止进入“看不见 -> 再点一次”的抖动。
@@ -2654,13 +2676,13 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             time.sleep(self.SHOP_CLOSE_ATTEMPT_WAIT)
             self.screenshot()
             self._shop_assumed_open = False
-            logger.info('Chess battle economy shop closed by one-shot toggle')
+            logger.debug('Chess battle economy shop closed by one-shot toggle')
             return True
 
         deadline = time.monotonic() + self.SHOP_CLOSE_TIMEOUT
         while time.monotonic() < deadline:
             if self._read_chess_mode() not in allowed_modes:
-                logger.info(
+                logger.debug(
                     'Stop closing Chess shop: mode changed outside '
                     f'{allowed_modes}'
                 )
@@ -2674,13 +2696,13 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                 self.screenshot()
                 if self._read_chess_mode() not in allowed_modes:
-                    logger.info(
+                    logger.debug(
                         'Stop closing Chess shop: mode changed outside '
                         f'{allowed_modes}'
                     )
                     return False
                 if not self._is_shop_open():
-                    logger.info('Chess shop closed successfully')
+                    logger.debug('Chess shop closed successfully')
                     self._shop_assumed_open = False
                     return True
 
@@ -2692,7 +2714,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         removed_experience = self.device.click_record_remove(self.I_EXPERIENCE)
         removed_refresh = self.device.click_record_remove(self.I_REFRESH)
         if removed_experience or removed_refresh:
-            logger.info(
+            logger.debug(
                 'Clear Chess economy click history before legal loop: '
                 f'experience={removed_experience}, refresh={removed_refresh}'
             )
@@ -2701,10 +2723,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self,
         click_rule: RuleClick,
         expected_name: str | None = None,
+        rules: list[tuple[str, RuleImage]] | None = None,
     ) -> dict | None:
         """只在一个商店点击框内匹配 ``*_m`` 式神头像。"""
         best = None
-        for name, rule in self.shikigami_shop_rules:
+        rules = self.shikigami_shop_rules if rules is None else rules
+        for name, rule in rules:
             if expected_name is not None and name != expected_name:
                 continue
             matches = rule.match_all_any(
@@ -2729,9 +2753,10 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         fallback = self._match_shop_shikigami_avatar_glow_fallback(
             click_rule,
             expected_name=expected_name,
+            rules=rules,
         )
         if fallback is not None:
-            logger.warning(
+            logger.debug(
                 'Chess shop avatar matched by glow fallback: '
                 f'name={fallback["name"]}, score={fallback["score"]:.3f}, '
                 f'threshold={self.SHOP_GLOW_TEMPLATE_THRESHOLD}'
@@ -2750,6 +2775,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self,
         click_rule: RuleClick,
         expected_name: str | None = None,
+        rules: list[tuple[str, RuleImage]] | None = None,
     ) -> dict | None:
         """发光商店卡兜底：用灰度归一化匹配降低光效影响。"""
         x, y, width, height = click_rule.roi_back
@@ -2758,7 +2784,8 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             return None
         source_gray = self._template_gray(source)
         best = None
-        for name, rule in self.shikigami_shop_rules:
+        rules = self.shikigami_shop_rules if rules is None else rules
+        for name, rule in rules:
             if expected_name is not None and name != expected_name:
                 continue
             template = rule.image
@@ -2788,7 +2815,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         if best is None:
             return None
         if best['score'] < self.SHOP_GLOW_TEMPLATE_THRESHOLD:
-            logger.info(
+            logger.debug(
                 'Chess shop glow fallback best candidate below threshold: '
                 f'name={best["name"]}, score={best["score"]:.3f}, '
                 f'threshold={self.SHOP_GLOW_TEMPLATE_THRESHOLD}'
@@ -2812,20 +2839,22 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         while current_match is not None and time.monotonic() < deadline:
             if not self._is_purchase_allowed():
-                logger.info(
+                logger.debug(
                     f'Stop buying {matched_name}: Hyakki mode detected'
                 )
                 return False
             if not self._can_afford_shop_shikigami(slot_index):
-                logger.info(
+                logger.debug(
                     f'Skip buying {matched_name}: insufficient gold for '
                     f'shop slot {slot_index}'
                 )
                 return False
             attempts += 1
             logger.info(
-                f'Chess buy {matched_name} from shop slot {slot_index}, '
-                f'attempt={attempts}, avatar_score={current_match["score"]:.3f}'
+                f'Buy Chess card: '
+                f'{self._shikigami_display_name(matched_name)} '
+                f'(slot={slot_index}, '
+                f'attempt={attempts}, avatar_score={current_match["score"]:.3f})'
             )
             self.click(click_rule)
             time.sleep(self.SHOP_BUY_RETRY_INTERVAL)
@@ -2836,17 +2865,17 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             )
             if current_match is not None:
                 if not self._is_purchase_allowed():
-                    logger.info(
+                    logger.debug(
                         f'Stop buying {matched_name}: Hyakki mode detected'
                     )
                     return False
                 if not self._can_afford_shop_shikigami(slot_index):
-                    logger.info(
+                    logger.debug(
                         f'Stop retrying {matched_name}: insufficient gold '
                         f'for shop slot {slot_index}'
                     )
                     return False
-                logger.info(
+                logger.debug(
                     f'Chess shop slot {slot_index} still matches '
                     f'{matched_name} after click, free hand space and retry'
                 )
@@ -2858,7 +2887,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     return False
 
         if current_match is None:
-            logger.info(
+            logger.debug(
                 'Chess shop purchase succeeded by avatar disappearance: '
                 f'slot={slot_index}, name={matched_name}, attempts={attempts}'
             )
@@ -2873,26 +2902,26 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def buy_lineup_shikigami_from_shop(self) -> list[str] | None:
         """先以卡面头像记录商店目标，再按记录购买所有阵容式神。"""
         if not self._is_purchase_allowed():
-            logger.info('Stop Chess shop purchase: Hyakki mode detected')
+            logger.debug('Stop Chess shop purchase: Hyakki mode detected')
             return None
         if not self._ensure_shop_open():
             return None
 
-        logger.info('Scan all Chess shop slots before purchasing')
+        logger.debug('Scan all Chess shop slots before purchasing')
         targets = []
 
         for slot_index, click_rule in self._shop_slots():
             if not self._is_purchase_allowed():
-                logger.info('Stop Chess shop purchase: Hyakki mode detected')
+                logger.debug('Stop Chess shop purchase: Hyakki mode detected')
                 return None
             matched = self._match_shop_shikigami_avatar(click_rule)
             if matched is None:
-                logger.info(
+                logger.debug(
                     f'Chess shop slot {slot_index}: no lineup avatar matched'
                 )
                 continue
 
-            logger.info(
+            logger.debug(
                 f'Chess shop slot {slot_index}: avatar -> '
                 f'{matched["name"]}, score={matched["score"]:.3f}'
             )
@@ -2902,17 +2931,17 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 'matched_name': matched['name'],
             })
 
-        logger.info(
+        logger.debug(
             'Chess shop target scan complete: '
             f'{[(item["slot_index"], item["matched_name"]) for item in targets]}'
         )
         purchased = []
         for target in targets:
             if not self._is_purchase_allowed():
-                logger.info('Stop Chess shop purchase: Hyakki mode detected')
+                logger.debug('Stop Chess shop purchase: Hyakki mode detected')
                 return None
             if not self._can_afford_shop_shikigami(target['slot_index']):
-                logger.info(
+                logger.debug(
                     'Skip unaffordable Chess shop target: '
                     f'slot={target["slot_index"]}, '
                     f'name={target["matched_name"]}'
@@ -2929,7 +2958,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             elif not self._can_afford_shop_shikigami(
                 target['slot_index']
             ):
-                logger.info(
+                logger.debug(
                     'Chess target became unaffordable; skip it and continue: '
                     f'slot={target["slot_index"]}, '
                     f'name={target["matched_name"]}'
@@ -2945,8 +2974,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 )
                 return None
 
-        logger.info(f'Chess shop check complete, purchased={purchased}')
+        logger.debug(f'Chess shop check complete, purchased={purchased}')
         return purchased
+
+    def purchase_lineup_cards_once(self) -> list[str] | None:
+        """确保商店打开后扫描并购买，不负责关闭商店。"""
+        return self.buy_lineup_shikigami_from_shop()
 
     def _reset_economy_state(self) -> None:
         """重置单局可暂停的回目结束任务和商店状态。"""
@@ -2961,25 +2994,25 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def _schedule_economy_cycle(self) -> None:
         """登记一次经济任务；已有未完成原子动作时保持其精确进度。"""
         if getattr(self, '_economy_pending', False):
-            logger.info(
+            logger.debug(
                 'Chess economy is already pending: '
                 f'state={self._economy_step_state}'
             )
             return
         self._economy_pending = True
-        self._economy_step_state = 'purchase_existing'
-        logger.info('Schedule Chess economy cycle from current shop purchase')
+        self._economy_step_state = 'ready'
+        logger.debug('Schedule Chess economy upgrade/refresh cycle')
 
     def _schedule_round_end_actions(self, round_no: int) -> None:
         """登记回目结束任务；第四回目起额外登记系统站位整理。"""
         if round_no > 3:
             if not getattr(self, '_formation_pending', False):
-                logger.info(
+                logger.debug(
                     f'Schedule Chess formation recovery after round {round_no}'
                 )
             self._formation_pending = True
         else:
-            logger.info(
+            logger.debug(
                 f'Chess round {round_no} uses alternate early layout; '
                 'skip formation recovery scheduling'
             )
@@ -2988,7 +3021,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def _finish_economy_cycle(self, reason: str) -> None:
         self._economy_pending = False
         self._economy_step_state = 'idle'
-        logger.info(f'Chess economy cycle complete: {reason}')
+        logger.debug(f'Chess economy cycle complete: {reason}')
 
     def _click_economy_button_and_confirm_gold(
         self,
@@ -3007,7 +3040,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             return 'no_progress'
 
         for attempt in range(1, self.ECONOMY_CONFIRM_RETRIES + 1):
-            logger.info(
+            logger.debug(
                 f'Chess {label}: fixed click attempt={attempt}, '
                 f'gold_before={gold_before}'
             )
@@ -3023,7 +3056,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 )
                 return 'unknown'
             if gold_after <= gold_before - expected_cost:
-                logger.info(
+                logger.debug(
                     f'Chess {label} confirmed by gold: '
                     f'{gold_before} -> {gold_after}'
                 )
@@ -3039,33 +3072,23 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         """返回当前阶数的原子操作序列。"""
         if level >= self._lineup_final_level():
             return ('refresh',)
-        if level <= 4:
-            return ('experience', 'experience', 'refresh')
-        elif level == 5:
-            return (
-                'experience',
-                'experience',
-                'experience',
-                'refresh',
-                'refresh',
-            )
-        elif level in (6, 7):
-            return ('experience', 'experience', 'refresh')
+        if level <= 7:
+            return ('experience', 'refresh')
         return ('experience', 'refresh', 'refresh')
 
     def _economy_reserve_for_level(self, level: int) -> int:
         if level >= self._lineup_final_level():
             return 0
         if level <= 5:
-            return self.ECONOMY_RESERVE_LEVEL_1_TO_5
+            return 45
         if level <= 7:
-            return self.ECONOMY_RESERVE_LEVEL_6_TO_7
-        return self.ECONOMY_RESERVE_LEVEL_8
+            return 35
+        return 25
 
     def _reset_economy_sequence_if_level_changed(self, level: int) -> None:
         if self._economy_sequence_level == level:
             return
-        logger.info(
+        logger.debug(
             'Reset Chess economy operation counter: '
             f'{self._economy_sequence_level} -> {level}'
         )
@@ -3077,7 +3100,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         sequence = self._economy_sequence_for_level(level)
         index = self._economy_sequence_index % len(sequence)
         operation = sequence[index]
-        logger.info(
+        logger.debug(
             'Chess economy next operation: '
             f'level={level}, sequence={sequence}, index={index}, '
             f'operation={operation}'
@@ -3090,7 +3113,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self._economy_sequence_index = (
             self._economy_sequence_index + 1
         ) % len(sequence)
-        logger.info(
+        logger.debug(
             'Advance Chess economy operation counter: '
             f'level={level}, next_index={self._economy_sequence_index}'
         )
@@ -3112,46 +3135,22 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         return gold >= reserve + cost
 
     def _run_economy_atomic_batch(self, battle_mode: bool = False) -> str:
-        """执行一个由计数器决定的经济原子动作。"""
+        """执行一个由计数器决定的升级/刷新原子动作。"""
         if not getattr(self, '_economy_pending', False):
             return 'complete'
         if not self._is_purchase_allowed():
-            logger.info('Pause Chess economy: Hyakki mode detected')
+            logger.debug('Pause Chess economy: Hyakki mode detected')
             return 'blocked'
 
         previous_battle_mode = getattr(self, '_economy_battle_mode', False)
         self._economy_battle_mode = battle_mode
         try:
-            state = self._economy_step_state
-            completed_prior_batch = state == 'purchase_after_refresh'
-            if state in ('purchase_existing', 'purchase_after_refresh'):
-                purchased = self.buy_lineup_shikigami_from_shop()
-                if purchased is None:
-                    logger.warning(
-                        f'Pause Chess economy at {state}: purchase not '
-                        'confirmed'
-                    )
-                    return 'blocked'
-                if state == 'purchase_after_refresh':
-                    logger.info(
-                        'Chess economy atomic batch finished: '
-                        f'purchased={purchased}'
-                    )
-                self._economy_step_state = 'ready'
-
             level = self._read_level()
             gold = self._read_shop_gold()
             if level is None or gold is None:
                 logger.warning(
                     'Pause Chess economy: level or gold OCR unavailable'
                 )
-                return 'blocked'
-            if completed_prior_batch:
-                # 这里只补完上次因阶段切换而暂停的购买子步骤。剩余经济
-                # 留给外层下一次调度，先刷新回目与模式状态。
-                return 'pending'
-
-            if not self._ensure_shop_open():
                 return 'blocked'
 
             operation = self._next_economy_operation(level)
@@ -3175,6 +3174,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     return 'blocked'
                 self._advance_economy_operation_counter(level)
             else:
+                # 只有刷新动作要求商店打开；购买经验不改变商店状态。
+                if not self._ensure_shop_open():
+                    return 'blocked'
                 result = self._click_economy_button_and_confirm_gold(
                     self.I_REFRESH,
                     self.SHOP_REFRESH_COST,
@@ -3183,18 +3185,20 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 )
                 if result == 'no_progress':
                     return 'blocked'
+                logger.info(
+                    f'Refresh Chess shop: cards={self._shop_shikigami_summary()}'
+                )
                 self._advance_economy_operation_counter(level)
-                purchased = self.buy_lineup_shikigami_from_shop()
+                purchased = self.purchase_lineup_cards_once()
                 if purchased is None:
                     logger.warning(
                         'Pause Chess economy after refresh: purchase not '
                         'confirmed'
                     )
-                    self._economy_step_state = 'purchase_after_refresh'
                     return 'blocked'
             self._economy_step_state = 'ready'
 
-            logger.info(
+            logger.debug(
                 'Chess economy atomic batch finished: '
                 f'operation={operation}, battle_mode={battle_mode}'
             )
@@ -3243,7 +3247,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
     def _start_chess_game(self) -> None:
         """从棋局大厅开战，确认进入局内后直接开始回合流程。"""
-        logger.hr('Chess game start')
+        logger.debug('Chess game start')
         # 御魂容量只在单局内记忆。新对局重新允许所有已上阵式神接受
         # 御魂，避免上一局的“已满”状态污染下一局。
         self._soul_full_positions = set()
@@ -3253,7 +3257,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self._alive_players_confirmed = 0
         self._reset_economy_state()
         strategy = self.get_lineup_strategy()
-        logger.info(
+        logger.debug(
             'Reset Chess per-game state: '
             f'lineup={strategy["key"]} ({strategy["display_name"]})'
         )
@@ -3261,7 +3265,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             timeout=self.GAME_ENTER_TIMEOUT,
             retry_start=True,
         )
-        logger.info(
+        logger.debug(
             'Chess entered game; skip lineup preset and start round loop'
         )
 
@@ -3290,9 +3294,55 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self.equip_souls_from_hand(verified_board_names)
         return self._is_preparation_mode()
 
+    def _run_preparation_economy_until_time_limit(self) -> None:
+        """备阶段升级/刷新循环：仅这部分受剩余时间限制。"""
+        if not self._is_preparation_mode():
+            return
+
+        self._schedule_economy_cycle()
+        while getattr(self, '_economy_pending', False):
+            if not self._is_preparation_mode():
+                return
+            if self.appear(self.I_SELECT_BUFF):
+                return
+            # 只有升级/刷新循环受剩余时间限制；第二套布局没有 now_time
+            # OCR，_read_remaining_time 会返回 None，因此不会误打断购买。
+            remaining = self._read_remaining_time()
+            if remaining is not None and remaining <= 15:
+                logger.info(
+                    'Stop Chess preparation upgrade/refresh loop: '
+                    f'remaining_time={remaining} <= 15'
+                )
+                return
+            result = self._run_economy_atomic_batch(battle_mode=False)
+            if result in ('complete', 'blocked'):
+                return
+            self.screenshot()
+
+    def _run_battle_economy_until_budget_limit(self) -> None:
+        """战阶段续跑升级/刷新循环；同样受剩余时间 <= 15 保护。"""
+        if self._read_chess_mode() != '战':
+            return
+        self._schedule_economy_cycle()
+        while (
+            self._read_chess_mode() == '战'
+            and getattr(self, '_economy_pending', False)
+        ):
+            remaining = self._read_remaining_time()
+            if remaining is not None and remaining <= 15:
+                logger.info(
+                    'Stop Chess battle upgrade/refresh loop: '
+                    f'remaining_time={remaining} <= 15'
+                )
+                return
+            result = self._run_economy_atomic_batch(battle_mode=True)
+            if result in ('complete', 'blocked'):
+                return
+            self.screenshot()
+
     def _return_to_chess_lobby(self) -> None:
         """严格按返回按钮、分享页、两次安全点击顺序返回棋局大厅。"""
-        logger.hr('Chess game finished')
+        logger.debug('Chess game finished')
         deadline = time.monotonic() + self.RESULT_RETURN_TIMEOUT
         share_seen = False
         exit_clicked = False
@@ -3306,7 +3356,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 rank_recovery_started
                 and self.appear(self.I_CHECK_CHESS)
             ):
-                logger.info('Returned to Chess lobby from recovered rank page')
+                logger.debug('Returned to Chess lobby from recovered rank page')
                 return
 
             # 任务重启时可能已经停在排名界面，此时没有机会重新经历分享
@@ -3314,7 +3364,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             rank_page = self.appear(self.I_CHECK_RANK)
             rank_button = self.appear(self.I_RANK_GOTO_CHESS)
             if (rank_page or rank_button) and not exit_clicked:
-                logger.info('Chess rank page detected, return to Chess lobby')
+                logger.debug('Chess rank page detected, return to Chess lobby')
                 rank_recovery_started = True
                 if rank_button:
                     self.appear_then_click(self.I_RANK_GOTO_CHESS, interval=1.5)
@@ -3323,7 +3373,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
             if not exit_clicked:
                 if self.appear(self.I_EXIT_TO_CHESS):
-                    logger.info(
+                    logger.debug(
                         'Chess return-to-lobby button detected, click it; '
                         'share page is now mandatory'
                     )
@@ -3332,7 +3382,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                     continue
                 if self.appear(self.I_EXIT_TO_CHESS_2):
-                    logger.info(
+                    logger.debug(
                         'Chess active-exit result detected; click it and '
                         'require share page next'
                     )
@@ -3345,7 +3395,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     continue
                 if self.appear(self.I_SHARE):
                     # 脚本重启时可能已经点击过返回并停在分享页。
-                    logger.info(
+                    logger.debug(
                         'Chess return flow resumed from existing share page'
                     )
                     exit_clicked = True
@@ -3366,7 +3416,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
             if not share_seen and self.appear(self.I_SHARE):
                 share_seen = True
-                logger.info(
+                logger.debug(
                     'Chess share page detected after return-to-lobby click'
                 )
 
@@ -3381,7 +3431,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     ltrb=(True, False, False, False)
                 )
                 safe_clicks += 1
-                logger.info(
+                logger.debug(
                     'Chess share safe click: '
                     f'{safe_clicks}/2, target={safe_click.name}'
                 )
@@ -3392,7 +3442,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 continue
 
             if rank_page or rank_button:
-                logger.info(
+                logger.debug(
                     'Chess rank page detected after two share safe clicks'
                 )
                 if rank_button:
@@ -3404,7 +3454,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 continue
 
             if self.appear(self.I_CHECK_CHESS):
-                logger.info(
+                logger.debug(
                     'Returned to Chess lobby after mandatory share flow: '
                     'safe_clicks=2'
                 )
@@ -3426,7 +3476,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
     def active_exit_chess_game(self) -> bool:
         """Chess 专属主动退出；不扩展通用 GeneralBattle 接口。"""
-        logger.info('Chess active exit requested')
+        logger.debug('Chess active exit requested')
         self.screenshot()
         if not self.appear(self.I_EXIT):
             logger.warning('Chess active exit button is not available')
@@ -3441,7 +3491,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     self.I_EXIT_ENSURE,
                     interval=0.8,
                 )
-                logger.info('Chess active exit success')
+                logger.debug('Chess active exit success')
                 self._return_to_chess_lobby()
                 return True
             if self.appear_then_click(self.I_EXIT_ENSURE, interval=0.8):
@@ -3469,7 +3519,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             or self.appear(self.I_CHECK_RANK)
             or self.appear(self.I_RANK_GOTO_CHESS)
         ):
-            logger.info('Chess startup recovery: unfinished result flow detected')
+            logger.debug('Chess startup recovery: unfinished result flow detected')
             self._return_to_chess_lobby()
             return True
 
@@ -3529,7 +3579,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 if mode is None:
                     empty_frames += 1
                     if empty_frames >= self.RESULT_EMPTY_CONFIRM_FRAMES:
-                        logger.info(
+                        logger.debug(
                             'Chess round and mode stayed empty before a round; '
                             'enter result flow'
                         )
@@ -3546,7 +3596,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         if not self._is_preparation_mode():
             return False
 
-        logger.hr('Chess pending system-card recall')
+        logger.debug('Chess pending system-card recall')
         if not self._ensure_shop_closed():
             return False
         if not self.recall_all_board_cards():
@@ -3555,50 +3605,32 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self.screenshot()
         if not self._is_preparation_mode():
             return False
-        # 回收之后先恢复阵容，再允许经济操作。若上一回目缺少战后备，
-        # 这里会在新回目的第一次可用备阶段完成，并直接算作该次备操作。
-        logger.hr('Chess immediate redeploy after pending recall')
+        # 回收之后先恢复阵容，再允许经济操作。
+        logger.debug('Chess immediate redeploy after pending recall')
         if not self._handle_preparation():
             return False
 
         self._formation_pending = False
-        logger.info('Chess pending formation recovery completed')
+        logger.debug('Chess pending formation recovery completed')
         return True
 
     def _handle_preparation_stage(self, stage_index: int) -> bool:
         """执行一次完整备阶段；卖卡已移至独立的战阶段环节。"""
-        logger.hr(f'Chess preparation stage {stage_index}/2')
+        logger.debug(f'Chess preparation stage {stage_index}/2')
         return self._handle_preparation() and self._is_preparation_mode()
 
     def _handle_battle_sell_stage(self) -> bool:
         """战阶段独立卖卡：持续清理杂卡和纹章，直到确认手牌干净。"""
         if self._read_chess_mode() != '战':
             return False
-        if (
-            self._is_shop_open()
-            or getattr(self, '_shop_assumed_open', False)
-        ) and not self._ensure_shop_closed(
-            allowed_modes=('战',),
-        ):
-            return False
-        logger.hr('Chess battle hand-card cleanup')
+        logger.debug('Chess battle hand-card cleanup')
         sold = self.cleanup_non_lineup_hand_cards(allowed_modes=('战',))
-        logger.info(f'Chess battle hand-card cleanup complete: sold={sold}')
+        logger.debug(f'Chess battle hand-card cleanup complete: sold={sold}')
         return self._read_chess_mode() == '战'
 
     def _handle_passive_stage(self, mode: str) -> bool:
-        """战、鬼、待阶段的公共动作：确保商店关闭。"""
-        if mode not in ('战', '鬼', '待'):
-            return False
-        if (
-            not self._is_shop_open()
-            and not getattr(self, '_shop_assumed_open', False)
-        ):
-            return True
-        logger.info(
-            f'Chess passive stage {mode}: shop is open, close it before waiting'
-        )
-        return self._ensure_shop_closed(allowed_modes=(mode,))
+        """战、鬼、待阶段只等待，不主动改变商店状态。"""
+        return mode in ('战', '鬼', '待')
 
     def _handle_battle_economy(self) -> str:
         """卖卡完成后，在战阶段续跑一个尚未完成的经济原子动作。"""
@@ -3606,26 +3638,23 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             return 'blocked'
         if not getattr(self, '_economy_pending', False):
             return 'complete'
-        logger.hr(
+        logger.debug(
             'Chess battle economy continuation: '
             f'state={self._economy_step_state}'
         )
         return self._run_economy_atomic_batch(battle_mode=True)
 
     def run_one_round(self, round_no: int) -> int | None:
-        """执行一个回目；第二次备可缺省，回目数字变化是硬边界。"""
-        logger.hr(f'Chess round {round_no}')
+        """执行一个回目：回合开始 -> 备 -> 战/鬼/待 -> 等待新回合。"""
+        logger.debug(f'Chess round {round_no}')
         self._read_round_resources(round_no, self._read_chess_mode())
-        phase = 'await_first_preparation'
-        preparation_count = 0
+        phase = 'await_preparation'
+        preparation_done = False
         next_round_candidate = None
         next_round_confirmed = 0
         empty_frames = 0
         unknown_since = None
         battle_hand_cleanup_done = False
-        post_battle_or_hyakki_wait_pending = False
-        last_seconds_deploy_checked = False
-        early_layout_round_start_purchase_done = False
 
         while True:
             self.device.stuck_record_clear()
@@ -3651,7 +3680,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             if observed_round is None and mode is None:
                 empty_frames += 1
                 if empty_frames >= self.RESULT_EMPTY_CONFIRM_FRAMES:
-                    logger.info(
+                    logger.debug(
                         f'Chess round {round_no} state stayed empty; '
                         'enter result flow'
                     )
@@ -3669,28 +3698,10 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     next_round_confirmed = 1
                 round_transition_pending = True
                 if next_round_confirmed >= self.ROUND_CONFIRM_FRAMES:
-                    actions_already_scheduled = phase in (
-                        'round_end',
-                        'round_end_economy',
-                        'round_complete',
-                    )
-                    if not actions_already_scheduled:
-                        logger.warning(
-                            f'Chess round {round_no} changed directly to '
-                            f'{observed_round} without a usable second '
-                            f'preparation: phase={phase}; defer round-end '
-                            'actions'
-                        )
-                        self._schedule_round_end_actions(round_no)
-                    logger.info(
+                    logger.debug(
                         f'Chess round boundary confirmed: {round_no} -> '
-                        f'{observed_round}, '
-                        f'preparation_count={preparation_count}, '
-                        f'phase={phase}, '
-                        f'formation_pending='
-                        f'{getattr(self, "_formation_pending", False)}, '
-                        f'economy_pending='
-                        f'{getattr(self, "_economy_pending", False)}'
+                        f'{observed_round}, phase={phase}, '
+                        f'preparation_done={preparation_done}'
                     )
                     return observed_round
             else:
@@ -3698,26 +3709,8 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 next_round_confirmed = 0
 
             # 回目数字第一次变化时暂停所有旧回目动作，等待第二帧确认。
-            # 这样新回目的首次“备”不会被误执行成旧回目的第二次“备”。
             if round_transition_pending:
                 time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
-            # 战、鬼结束后的画面切换动画较长。回目边界检查优先于延迟，
-            # 避免缺少战后备时先睡眠、再误处理新回目的画面。
-            if mode in ('战', '鬼'):
-                post_battle_or_hyakki_wait_pending = True
-            elif post_battle_or_hyakki_wait_pending:
-                wait_seconds = random.uniform(
-                    *self.POST_BATTLE_OR_HYAKKI_WAIT_RANGE
-                )
-                logger.info(
-                    'Chess battle/Hyakki mode disappeared; wait before '
-                    f'processing next state: {wait_seconds:.1f}s'
-                )
-                time.sleep(wait_seconds)
-                self.screenshot()
-                post_battle_or_hyakki_wait_pending = False
                 continue
 
             in_game = mode is not None or self._is_in_chess_game()
@@ -3732,33 +3725,20 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
             if mode in ('战', '鬼', '待'):
                 if mode == '战':
+                    self._run_battle_economy_until_budget_limit()
                     if not battle_hand_cleanup_done:
                         battle_hand_cleanup_done = (
                             self._handle_battle_sell_stage()
                         )
-                    if battle_hand_cleanup_done:
-                        if getattr(self, '_economy_pending', False):
-                            economy_result = self._handle_battle_economy()
-                            if economy_result == 'complete':
-                                self._handle_passive_stage('战')
-                        else:
-                            self._handle_passive_stage('战')
+                    self._handle_passive_stage('战')
                 else:
                     self._handle_passive_stage(mode)
-                if phase == 'await_first_preparation':
-                    # 中途恢复时已经错过本回目的第一次备；把它视为已结束，
-                    # 等下一次备执行第二阶段，避免永远等不到完整序列。
-                    preparation_count = 1
-                    phase = 'await_second_preparation'
+                if phase == 'await_preparation':
+                    preparation_done = True
+                    phase = 'await_battle_end'
                     logger.warning(
                         f'Chess round {round_no}: resumed in passive mode '
-                        f'{mode}; treat first preparation as already passed'
-                    )
-                elif phase == 'await_middle_stage':
-                    phase = 'await_second_preparation'
-                    logger.info(
-                        f'Chess round {round_no}: middle stage={mode}; '
-                        'wait for second preparation'
+                        f'{mode}; treat preparation as already passed'
                     )
 
             elif mode == '备':
@@ -3766,109 +3746,24 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 # phase/preparation_count；下一轮循环会把它当作新的同阶段备，
                 # 从上式神、上御魂的起点重新执行。
                 if self.appear(self.I_SELECT_BUFF):
-                    logger.hr('Chess preparation interrupted by buff selection')
+                    logger.debug('Chess preparation interrupted by buff selection')
                     self.select_random_buff()
                     continue
 
-                if (
-                    phase == 'await_first_preparation'
-                    and not early_layout_round_start_purchase_done
-                    and self._is_early_round_layout()
-                ):
-                    logger.hr(
-                        'Chess alternate-layout round-start shop purchase'
-                    )
-                    purchased = self.buy_lineup_shikigami_from_shop()
-                    logger.info(
-                        'Chess alternate-layout round-start purchase '
-                        f'complete: purchased={purchased}'
-                    )
-                    early_layout_round_start_purchase_done = True
+                if phase == 'await_preparation':
+                    # 回合开始先独立购买一次：开商店、扫商店、买目标。
+                    # 15 秒保护只约束后面的升级/刷新循环，不影响这次买卡。
+                    self.purchase_lineup_cards_once()
+                    self._run_preparation_economy_until_time_limit()
                     if not self._is_preparation_mode():
                         time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                         continue
-
-                # 已完成当前阶段动作后才属于“无操作”状态。第一套布局在
-                # 备阶段倒计时进入最后 10 秒且阵容未满时，补做一次上阵，
-                # 防止刷新购卡后新卡留在手牌直到系统自动上阵。
-                idle_phase = phase in ('await_middle_stage', 'round_complete')
-                if (
-                    idle_phase
-                    and not last_seconds_deploy_checked
-                    and not getattr(self, '_formation_pending', False)
-                    and not getattr(self, '_economy_pending', False)
-                ):
-                    last_seconds_deploy_checked = (
-                        self._try_last_seconds_deploy()
-                    )
-                    if last_seconds_deploy_checked:
-                        continue
-
-                # 上一回目若缺少战后备，阵容整理会延迟到这里。整理内部
-                # 已包含上式神和上御魂，因此直接把它计作当前备阶段，
-                # 禁止随后再次执行同一套上阵流程。
-                if getattr(self, '_formation_pending', False):
-                    logger.hr(
-                        'Chess execute deferred formation recovery in '
-                        f'phase={phase}'
-                    )
-                    if not self._handle_round_end():
-                        time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                        continue
-                    if phase == 'await_first_preparation':
-                        preparation_count = 1
-                        phase = 'await_middle_stage'
-                        logger.info(
-                            f'Chess round {round_no}: deferred formation '
-                            'recovery counted as first preparation'
-                        )
-                    elif phase == 'await_second_preparation':
-                        preparation_count = 2
-                        self._schedule_economy_cycle()
-                        phase = 'round_end_economy'
-                        logger.info(
-                            f'Chess round {round_no}: deferred formation '
-                            'recovery counted as second preparation; '
-                            'continue economy without duplicate recall'
-                        )
-                    continue
-
-                if phase == 'await_first_preparation':
                     if self._handle_preparation_stage(1):
-                        preparation_count = 1
-                        phase = 'await_middle_stage'
-                        logger.info(
-                            f'Chess round {round_no}: first preparation '
+                        preparation_done = True
+                        phase = 'await_battle'
+                        logger.debug(
+                            f'Chess round {round_no}: preparation '
                             'complete; wait for 战/鬼/待'
-                        )
-
-                elif phase == 'await_second_preparation':
-                    if self._handle_preparation_stage(2):
-                        preparation_count = 2
-                        self._schedule_round_end_actions(round_no)
-                        phase = 'round_end'
-                        logger.info(
-                            f'Chess round {round_no}: second preparation '
-                            'complete; restore formation before economy'
-                        )
-
-                if phase == 'round_end':
-                    if self._handle_round_end():
-                        phase = 'round_end_economy'
-                        logger.info(
-                            f'Chess round {round_no}: formation protected; '
-                            'start interruptible economy batches'
-                        )
-
-                if phase == 'round_end_economy':
-                    economy_result = self._run_economy_atomic_batch(
-                        battle_mode=False,
-                    )
-                    if economy_result == 'complete':
-                        phase = 'round_complete'
-                        logger.info(
-                            f'Chess round {round_no}: economy reached its '
-                            'current limit; wait for next round number'
                         )
 
             interval = (
@@ -3938,7 +3833,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 )
                 break
 
-            logger.hr(
+            logger.debug(
                 'Chess game loop '
                 f'{completed + 1}/'
                 f'{"infinite" if target_count == -1 else target_count}'

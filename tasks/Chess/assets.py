@@ -48,12 +48,6 @@ class ChessAssets:
 	I_CHECK_RANK = RuleImage(roi_front=(14,75,79,38), roi_back=(14,75,79,38), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_rank.png")
 	#  
 	I_RANK_GOTO_CHESS = RuleImage(roi_front=(66,646,133,42), roi_back=(66,646,133,42), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_rank_goto_chess.png")
-	# 一星手牌标志 
-	I_CARD_1 = RuleImage(roi_front=(614,552,27,26), roi_back=(179,540,957,158), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_card_1.png")
-	# 二星手牌标志 
-	I_CARD_2 = RuleImage(roi_front=(565,552,27,26), roi_back=(179,540,957,158), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_card_2.png")
-	# 三星手牌标志 
-	I_CARD_3 = RuleImage(roi_front=(614,552,27,26), roi_back=(179,540,957,158), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_card_3.png")
 	#  
 	I_USE_SOUL = RuleImage(roi_front=(1005,144,172,47), roi_back=(1005,144,172,47), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_use_soul.png")
 	#  
@@ -80,6 +74,8 @@ class ChessAssets:
 	I_SKIP = RuleImage(roi_front=(1148,39,77,22), roi_back=(1148,39,77,22), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_skip.png")
 	#  
 	I_SHIKIGAMI_SPECIFICS = RuleImage(roi_front=(1215,106,44,46), roi_back=(1215,106,44,46), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_shikigami_specifics.png")
+	#  
+	I_CHECK_MARKET = RuleImage(roi_front=(1206,319,35,31), roi_back=(1206,319,35,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_market.png")
 
 
 	# Ocr Rule Assets
