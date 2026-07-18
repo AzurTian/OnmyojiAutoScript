@@ -121,7 +121,7 @@ MINGFU_CONFIG = {
         '判官': 6,
         '花鸟卷': 7,
         '鬼使白': 8,
-        '白童子': 10,
+        '白童子': 9,
     },
     'hakuzosu_protect_position': 1,
 }
