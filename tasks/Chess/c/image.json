@@ -187,5 +187,32 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""
+  },
+  {
+    "itemName": "chess_exit",
+    "imageName": "c_chess_exit.png",
+    "roiFront": "12,14,48,38",
+    "roiBack": "12,14,48,38",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "chess_exit_confirm",
+    "imageName": "c_chess_exit_confirm.png",
+    "roiFront": "716,409,88,45",
+    "roiBack": "716,409,88,45",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "chess_exit_cancel",
+    "imageName": "c_chess_exit_cancel.png",
+    "roiFront": "478,409,88,45",
+    "roiBack": "478,409,88,45",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
   }
 ]

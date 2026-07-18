@@ -34,7 +34,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     conf: Chess = None
     HAND_AREA = (179, 540, 957, 158)
     HAND_TEMPLATE_THRESHOLD = 0.7
-    HAND_DEPLOY_TEMPLATE_THRESHOLD = 0.7
+    HAND_DEPLOY_TEMPLATE_THRESHOLD = 0.6
     HAND_DEPLOY_CONFIRM_FRAMES = 1
     SHOP_TEMPLATE_THRESHOLD = 0.7
     SHOP_GLOW_TEMPLATE_THRESHOLD = 0.58
@@ -589,11 +589,35 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         )
         x, y, width, height = target['roi']
         position = (x + width // 2, y + height // 2)
-        logger.info(f'Sell Chess card: rightmost hand card, position={position}')
+        identity = self.classify_hand_card(target['roi'])
+        sale_key = (identity['type'], identity['name'])
+        count_before = self._hand_card_identity_count(*sale_key)
+        logger.info(
+            f'Sell Chess card: rightmost hand card, '
+            f'name={self._shikigami_display_name(identity["name"])}, '
+            f'position={position}'
+        )
         self.sell_hand_card(position)
         time.sleep(self.HAND_SELL_WAIT)
         self.screenshot()
-        return {'type': 'rightmost', 'position': position}
+        self.close_shikigami_specifics_if_open()
+        self.screenshot()
+        count_after = self._hand_card_identity_count(*sale_key)
+        if count_after >= count_before:
+            logger.warning(
+                'Rightmost Chess card sale not confirmed; '
+                f'count={count_before}->{count_after}'
+            )
+            return None
+        logger.info(
+            'Rightmost Chess card sale confirmed: '
+            f'count={count_before}->{count_after}'
+        )
+        return {
+            'type': 'rightmost',
+            'name': identity['name'],
+            'position': position,
+        }
 
     def _hakuzosu_protect_target_position(self) -> int | None:
         """当前阵容中守护之印的目标位置；没有白藏主则禁用。"""
@@ -1548,6 +1572,53 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         """兼容只需要卡框的分类流程。"""
         return [item['roi'] for item in self._hand_card_detections()]
 
+    def _hand_card_identity_count(
+        self,
+        card_type: str,
+        name: str | None,
+    ) -> int:
+        """统计手牌中指定素材的命中张数，用于确认出售确实生效。"""
+        if card_type == 'shikigami' and name:
+            rules = [
+                rule
+                for rule_name, rule in self.shikigami_hand_rules
+                if rule_name == name
+            ]
+        elif card_type == 'soul' and name:
+            rules = [
+                rule
+                for rule_name, rule in self.soul_hand_rules
+                if rule_name == name
+            ]
+        else:
+            return len(self._hand_card_detections())
+
+        matches = []
+        for rule in rules:
+            matches.extend(rule.match_all_any(
+                self.device.image,
+                roi=list(self.HAND_AREA),
+                threshold=rule.threshold,
+                nms_threshold=0.3,
+                frame_id=self.device.image_frame_id,
+            ))
+
+        centers = []
+        for score, x, y, width, height in sorted(
+            matches,
+            key=lambda item: item[0],
+            reverse=True,
+        ):
+            center = (x + width // 2, y + height // 2)
+            if any(
+                abs(center[0] - kept[0]) <= 28
+                and abs(center[1] - kept[1]) <= 40
+                for kept in centers
+            ):
+                continue
+            centers.append(center)
+        return len(centers)
+
     def cleanup_non_lineup_hand_cards(
         self,
         allowed_modes: tuple[str, ...] = ('战',),
@@ -1562,6 +1633,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             return []
 
         sold = []
+        failed_sale_attempts = {}
         clean_confirm_frames = 0
         strategy = self.get_lineup_strategy()
         logger.debug(
@@ -1645,23 +1717,29 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 if keep:
                     continue
 
-                # 即使常规分类给出了非阵容或 unknown，也以更宽松阈值
-                # 复查阵容头像，防止发光、遮挡等瞬时变化误卖核心卡。
-                possible = self._possible_lineup_shikigami(card_roi)
-                if possible is not None:
-                    logger.debug(
-                        'Protect possible lineup Chess hand card from sale: '
-                        f'name={possible["name"]}, '
-                        f'score={possible["score"]:.3f}, '
-                        f'classified_type={result["type"]}, '
-                        f'classified_name={result["name"]}'
-                    )
-                    continue
-
                 if result['type'] == 'unknown':
+                    # 低阈值阵容保护只用于无法分类的卡。已经被完整素材库
+                    # 明确识别为非阵容式神的卡不能再被 0.58 的模糊匹配
+                    # 覆盖，否则会出现日志列出杂卡但卖卡阶段始终保留。
+                    possible = self._possible_lineup_shikigami(card_roi)
+                    if possible is not None:
+                        logger.debug(
+                            'Protect possible lineup Chess hand card from sale: '
+                            f'name={possible["name"]}, '
+                            f'score={possible["score"]:.3f}'
+                        )
+                        continue
                     result = self._confirm_unknown_hand_card(card_roi)
                     if result is None:
                         continue
+                sale_key = (result['type'], result['name'])
+                if failed_sale_attempts.get(sale_key, 0) >= 2:
+                    logger.debug(
+                        'Skip repeatedly failed Chess sale target in this '
+                        f'cleanup pass: type={result["type"]}, '
+                        f'name={result["name"]}'
+                    )
+                    continue
                 sell_target = result
                 break
             if sell_target is None:
@@ -1691,11 +1769,37 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'name={self._shikigami_display_name(sell_target["name"])}, '
                 f'position={sell_target["position"]}'
             )
+            sale_key = (sell_target['type'], sell_target['name'])
+            count_before = self._hand_card_identity_count(*sale_key)
             self.sell_hand_card(sell_target['position'])
-            sold.append(sell_target['position'])
-            clean_confirm_frames = 0
             time.sleep(self.HAND_CLEANUP_REFLOW_WAIT)
             self.screenshot()
+            self.close_shikigami_specifics_if_open()
+            self.screenshot()
+            count_after = self._hand_card_identity_count(*sale_key)
+            if count_after < count_before:
+                sold.append(sell_target['position'])
+                failed_sale_attempts.pop(sale_key, None)
+                clean_confirm_frames = 0
+                logger.info(
+                    'Chess card sale confirmed: '
+                    f'type={sell_target["type"]}, '
+                    f'name={self._shikigami_display_name(sell_target["name"])}, '
+                    f'count={count_before}->{count_after}'
+                )
+                continue
+
+            failed_sale_attempts[sale_key] = (
+                failed_sale_attempts.get(sale_key, 0) + 1
+            )
+            clean_confirm_frames = 0
+            logger.warning(
+                'Chess card sale not confirmed; do not register as sold: '
+                f'type={sell_target["type"]}, '
+                f'name={self._shikigami_display_name(sell_target["name"])}, '
+                f'count={count_before}->{count_after}, '
+                f'attempt={failed_sale_attempts[sale_key]}/2'
+            )
         else:
             logger.warning(
                 'Stop cleaning Chess hand cards at safety limit '
@@ -3080,10 +3184,10 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         if level >= self._lineup_final_level():
             return 0
         if level <= 5:
-            return 45
+            return 42
         if level <= 7:
-            return 35
-        return 25
+            return 30
+        return 10
 
     def _reset_economy_sequence_if_level_changed(self, level: int) -> None:
         if self._economy_sequence_level == level:
@@ -3477,30 +3581,46 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def active_exit_chess_game(self) -> bool:
         """Chess 专属主动退出；不扩展通用 GeneralBattle 接口。"""
         logger.debug('Chess active exit requested')
-        self.screenshot()
-        if not self.appear(self.I_EXIT):
-            logger.warning('Chess active exit button is not available')
-            return False
-
         deadline = time.monotonic() + self.RESULT_RETURN_TIMEOUT
+        next_exit_click_at = 0.0
+        next_confirm_click_at = 0.0
+        dialog_seen = False
+        confirm_clicked = False
+
         while time.monotonic() < deadline:
             self.device.stuck_record_clear()
             self.screenshot()
-            if self.appear(self.I_EXIT_TO_CHESS_2):
-                self.ui_click_until_disappear(
-                    self.I_EXIT_ENSURE,
-                    interval=0.8,
-                )
+
+            confirm_visible = self.appear(self.I_CHESS_EXIT_CONFIRM)
+            cancel_visible = self.appear(self.I_CHESS_EXIT_CANCEL)
+            if confirm_visible or cancel_visible:
+                dialog_seen = True
+
+            # 只有确实点击过确认按钮后，它的消失才代表主动退出成功。
+            if dialog_seen and confirm_clicked and not confirm_visible:
                 logger.debug('Chess active exit success')
                 self._return_to_chess_lobby()
                 return True
-            if self.appear_then_click(self.I_EXIT_ENSURE, interval=0.8):
+
+            now = time.monotonic()
+            if dialog_seen:
+                if confirm_visible and now >= next_confirm_click_at:
+                    self.click(self.I_CHESS_EXIT_CONFIRM)
+                    confirm_clicked = True
+                    next_confirm_click_at = now + 2.0
+                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                 continue
-            if self.appear_then_click(self.I_EXIT, interval=6):
-                continue
+
+            if now >= next_exit_click_at:
+                if self.appear(self.I_CHESS_EXIT):
+                    self.click(self.I_CHESS_EXIT)
+                next_exit_click_at = now + 2.0
             time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
 
-        logger.warning('Chess active exit timed out before result page')
+        logger.warning(
+            'Chess active exit timed out: '
+            f'dialog_seen={dialog_seen}, confirm_clicked={confirm_clicked}'
+        )
         return False
 
     def _recover_interrupted_chess_game(self) -> bool:

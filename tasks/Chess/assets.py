@@ -29,8 +29,8 @@ class ChessAssets:
 	C_BUFF_OPTION_2 = RuleClick(roi_front=(598,205,90,130), roi_back=(598,205,90,130), name="buff_option_2")
 	# Buff右侧选项卡面 
 	C_BUFF_OPTION_3 = RuleClick(roi_front=(875,205,90,130), roi_back=(875,205,90,130), name="buff_option_3")
-	#  
-	C_CLICK_CLOSE_SPECIFICS_AREA = RuleClick(roi_front=(16,163,109,380), roi_back=(16,163,109,380), name="click_close_specifics_area")
+	# 关闭式神详情界面 
+	C_CLICK_CLOSE_SPECIFICS_AREA = RuleClick(roi_front=(193,95,91,430), roi_back=(193,95,91,430), name="click_close_specifics_area")
 
 
 	# Image Rule Assets
@@ -76,6 +76,12 @@ class ChessAssets:
 	I_SHIKIGAMI_SPECIFICS = RuleImage(roi_front=(1215,106,44,46), roi_back=(1215,106,44,46), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_shikigami_specifics.png")
 	#  
 	I_CHECK_MARKET = RuleImage(roi_front=(1206,319,35,31), roi_back=(1206,319,35,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_market.png")
+	#  
+	I_CHESS_EXIT = RuleImage(roi_front=(12,14,48,38), roi_back=(12,14,48,38), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit.png")
+	#  
+	I_CHESS_EXIT_CONFIRM = RuleImage(roi_front=(716,409,88,45), roi_back=(716,409,88,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit_confirm.png")
+	#  
+	I_CHESS_EXIT_CANCEL = RuleImage(roi_front=(478,409,88,45), roi_back=(478,409,88,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit_cancel.png")
 
 
 	# Ocr Rule Assets

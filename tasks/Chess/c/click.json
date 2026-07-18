@@ -55,8 +55,8 @@
   },
   {
     "itemName": "click_close_specifics_area",
-    "roiFront": "16,163,109,380",
-    "roiBack": "16,163,109,380",
-    "description": ""
+    "roiFront": "193,95,91,430",
+    "roiBack": "193,95,91,430",
+    "description": "关闭式神详情界面"
   }
 ]
