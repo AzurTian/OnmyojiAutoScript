@@ -34,16 +34,17 @@ QIJIAOSHAN_CONFIG = {
     'key': 'qijiaoshan',
     'display_name': '七角山',
     'shikigami_positions': {
-        '座敷童子': 1,
+        '御馔津': 1,
         '薰': 2,
         '一目连': 3,
         '白狼': 4,
         '萤草': 5,
         '小松丸': 6,
-        '花鸟卷': 7,
+        '梦山白藏主': 7,
         '山风': 8,
         '寻森小鹿男': 10,
     },
+    'hakuzosu_protect_position': 1,
 }
 
 

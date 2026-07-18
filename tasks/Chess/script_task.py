@@ -3445,7 +3445,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             self.screenshot()
 
     def _return_to_chess_lobby(self) -> None:
-        """严格按返回按钮、分享页、两次安全点击顺序返回棋局大厅。"""
+        """点击返回与分享页，并持续安全点击直到进入可识别页面。"""
         logger.debug('Chess game finished')
         deadline = time.monotonic() + self.RESULT_RETURN_TIMEOUT
         share_seen = False
@@ -3530,25 +3530,11 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
                 continue
 
-            if safe_clicks < 2:
-                safe_click = random_click(
-                    ltrb=(True, False, False, False)
-                )
-                safe_clicks += 1
-                logger.debug(
-                    'Chess share safe click: '
-                    f'{safe_clicks}/2, target={safe_click.name}'
-                )
-                # 不设置 interval：两次点击都是强制动作，不能被同名按钮
-                # 的间隔计时器吞掉。
-                self.click(safe_click)
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
             if rank_page or rank_button:
                 logger.debug(
-                    'Chess rank page detected after two share safe clicks'
+                    'Chess rank page detected after share safe clicks'
                 )
+                rank_recovery_started = True
                 if rank_button:
                     self.appear_then_click(
                         self.I_RANK_GOTO_CHESS,
@@ -3559,11 +3545,22 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
             if self.appear(self.I_CHECK_CHESS):
                 logger.debug(
-                    'Returned to Chess lobby after mandatory share flow: '
-                    'safe_clicks=2'
+                    'Returned to Chess lobby after share flow: '
+                    f'safe_clicks={safe_clicks}'
                 )
                 return
 
+            # 分享页出现后不再限制点击次数。只要尚未进入棋局大厅或
+            # 排名页，就继续点击左侧安全区域推动结算动画和弹窗。
+            safe_click = random_click(
+                ltrb=(True, False, False, False)
+            )
+            safe_clicks += 1
+            logger.debug(
+                'Chess share safe click: '
+                f'{safe_clicks}, target={safe_click.name}'
+            )
+            self.click(safe_click)
             time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
         raise GameStuckError('Chess: failed to return to lobby after result')
 
