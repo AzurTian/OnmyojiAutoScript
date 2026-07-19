@@ -3951,10 +3951,24 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         while round_no is not None:
             round_no = self.run_one_round(round_no)
 
-    def run_one_game(self) -> None:
-        """从棋局大厅开始一局，并运行全部回目直到返回棋局大厅。"""
+    def run_one_game(self) -> int | None:
+        """运行一局，并以最后一次存活人数快照作为本局估算名次。"""
         self._start_chess_game()
         self._run_round_loop()
+        snapshot = getattr(self, '_round_snapshot', None) or {}
+        rank = snapshot.get('alive_players')
+        if isinstance(rank, int) and 1 <= rank <= 8:
+            logger.info(
+                f'Chess game ended: 第{rank}名 '
+                f'(last_alive_players={rank}, '
+                f'round={snapshot.get("round")})'
+            )
+            return rank
+        logger.warning(
+            'Chess game ended: rank unavailable because the last '
+            f'alive-player snapshot is invalid [{rank}]'
+        )
+        return None
 
     def run(self):
         """按执行次数循环百鬼棋局，并可在鼬乐币刷满时提前结束。"""
@@ -4019,7 +4033,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 rank_protection and rank_protection_exits_remaining > 0
             )
             self._rank_protection_exit_succeeded = False
-            self.run_one_game()
+            game_rank = self.run_one_game()
 
             if (
                 self._rank_protection_exit_requested
@@ -4034,8 +4048,21 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 continue
 
             completed += 1
-            if rank_protection:
+            if rank_protection and game_rank is not None and game_rank <= 4:
                 rank_protection_exits_remaining = 3
+                logger.info(
+                    'Chess rank protection activated: '
+                    f'last_rank=第{game_rank}名, schedule 3 active exits'
+                )
+            else:
+                rank_protection_exits_remaining = 0
+                if rank_protection:
+                    logger.info(
+                        'Chess rank protection not activated: '
+                        f'last_rank='
+                        f'{"未知" if game_rank is None else f"第{game_rank}名"}, '
+                        'requires 第1至第4名'
+                    )
             logger.info(
                 f'Chess completed games: {completed}/'
                 f'{"infinite" if target_count == -1 else target_count}, '
