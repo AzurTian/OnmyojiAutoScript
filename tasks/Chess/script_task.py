@@ -34,7 +34,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     conf: Chess = None
     HAND_AREA = (179, 540, 957, 158)
     HAND_TEMPLATE_THRESHOLD = 0.7
-    HAND_DEPLOY_TEMPLATE_THRESHOLD = 0.6
+    HAND_DEPLOY_TEMPLATE_THRESHOLD = 0.66
     HAND_DEPLOY_CONFIRM_FRAMES = 1
     SHOP_TEMPLATE_THRESHOLD = 0.7
     SHOP_GLOW_TEMPLATE_THRESHOLD = 0.58
@@ -55,11 +55,11 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     BOARD_OCCUPANCY_TEMPLATE_THRESHOLD = 0.70
     ROUND_CONFIRM_FRAMES = 2
     RESULT_EMPTY_CONFIRM_FRAMES = 3
-    ALIVE_PLAYERS_CONFIRM_FRAMES = 2
     GAME_ENTER_TIMEOUT = 120.0
     RESULT_RETURN_TIMEOUT = 60.0
     UNKNOWN_STATE_TIMEOUT = 25.0
     NORMAL_SCREENSHOT_INTERVAL = 0.35
+    ROUND_STATE_SCREENSHOT_INTERVAL = 1.0
     HYAKKI_SCREENSHOT_INTERVAL = 3.0
     SHOP_OPEN_TIMEOUT = 8.0
     SHOP_OPEN_ATTEMPT_WAIT = 2.0
@@ -2324,24 +2324,39 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             'count': count,
         }
 
-    def _read_round_resources(self, round_no: int, mode: str | None) -> dict:
-        """记录一个新回合需要检查的五项信息。"""
+    def _read_round_resources(self, round_no: int) -> dict:
+        """关闭商店后以同一帧记录新回目的资源与存活人数。"""
+        if not self._ensure_shop_closed(
+            allowed_modes=('备', '战', '鬼', '待'),
+        ):
+            logger.warning(
+                'Chess round snapshot could not confirm shop closed; '
+                'capture current screen as fallback'
+            )
+        # 回目快照同样服从 Buff 高优先级；处理完后再获取正式快照帧。
+        if self._refresh_round_state_screenshot():
+            self.screenshot()
         snapshot = {
-            'gold': self.O_GOLD.ocr(self.device.image),
             'round': round_no,
+            'gold': self._read_shop_gold(),
             'level': self._read_level(),
-            'chess_mode': mode or self._read_chess_mode(),
+            'chess_mode': self._read_chess_mode(),
+            'alive_players': self._read_alive_players(),
+            'hand_shikigami': self._hand_shikigami_summary(),
         }
+        self._round_snapshot = snapshot
         logger.debug(
             'Chess round snapshot: '
             f'round={snapshot["round"]}, mode={snapshot["chess_mode"]}, '
-            f'level={snapshot["level"]}, gold={snapshot["gold"]}'
+            f'level={snapshot["level"]}, gold={snapshot["gold"]}, '
+            f'alive_players={snapshot["alive_players"]}'
         )
         logger.info(
             'Chess round update: '
-            f'round={snapshot["round"]}, mode={snapshot["chess_mode"]}, '
-            f'gold={snapshot["gold"]}, level={snapshot["level"]}, '
-            f'hand_shikigami={self._hand_shikigami_summary()}'
+            f'round={snapshot["round"]}, gold={snapshot["gold"]}, '
+            f'level={snapshot["level"]}, '
+            f'alive_players={snapshot["alive_players"]}, '
+            f'hand_shikigami={snapshot["hand_shikigami"]}'
         )
         return snapshot
 
@@ -2408,7 +2423,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         return alive
 
     def _early_exit_by_alive_players_reached(self) -> bool:
-        """连续确认存活人数达到阈值，避免单帧 OCR 漏识别导致误退。"""
+        """使用回目开始快照中的存活人数判断是否主动退出。"""
         threshold = getattr(self, '_remaining_players_exit', 0)
         if (
             not getattr(self, '_early_exit_enabled', False)
@@ -2416,29 +2431,17 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         ):
             return False
 
-        alive = self._read_alive_players()
+        snapshot = getattr(self, '_round_snapshot', None) or {}
+        alive = snapshot.get('alive_players')
         if alive is None:
-            self._alive_players_candidate = None
-            self._alive_players_confirmed = 0
             return False
 
-        if alive == getattr(self, '_alive_players_candidate', None):
-            self._alive_players_confirmed += 1
-        else:
-            self._alive_players_candidate = alive
-            self._alive_players_confirmed = 1
-
         logger.debug(
-            'Chess early-exit player check: '
-            f'alive={alive}, threshold={threshold}, '
-            f'confirmed={self._alive_players_confirmed}/'
-            f'{self.ALIVE_PLAYERS_CONFIRM_FRAMES}'
+            'Chess early-exit player check from round snapshot: '
+            f'round={snapshot.get("round")}, alive={alive}, '
+            f'threshold={threshold}'
         )
-        return (
-            alive <= threshold
-            and self._alive_players_confirmed
-            >= self.ALIVE_PLAYERS_CONFIRM_FRAMES
-        )
+        return alive <= threshold
 
     def _try_last_seconds_deploy(self) -> bool:
         """第一套布局备阶段倒计时不超过 10 秒时，空闲补做一次上阵。
@@ -3357,8 +3360,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self._soul_full_positions = set()
         self._board_lineup_names = set()
         self._player_deployed_positions = set()
-        self._alive_players_candidate = None
-        self._alive_players_confirmed = 0
+        self._round_snapshot = None
         self._reset_economy_state()
         strategy = self.get_lineup_strategy()
         logger.debug(
@@ -3668,6 +3670,39 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self._return_to_chess_lobby()
         return True
 
+    def _refresh_round_state_screenshot(self) -> bool:
+        """刷新回目状态截图；选 Buff 出现时必须优先处理完毕。"""
+        self.screenshot()
+        if not self.appear(self.I_SELECT_BUFF):
+            return False
+        logger.info(
+            'Chess round-state refresh interrupted by buff selection; '
+            'resolve buff before reading round and mode'
+        )
+        self.select_random_buff()
+        self.screenshot()
+        return True
+
+    def _confirm_game_end_after_empty_state(self, context: str) -> bool:
+        """回目和模式连续为空后，用新截图中的阵容入口复核对局状态。"""
+        if self._refresh_round_state_screenshot():
+            logger.debug(
+                'Chess empty-state result postponed after buff selection: '
+                f'context={context}'
+            )
+            return False
+        if self.appear(self.I_OPEN_LINEUP):
+            logger.debug(
+                'Chess empty-state result rejected: '
+                f'I_OPEN_LINEUP is still visible, context={context}'
+            )
+            return False
+        logger.info(
+            'Chess game end confirmed after empty round/mode: '
+            f'I_OPEN_LINEUP is absent, context={context}'
+        )
+        return True
+
     def _wait_for_round_start(self) -> int | None:
         """等待稳定回目数字；返回 None 表示本局已经结算。"""
         candidate = None
@@ -3675,7 +3710,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         empty_frames = 0
         while True:
             self.device.stuck_record_clear()
-            self.screenshot()
+            if self._refresh_round_state_screenshot():
+                candidate = None
+                confirmed = 0
+                empty_frames = 0
+                time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
+                continue
             if self._finish_chess_game_if_visible():
                 return None
 
@@ -3696,15 +3736,15 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 if mode is None:
                     empty_frames += 1
                     if empty_frames >= self.RESULT_EMPTY_CONFIRM_FRAMES:
-                        logger.debug(
-                            'Chess round and mode stayed empty before a round; '
-                            'enter result flow'
-                        )
-                        self._return_to_chess_lobby()
-                        return None
+                        if self._confirm_game_end_after_empty_state(
+                            'wait_for_round_start'
+                        ):
+                            self._return_to_chess_lobby()
+                            return None
+                        empty_frames = 0
                 else:
                     empty_frames = 0
-            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+            time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
 
     def _handle_round_end(self) -> bool:
         """在下一次可用的备阶段补做系统卡回收、上阵和御魂。"""
@@ -3764,7 +3804,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def run_one_round(self, round_no: int) -> int | None:
         """执行一个回目：回合开始 -> 备 -> 战/鬼/待 -> 等待新回合。"""
         logger.debug(f'Chess round {round_no}')
-        self._read_round_resources(round_no, self._read_chess_mode())
+        self._read_round_resources(round_no)
         phase = 'await_preparation'
         preparation_done = False
         next_round_candidate = None
@@ -3775,13 +3815,16 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         while True:
             self.device.stuck_record_clear()
-            self.screenshot()
+            if self._refresh_round_state_screenshot():
+                empty_frames = 0
+                time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
+                continue
             if self._finish_chess_game_if_visible():
                 return None
             if self._early_exit_by_alive_players_reached():
                 logger.warning(
                     'Chess remaining-player early exit reached: '
-                    f'alive={self._alive_players_candidate}, '
+                    f'alive={self._round_snapshot.get("alive_players")}, '
                     f'threshold={self._remaining_players_exit}'
                 )
                 if self.active_exit_chess_game():
@@ -3797,12 +3840,14 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             if observed_round is None and mode is None:
                 empty_frames += 1
                 if empty_frames >= self.RESULT_EMPTY_CONFIRM_FRAMES:
-                    logger.debug(
-                        f'Chess round {round_no} state stayed empty; '
-                        'enter result flow'
-                    )
-                    self._return_to_chess_lobby()
-                    return None
+                    if self._confirm_game_end_after_empty_state(
+                        f'round_{round_no}'
+                    ):
+                        self._return_to_chess_lobby()
+                        return None
+                    empty_frames = 0
+                    time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
+                    continue
             else:
                 empty_frames = 0
 
@@ -3827,7 +3872,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
             # 回目数字第一次变化时暂停所有旧回目动作，等待第二帧确认。
             if round_transition_pending:
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+                time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
                 continue
 
             in_game = mode is not None or self._is_in_chess_game()
@@ -3873,7 +3918,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     self.purchase_lineup_cards_once()
                     self._run_preparation_economy_until_time_limit()
                     if not self._is_preparation_mode():
-                        time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+                        time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
                         continue
                     if self._handle_preparation_stage(1):
                         preparation_done = True
@@ -3886,7 +3931,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             interval = (
                 self.HYAKKI_SCREENSHOT_INTERVAL
                 if mode == '鬼'
-                else self.NORMAL_SCREENSHOT_INTERVAL
+                else self.ROUND_STATE_SCREENSHOT_INTERVAL
             )
             time.sleep(interval)
 
