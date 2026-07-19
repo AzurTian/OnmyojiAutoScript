@@ -1,6 +1,6 @@
 # This Python file uses the following encoding: utf-8
 
-"""百鬼棋局式神统一目录。
+"""百鬼棋局阵容策略共用的式神统一目录。
 
 数据来源于 ``shikigami/shikigami_menu.txt``，每条文本含义为：
 ``费用-编号:罗马音:中文名``。

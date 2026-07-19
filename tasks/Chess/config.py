@@ -4,7 +4,7 @@ from pydantic import Field
 
 from tasks.Component.config_base import ConfigBase
 from tasks.Component.config_scheduler import Scheduler
-from tasks.Chess.lineup import LineupBond
+from tasks.Chess.strategy.lineup import LineupBond
 
 
 class ChessConfig(ConfigBase):
@@ -26,7 +26,7 @@ class ChessConfig(ConfigBase):
     rank_protection: bool = Field(
         title='保段位',
         default=False,
-        description='开启后每完成一局主动退出三局；退出局不计入执行次数',
+        description='开启后每完成前四名一局主动退出三局；退出局不计入执行次数',
     )
 
     run_count: int = Field(
@@ -38,7 +38,7 @@ class ChessConfig(ConfigBase):
     coin_full_exit: bool = Field(
         title='刷满鼬乐币',
         default=False,
-        description='勾选后检测到鼬乐币为600/600时立即结束百鬼棋局',
+        description='勾选后检测到鼬乐币已满时立即结束百鬼棋局',
     )
 
 

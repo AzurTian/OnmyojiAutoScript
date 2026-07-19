@@ -12,7 +12,7 @@
 经济策略属于通用运营流程，写在主任务中，不放入阵容配置。
 """
 
-from tasks.Chess.shikigami_catalog import build_lineup_shikigami
+from tasks.Chess.strategy.shikigami_catalog import build_lineup_shikigami
 
 
 def build_lineup_strategy(config: dict) -> dict:

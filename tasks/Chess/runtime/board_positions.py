@@ -1,6 +1,6 @@
 # This Python file uses the following encoding: utf-8
 
-"""百鬼棋局棋盘固定位置。
+"""百鬼棋局运行时棋盘固定位置。
 
 这些坐标不是自动生成的 Rule 资源，不能放在 assets.py 中；assets.py
 会被 dev_tools/assets_extract.py 重新生成覆盖。
