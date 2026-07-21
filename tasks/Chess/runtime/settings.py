@@ -4,6 +4,7 @@ from tasks.Chess.strategy.lineup import (
     DEFAULT_LINEUP_KEY as REGISTERED_DEFAULT_LINEUP_KEY,
     LINEUP_REGISTRY as REGISTERED_LINEUP_REGISTRY,
 )
+from tasks.Chess.strategy.soul_catalog import SOUL_ENTRIES
 
 
 class ChessRuntimeSettings:
@@ -15,8 +16,8 @@ class ChessRuntimeSettings:
     HAND_TEMPLATE_THRESHOLD = 0.75
     HAND_DEPLOY_TEMPLATE_THRESHOLD = 0.8
     HAND_DEPLOY_CONFIRM_FRAMES = 1
-    SHOP_TEMPLATE_THRESHOLD = 0.9
-    SHOP_GLOW_TEMPLATE_THRESHOLD = 0.8
+    SHOP_TEMPLATE_THRESHOLD = 0.80
+    SHOP_GLOW_TEMPLATE_THRESHOLD = 0.65
     HAND_DEPLOY_WAIT = 0.6
     HAND_DEPLOY_SAFETY_LIMIT = 20
     HAND_CLEANUP_SAFETY_LIMIT = 30
@@ -31,7 +32,7 @@ class ChessRuntimeSettings:
     # 只需要依次回收这些候选格；若 9 号位由脚本亲自部署，则保留该格。
     BOARD_RECALL_POSITIONS = (11, 12, 9, 10)
     # c_card_1/2/3.png 专用于检测棋盘式神头顶的三种勾玉颜色。
-    BOARD_OCCUPANCY_TEMPLATE_THRESHOLD = 0.70
+    BOARD_OCCUPANCY_TEMPLATE_THRESHOLD = 0.68
     ROUND_CONFIRM_FRAMES = 2
     RESULT_EMPTY_CONFIRM_FRAMES = 3
     GAME_ENTER_TIMEOUT = 120.0
@@ -46,7 +47,6 @@ class ChessRuntimeSettings:
     SHOP_CLOSE_ATTEMPT_WAIT = 2.0
     SHOP_REFRESH_WAIT = 0.8
     SHOP_POST_REFRESH_RECOGNITION_WAIT = 0.5
-    SHOP_UNRECOGNIZED_RETRY_WAIT = 0.5
     ECONOMY_CONFIRM_RETRIES = 2
     SHOP_BUY_RETRY_INTERVAL = 0.4
     SHOP_POST_PURCHASE_SETTLE_WAIT = 0.5
@@ -75,36 +75,16 @@ class ChessRuntimeSettings:
     UNKNOWN_LINEUP_PROTECT_THRESHOLD = 0.58
     UNKNOWN_LINEUP_PROTECT_SCALES = (0.90, 0.95, 1.00, 1.05, 1.10)
     SOUL_DISPLAY_NAMES = {
-        'poshang': '破势',
-        'shanghunniao': '伤魂鸟',
-        'fuyi': '蝠翼',
-        'wangqie': '网切',
-        'yinmoluo': '阴摩罗',
-        'yingshengchong': '应声虫',
-        'kuanggu': '狂骨',
-        'beichuifang': '贝吹坊',
-        'beifu': '被服',
-        'bangjing': '蚌精',
-        'niepanzhihuo': '涅槃之火',
-        'qingnvfang': '青女房',
-        'zheng': '狰',
-        'huoling': '火灵',
-        'dizangxiang': '地藏像',
-        'wangliangzhixia': '魍魉之匣',
-        'diaopinghuo': '钓瓶火',
-        # 图鉴中已裁好的另外三种均按功能性处理。
-        'zhaocaimao': '招财猫',
-        'jingji': '镜姬',
-        'mumei': '木魅',
+        entry.key: entry.chinese_name
+        for entry in SOUL_ENTRIES
     }
     ATTACK_SOUL_NAMES = {
-        'poshang',
-        'shanghunniao',
-        'fuyi',
-        'wangqie',
-        'yinmoluo',
-        'yingshengchong',
-        'kuanggu',
-        'beichuifang',
+        entry.key
+        for entry in SOUL_ENTRIES
+        if entry.category == 'attack'
     }
-    FUNCTIONAL_SOUL_NAMES = set(SOUL_DISPLAY_NAMES) - ATTACK_SOUL_NAMES
+    FUNCTIONAL_SOUL_NAMES = {
+        entry.key
+        for entry in SOUL_ENTRIES
+        if entry.category == 'functional'
+    }
