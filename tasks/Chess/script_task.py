@@ -143,43 +143,37 @@ class ScriptTask(
         raise TaskEnd('Chess')
 
     def run_one_game(self) -> int | None:
-        """运行一局，并以最后一次存活人数快照作为本局估算名次。"""
+        """运行一局，并返回结算页 OCR 得到的实际名次。"""
         self._start_chess_game()
         self._run_round_loop()
-        snapshot = getattr(self, '_round_snapshot', None) or {}
-        rank = snapshot.get('alive_players')
+        rank = getattr(self, '_last_game_rank', None)
         if isinstance(rank, int) and 1 <= rank <= 8:
-            logger.info(
-                f'Chess game ended: 第{rank}名 '
-                f'(last_alive_players={rank}, '
-                f'round={snapshot.get("round")})'
-            )
+            logger.info(f'Chess game ended: 第{rank}名')
             return rank
         logger.warning(
-            'Chess game ended: rank unavailable because the last '
-            f'alive-player snapshot is invalid [{rank}]'
+            f'Chess game ended: result-page rank OCR unavailable [{rank}]'
         )
         return None
 
     def run_one_round(self, round_no: int) -> int | None:
         """执行一个回目：回合开始 -> 备 -> 战/鬼/待 -> 等待新回合。"""
         logger.debug(f'Chess round {round_no}')
-        self._read_round_resources(round_no)
         phase = 'await_preparation'
         preparation_done = False
         next_round_candidate = None
         next_round_confirmed = 0
-        empty_frames = 0
         unknown_since = None
+        battle_economy_done = False
         battle_hand_cleanup_done = False
 
         while True:
             self.device.stuck_record_clear()
             if self._refresh_round_state_screenshot():
-                empty_frames = 0
                 time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
                 continue
-            if self._finish_chess_game_if_visible():
+            if self._finish_chess_game_after_open_lineup_missing(
+                f'round_{round_no}'
+            ):
                 return None
             if getattr(self, '_rank_protection_exit_requested', False):
                 logger.info(
@@ -195,20 +189,6 @@ class ScriptTask(
                 )
             observed_round = self._read_round_number()
             mode = self._read_chess_mode()
-
-            if observed_round is None and mode is None:
-                empty_frames += 1
-                if empty_frames >= self.RESULT_EMPTY_CONFIRM_FRAMES:
-                    if self._confirm_game_end_after_empty_state(
-                        f'round_{round_no}'
-                    ):
-                        self.return_to_chess_lobby()
-                        return None
-                    empty_frames = 0
-                    time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
-                    continue
-            else:
-                empty_frames = 0
 
             round_transition_pending = False
             if observed_round is not None and observed_round != round_no:
@@ -246,7 +226,9 @@ class ScriptTask(
 
             if mode in ('战', '鬼', '待'):
                 if mode == '战':
-                    self._run_battle_economy_until_budget_limit()
+                    if not battle_economy_done:
+                        self._run_battle_economy_until_budget_limit()
+                        battle_economy_done = True
                     if not battle_hand_cleanup_done:
                         battle_hand_cleanup_done = (
                             self._handle_battle_sell_stage()
@@ -441,46 +423,72 @@ class ScriptTask(
         self.screenshot()
         return True
 
-    def _confirm_game_end_after_empty_state(self, context: str) -> bool:
-        """回目和模式连续为空后，用新截图中的阵容入口复核对局状态。"""
-        if self._refresh_round_state_screenshot():
-            logger.debug(
-                'Chess empty-state result postponed after buff selection: '
-                f'context={context}'
-            )
-            return False
+    def _finish_chess_game_after_open_lineup_missing(
+        self,
+        context: str,
+    ) -> bool:
+        """阵容入口连续三帧消失后，等待结算页并读取实际名次。"""
         if self.appear(self.I_OPEN_LINEUP):
-            logger.debug(
-                'Chess empty-state result rejected: '
-                f'I_OPEN_LINEUP is still visible, context={context}'
-            )
             return False
+
+        for frame in range(2, self.GAME_END_CONFIRM_FRAMES + 1):
+            time.sleep(self.GAME_END_CONFIRM_INTERVAL)
+            self.device.stuck_record_clear()
+            self.screenshot()
+            if self.appear(self.I_OPEN_LINEUP):
+                logger.debug(
+                    'Chess game-end confirmation cancelled: '
+                    f'I_OPEN_LINEUP recovered at frame={frame}, '
+                    f'context={context}'
+                )
+                return False
+
         logger.info(
-            'Chess game end confirmed after empty round/mode: '
-            f'I_OPEN_LINEUP is absent, context={context}'
+            'Chess game end detected: I_OPEN_LINEUP absent for '
+            f'{self.GAME_END_CONFIRM_FRAMES} frames, context={context}'
         )
-        return True
+        deadline = time.monotonic() + self.GAME_OVER_WAIT_TIMEOUT
+        while time.monotonic() < deadline:
+            self.device.stuck_record_clear()
+            if self.appear(self.I_GAME_OVER):
+                rank, raw = self._read_game_rank()
+                self._last_game_rank = rank
+                if rank is None:
+                    logger.warning(
+                        f'Chess game-over rank OCR invalid: [{raw}]'
+                    )
+                else:
+                    logger.info(
+                        f'Chess game-over rank OCR: [{raw}] -> 第{rank}名'
+                    )
+                self.return_to_chess_lobby()
+                return True
+            time.sleep(self.GAME_END_CONFIRM_INTERVAL)
+            self.screenshot()
+
+        raise GameStuckError(
+            'Chess: I_OPEN_LINEUP disappeared, but I_GAME_OVER did not '
+            f'appear within {self.GAME_OVER_WAIT_TIMEOUT:.0f}s'
+        )
 
     def _wait_for_round_start(self) -> int | None:
         """等待稳定回目数字；返回 None 表示本局已经结算。"""
         candidate = None
         confirmed = 0
-        empty_frames = 0
         while True:
             self.device.stuck_record_clear()
             if self._refresh_round_state_screenshot():
                 candidate = None
                 confirmed = 0
-                empty_frames = 0
                 time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
                 continue
-            if self._finish_chess_game_if_visible():
+            if self._finish_chess_game_after_open_lineup_missing(
+                'wait_for_round_start'
+            ):
                 return None
 
             round_no = self._read_round_number()
-            mode = self._read_chess_mode()
             if round_no is not None:
-                empty_frames = 0
                 if round_no == candidate:
                     confirmed += 1
                 else:
@@ -491,22 +499,11 @@ class ScriptTask(
             else:
                 candidate = None
                 confirmed = 0
-                if mode is None:
-                    empty_frames += 1
-                    if empty_frames >= self.RESULT_EMPTY_CONFIRM_FRAMES:
-                        if self._confirm_game_end_after_empty_state(
-                            'wait_for_round_start'
-                        ):
-                            self.return_to_chess_lobby()
-                            return None
-                        empty_frames = 0
-                else:
-                    empty_frames = 0
             time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
 
     def _is_in_chess_game(self) -> bool:
-        """阵容入口或商店任一出现，即认为仍处于棋局内。"""
-        return self.appear(self.I_OPEN_LINEUP) or self.appear(self.I_MARKET)
+        """只以阵容入口图片确认当前处于百鬼棋局对局内。"""
+        return self.appear(self.I_OPEN_LINEUP)
 
     def _wait_until_in_chess_game(
         self,
@@ -555,7 +552,7 @@ class ScriptTask(
         self._board_lineup_names = set()
         self._player_deployed_positions = set()
         self._arakawa_goldfish_current_position = None
-        self._round_snapshot = None
+        self._last_game_rank = None
         self._reset_economy_state()
         strategy = self.get_lineup_strategy()
         logger.debug(
@@ -584,12 +581,15 @@ class ScriptTask(
             self.return_to_chess_lobby()
             return True
 
-        mode = self._read_chess_mode()
-        if mode is None and not self._is_in_chess_game():
+        # 启动恢复属于全局页面判断，只允许使用 c_open_lineup.png。
+        # chess_mode OCR 仅供已确认在局内后的回目状态机使用，不能拿来
+        # 判断全局页面，否则庭院等页面中的任意非空误识别都会触发退出。
+        if not self._is_in_chess_game():
             return False
 
         logger.warning(
-            f'Chess startup recovery: interrupted in-game state detected, mode={mode}'
+            'Chess startup recovery: interrupted in-game state detected '
+            'by I_OPEN_LINEUP'
         )
         if not self.exit_chess_battle():
             raise GameStuckError(
@@ -602,10 +602,3 @@ class ScriptTask(
         round_no = self._wait_for_round_start()
         while round_no is not None:
             round_no = self.run_one_round(round_no)
-
-    def _finish_chess_game_if_visible(self) -> bool:
-        """发现任一结算入口时完成返回大厅流程。"""
-        if not self.chess_result_flow_visible():
-            return False
-        self.return_to_chess_lobby()
-        return True

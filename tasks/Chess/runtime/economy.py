@@ -10,9 +10,12 @@ import numpy as np
 
 from module.atom.click import RuleClick
 from module.atom.image import RuleImage
+from module.atom.ocr import RuleOcr
 from module.logger import logger
 from tasks.Chess.strategy.shikigami_catalog import (
     KNOWN_BONDS,
+    NON_SHOP_SHIKIGAMI,
+    SHIKIGAMI_ENTRIES,
     SHIKIGAMI_BY_ROMAJI,
     STORE_SHIKIGAMI_BY_SIGNATURE,
     bond_key,
@@ -192,11 +195,47 @@ class ChessEconomyMixin:
         return affordable
 
     def _read_shop_slot_price(self, slot_index: int) -> tuple[int | None, str]:
-        """读取指定商店格费用，供身份识别与购买能力判断共用。"""
+        """定位金币图标并读取其右侧费用数字。"""
         if slot_index not in range(1, 6):
             return None, ''
         price_rule = getattr(self, f'O_SHIKIGAMI_GOLD_{slot_index}')
-        raw = self._normalize_ocr_text(price_rule.ocr(self.device.image))
+        price_roi = tuple(price_rule.roi)
+        matches = self.store_gold_rule.match_all_any(
+            self.device.image,
+            roi=list(price_roi),
+            threshold=self.SHOP_GOLD_ICON_THRESHOLD,
+            nms_threshold=0.3,
+            frame_id=self.device.image_frame_id,
+        )
+        if not matches:
+            logger.debug(
+                'Chess shop price icon unavailable: '
+                f'slot={slot_index}, roi={price_roi}'
+            )
+            return None, ''
+
+        _, icon_x, _, icon_width, _ = max(
+            matches,
+            key=lambda item: item[0],
+        )
+        roi_x, roi_y, roi_width, roi_height = price_roi
+        price_x = icon_x + icon_width
+        price_right = roi_x + roi_width
+        price_width = price_right - price_x
+        if price_width <= 0:
+            return None, ''
+
+        digit_rule = RuleOcr(
+            roi=(price_x, roi_y, price_width, roi_height),
+            area=(price_x, roi_y, price_width, roi_height),
+            mode='Single',
+            method='Default',
+            keyword='',
+            name=f'shikigami_gold_value_{slot_index}',
+        )
+        raw = self._normalize_ocr_text(
+            digit_rule.ocr(self.device.image)
+        )
         matched = re.search(r'\d+', raw)
         if matched is None:
             return None, raw
@@ -407,6 +446,65 @@ class ChessEconomyMixin:
             )
         return fallback
 
+    def _recognize_shop_shikigami_by_name(
+        self,
+        slot_index: int,
+        click_rule: RuleClick,
+    ) -> dict | None:
+        """以式神名字 OCR 作为商店身份识别的最高优先级。"""
+        if slot_index not in range(1, 6):
+            return None
+        name_rule = getattr(self, f'O_SHIKIGAMI_NAME_{slot_index}')
+        raw = self._normalize_ocr_text(name_rule.ocr(self.device.image))
+        if not raw:
+            return None
+
+        entries = tuple(
+            entry
+            for entry in SHIKIGAMI_ENTRIES
+            if entry.romaji not in NON_SHOP_SHIKIGAMI
+        )
+        exact = [
+            entry
+            for entry in entries
+            if entry.chinese_name in raw
+        ]
+        if exact:
+            entry = max(exact, key=lambda item: len(item.chinese_name))
+            score = 1.0
+        else:
+            candidates = []
+            for entry in entries:
+                matched, similarity, _ = self._fuzzy_text_match(
+                    entry.chinese_name,
+                    raw,
+                )
+                if matched:
+                    candidates.append((similarity, entry))
+            if not candidates:
+                logger.debug(
+                    'Chess shop name OCR unavailable: '
+                    f'slot={slot_index}, raw=[{raw}]'
+                )
+                return None
+            score, entry = max(candidates, key=lambda item: item[0])
+
+        x, y, width, height = click_rule.roi_back
+        logger.debug(
+            'Chess shop name identity: '
+            f'slot={slot_index}, raw=[{raw}], score={score:.3f} '
+            f'-> {entry.romaji}'
+        )
+        return {
+            'name': entry.romaji,
+            'score': float(score),
+            'position': (x + width // 2, y + height // 2),
+            'source': 'ocr_name',
+            'price': entry.cost,
+            'bonds': entry.bonds,
+            'raw_name': raw,
+        }
+
     def _recognize_shop_shikigami_by_ocr(
         self,
         slot_index: int,
@@ -503,11 +601,16 @@ class ChessEconomyMixin:
         expected_name: str | None = None,
         fallback_rules: list[tuple[str, RuleImage]] | None = None,
     ) -> dict | None:
-        """商店统一识别入口：羁绊→必要时费用→图片兜底。"""
-        recognized = self._recognize_shop_shikigami_by_ocr(
+        """商店统一识别入口：名字→羁绊及费用→图片兜底。"""
+        recognized = self._recognize_shop_shikigami_by_name(
             slot_index,
             click_rule,
         )
+        if recognized is None:
+            recognized = self._recognize_shop_shikigami_by_ocr(
+                slot_index,
+                click_rule,
+            )
         if recognized is not None:
             if expected_name is None or recognized['name'] == expected_name:
                 return recognized

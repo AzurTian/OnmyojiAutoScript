@@ -262,42 +262,6 @@ class ChessRoundStateMixin:
             'count': count,
         }
 
-    def _read_round_resources(self, round_no: int) -> dict:
-        """关闭商店后以同一帧记录新回目的资源与存活人数。"""
-        if not self._ensure_shop_closed(
-            allowed_modes=('备', '战', '鬼', '待'),
-        ):
-            logger.warning(
-                'Chess round snapshot could not confirm shop closed; '
-                'capture current screen as fallback'
-            )
-        # 回目快照同样服从 Buff 高优先级；处理完后再获取正式快照帧。
-        if self._refresh_round_state_screenshot():
-            self.screenshot()
-        snapshot = {
-            'round': round_no,
-            'gold': self._read_shop_gold(),
-            'level': self._read_level(),
-            'chess_mode': self._read_chess_mode(),
-            'alive_players': self._read_alive_players(),
-            'hand_shikigami': self._hand_shikigami_summary(),
-        }
-        self._round_snapshot = snapshot
-        logger.debug(
-            'Chess round snapshot: '
-            f'round={snapshot["round"]}, mode={snapshot["chess_mode"]}, '
-            f'level={snapshot["level"]}, gold={snapshot["gold"]}, '
-            f'alive_players={snapshot["alive_players"]}'
-        )
-        logger.info(
-            'Chess round update: '
-            f'round={snapshot["round"]}, gold={snapshot["gold"]}, '
-            f'level={snapshot["level"]}, '
-            f'alive_players={snapshot["alive_players"]}, '
-            f'hand_shikigami={snapshot["hand_shikigami"]}'
-        )
-        return snapshot
-
     def _read_level(self) -> int | None:
         """读取“一阶”至“九阶”，同时兼容阿拉伯数字显示。"""
         raw = self._normalize_ocr_text(self.O_LEVEL.ocr(self.device.image))
@@ -341,24 +305,27 @@ class ChessRoundStateMixin:
         logger.debug(f'Chess remaining time: [{raw}] -> {remaining}')
         return remaining
 
-    def _read_alive_players(self) -> int | None:
-        """以 health_1-8 中仍含数字的最大编号作为当前存活人数。"""
-        detected = {}
-        for index in range(1, 9):
-            rule = getattr(self, f'O_HEALTH_{index}')
-            raw = self._normalize_ocr_text(rule.ocr(self.device.image))
-            if re.search(r'\d', raw):
-                detected[index] = raw
+    def _read_game_rank(self) -> tuple[int | None, str]:
+        """读取结算页“第几名”，兼容阿拉伯数字和中文数字。"""
+        raw = self._normalize_ocr_text(self.O_RANK.ocr(self.device.image))
+        matched = re.search(r'第?([1-8])名?', raw)
+        if matched is not None:
+            return int(matched.group(1)), raw
 
-        if not detected:
-            logger.warning('Chess alive-player OCR found no health value')
-            return None
-        alive = max(detected)
-        logger.debug(
-            'Chess alive players by health OCR: '
-            f'alive={alive}, detected={detected}'
-        )
-        return alive
+        chinese_digits = {
+            '一': 1,
+            '二': 2,
+            '三': 3,
+            '四': 4,
+            '五': 5,
+            '六': 6,
+            '七': 7,
+            '八': 8,
+        }
+        for character, rank in chinese_digits.items():
+            if character in raw:
+                return rank, raw
+        return None, raw
 
     def _try_last_seconds_deploy(self) -> bool:
         """第一套布局备阶段倒计时不超过 10 秒时，空闲补做一次上阵。

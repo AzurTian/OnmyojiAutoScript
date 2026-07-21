@@ -68,6 +68,8 @@ class ChessAssets:
 	I_CHECK_MARKET = RuleImage(roi_front=(1206,319,35,31), roi_back=(1206,319,35,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_market.png")
 	#  
 	I_CANCEL_WAITING = RuleImage(roi_front=(584,597,111,45), roi_back=(584,597,111,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_cancel_waiting.png")
+	#  
+	I_GAME_OVER = RuleImage(roi_front=(549,401,198,31), roi_back=(549,401,198,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_game_over.png")
 
 
 	# Image Rule Assets
@@ -93,15 +95,15 @@ class ChessAssets:
 
 	# Ocr Rule Assets
 	# 商店式神名称5 
-	O_SHIKIGAMI_GOLD_5 = RuleOcr(roi=(501,261,18,34), area=(501,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_5")
+	O_SHIKIGAMI_GOLD_5 = RuleOcr(roi=(481,266,38,24), area=(481,266,38,24), mode="Single", method="Default", keyword="", name="shikigami_gold_5")
 	# 商店式神名称4 
-	O_SHIKIGAMI_GOLD_4 = RuleOcr(roi=(688,261,18,34), area=(688,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_4")
+	O_SHIKIGAMI_GOLD_4 = RuleOcr(roi=(668,266,38,24), area=(668,266,38,24), mode="Single", method="Default", keyword="", name="shikigami_gold_4")
 	# 商店式神名称3 
-	O_SHIKIGAMI_GOLD_3 = RuleOcr(roi=(875,261,18,34), area=(875,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_3")
+	O_SHIKIGAMI_GOLD_3 = RuleOcr(roi=(855,266,38,24), area=(855,266,38,24), mode="Single", method="Default", keyword="", name="shikigami_gold_3")
 	# 商店式神名称2 
-	O_SHIKIGAMI_GOLD_2 = RuleOcr(roi=(1062,261,18,34), area=(1062,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_2")
+	O_SHIKIGAMI_GOLD_2 = RuleOcr(roi=(1042,266,38,24), area=(1042,266,38,24), mode="Single", method="Default", keyword="", name="shikigami_gold_2")
 	# 商店式神名称1 
-	O_SHIKIGAMI_GOLD_1 = RuleOcr(roi=(1249,261,18,34), area=(1249,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_1")
+	O_SHIKIGAMI_GOLD_1 = RuleOcr(roi=(1229,266,38,24), area=(1229,266,38,24), mode="Single", method="Default", keyword="", name="shikigami_gold_1")
 	# 当前等级 
 	O_LEVEL = RuleOcr(roi=(131,680,47,30), area=(131,680,47,30), mode="Single", method="Default", keyword="", name="level")
 	# 当前回目 
@@ -121,32 +123,28 @@ class ChessAssets:
 	#  
 	O_NOW_TIME = RuleOcr(roi=(768,0,32,28), area=(768,0,32,28), mode="Single", method="Default", keyword="", name="now_time")
 	#  
-	O_HEALTH_1 = RuleOcr(roi=(1186,76,31,24), area=(1186,76,31,24), mode="Single", method="Default", keyword="", name="health_1")
+	O_SHIKIGAMI_SKILL_1 = RuleOcr(roi=(1120,165,94,94), area=(1120,165,94,94), mode="Single", method="Default", keyword="", name="shikigami_skill_1")
 	#  
-	O_HEALTH_2 = RuleOcr(roi=(1186,138,31,24), area=(1186,138,31,24), mode="Single", method="Default", keyword="", name="health_2")
+	O_SHIKIGAMI_SKILL_2 = RuleOcr(roi=(933,165,94,94), area=(933,165,94,94), mode="Single", method="Default", keyword="", name="shikigami_skill_2")
 	#  
-	O_HEALTH_3 = RuleOcr(roi=(1186,200,31,24), area=(1186,200,31,24), mode="Single", method="Default", keyword="", name="health_3")
+	O_SHIKIGAMI_SKILL_3 = RuleOcr(roi=(746,165,94,94), area=(746,165,94,94), mode="Single", method="Default", keyword="", name="shikigami_skill_3")
 	#  
-	O_HEALTH_4 = RuleOcr(roi=(1186,262,31,24), area=(1186,262,31,24), mode="Single", method="Default", keyword="", name="health_4")
+	O_SHIKIGAMI_SKILL_4 = RuleOcr(roi=(559,165,94,94), area=(559,165,94,94), mode="Single", method="Default", keyword="", name="shikigami_skill_4")
 	#  
-	O_HEALTH_5 = RuleOcr(roi=(1186,324,31,24), area=(1186,324,31,24), mode="Single", method="Default", keyword="", name="health_5")
-	#  
-	O_HEALTH_6 = RuleOcr(roi=(1186,386,31,24), area=(1186,386,31,24), mode="Single", method="Default", keyword="", name="health_6")
-	#  
-	O_HEALTH_7 = RuleOcr(roi=(1186,448,31,24), area=(1186,448,31,24), mode="Single", method="Default", keyword="", name="health_7")
-	#  
-	O_HEALTH_8 = RuleOcr(roi=(1186,510,31,24), area=(1186,510,31,24), mode="Single", method="Default", keyword="", name="health_8")
-	#  
-	O_SHIKIGAMI_SKILL_1 = RuleOcr(roi=(1120,165,94,89), area=(1120,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_1")
-	#  
-	O_SHIKIGAMI_SKILL_2 = RuleOcr(roi=(933,165,94,89), area=(933,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_2")
-	#  
-	O_SHIKIGAMI_SKILL_3 = RuleOcr(roi=(746,165,94,89), area=(746,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_3")
-	#  
-	O_SHIKIGAMI_SKILL_4 = RuleOcr(roi=(559,165,94,89), area=(559,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_4")
-	#  
-	O_SHIKIGAMI_SKILL_5 = RuleOcr(roi=(372,165,94,89), area=(372,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_5")
+	O_SHIKIGAMI_SKILL_5 = RuleOcr(roi=(372,165,94,94), area=(372,165,94,94), mode="Single", method="Default", keyword="", name="shikigami_skill_5")
 	#  
 	O_SHIKIGAMI_SPECIFICS_NAME = RuleOcr(roi=(997,101,193,36), area=(501,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_specifics_name")
+	#  
+	O_RANK = RuleOcr(roi=(443,193,417,204), area=(443,193,417,204), mode="Single", method="Default", keyword="", name="rank")
+	#  
+	O_SHIKIGAMI_NAME_1 = RuleOcr(roi=(1097,261,117,33), area=(1097,261,117,33), mode="Single", method="Default", keyword="", name="shikigami_name_1")
+	#  
+	O_SHIKIGAMI_NAME_2 = RuleOcr(roi=(910,261,117,33), area=(910,261,117,33), mode="Single", method="Default", keyword="", name="shikigami_name_2")
+	#  
+	O_SHIKIGAMI_NAME_3 = RuleOcr(roi=(723,261,117,33), area=(723,261,117,33), mode="Single", method="Default", keyword="", name="shikigami_name_3")
+	#  
+	O_SHIKIGAMI_NAME_4 = RuleOcr(roi=(536,261,117,33), area=(536,261,117,33), mode="Single", method="Default", keyword="", name="shikigami_name_4")
+	#  
+	O_SHIKIGAMI_NAME_5 = RuleOcr(roi=(349,261,117,33), area=(349,261,117,33), mode="Single", method="Default", keyword="", name="shikigami_name_5")
 
 

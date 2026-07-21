@@ -79,6 +79,17 @@ class ChessRecognitionMixin:
             names.append(self._shikigami_display_name(result['name']))
         return names
 
+    @cached_property
+    def store_gold_rule(self) -> RuleImage:
+        """商店卡价格前的金币图标，用于定位其右侧价格数字。"""
+        return RuleImage(
+            roi_front=(0, 0, 18, 18),
+            roi_back=(0, 0, 1280, 720),
+            method=RuleImage.METHOD_TEMPLATE_MATCH,
+            threshold=self.SHOP_GOLD_ICON_THRESHOLD,
+            file=str(CHESS_TASK_DIR / 'c' / 'store_gold.png'),
+        )
+
     def _shop_shikigami_summary(self) -> list[str]:
         """汇总当前商店五格中已识别出的式神。"""
         names = []

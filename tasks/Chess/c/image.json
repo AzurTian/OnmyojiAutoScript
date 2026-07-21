@@ -151,5 +151,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""
+  },
+  {
+    "itemName": "game_over",
+    "imageName": "c_game_over.png",
+    "roiFront": "549,401,198,31",
+    "roiBack": "549,401,198,31",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
   }
 ]
