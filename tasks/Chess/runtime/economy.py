@@ -688,6 +688,7 @@ class ChessEconomyMixin:
         logger.debug('Scan all Chess shop slots before purchasing')
         targets = []
         recognized_slots = {}
+        unrecognized_slots = []
 
         for slot_index, click_rule in self._shop_slots():
             if not self._is_purchase_allowed():
@@ -699,6 +700,7 @@ class ChessEconomyMixin:
             )
             if matched is None:
                 recognized_slots[slot_index] = '未识别'
+                unrecognized_slots.append((slot_index, click_rule))
                 logger.debug(
                     f'Chess shop slot {slot_index}: identity not recognized'
                 )
@@ -725,6 +727,53 @@ class ChessEconomyMixin:
                 'matched_name': matched['name'],
                 'known_price': SHIKIGAMI_BY_ROMAJI[matched['name']].cost,
             })
+
+        # 战斗中的技能动画可能遮挡个别商店格。首轮存在未识别项时，
+        # 统一等待半秒刷新一帧，只补扫这些格子一次；仍失败就直接保留
+        # “未识别”，不再追加等待，以免拖慢刷新和运营循环。
+        if unrecognized_slots:
+            logger.debug(
+                'Retry unrecognized Chess shop slots once after animation: '
+                f'slots={[slot for slot, _ in unrecognized_slots]}'
+            )
+            time.sleep(self.SHOP_UNRECOGNIZED_RETRY_WAIT)
+            self.screenshot()
+            if not self._is_purchase_allowed():
+                logger.debug(
+                    'Stop Chess shop retry: Hyakki mode detected'
+                )
+                return None
+
+            for slot_index, click_rule in unrecognized_slots:
+                matched = self._recognize_shop_slot(
+                    slot_index,
+                    click_rule,
+                )
+                if matched is None:
+                    logger.debug(
+                        'Chess shop slot remains unrecognized after one '
+                        f'retry: slot={slot_index}'
+                    )
+                    continue
+
+                recognized_slots[slot_index] = (
+                    self._shikigami_display_name(matched['name'])
+                )
+                logger.debug(
+                    'Chess shop retry recovered slot: '
+                    f'slot={slot_index}, source={matched["source"]}, '
+                    f'name={matched["name"]}, score={matched["score"]:.3f}'
+                )
+                if matched['name'] not in self.shikigami_deploy_positions:
+                    continue
+                targets.append({
+                    'slot_index': slot_index,
+                    'click_rule': click_rule,
+                    'matched_name': matched['name'],
+                    'known_price': SHIKIGAMI_BY_ROMAJI[
+                        matched['name']
+                    ].cost,
+                })
 
         # 资源编号从右向左为 1→5；日志按玩家看到的左→右输出 5→1。
         logger.info(
