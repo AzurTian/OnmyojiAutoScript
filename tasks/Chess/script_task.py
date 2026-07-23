@@ -450,6 +450,12 @@ class ScriptTask(
         deadline = time.monotonic() + self.GAME_OVER_WAIT_TIMEOUT
         while time.monotonic() < deadline:
             self.device.stuck_record_clear()
+            if self.appear(self.I_OPEN_LINEUP):
+                logger.info(
+                    'Chess game-end wait cancelled: I_OPEN_LINEUP recovered; '
+                    f'reset missing-frame count, context={context}'
+                )
+                return False
             if self.appear(self.I_GAME_OVER):
                 rank, raw = self._read_game_rank()
                 self._last_game_rank = rank
