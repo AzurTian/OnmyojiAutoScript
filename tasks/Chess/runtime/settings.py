@@ -78,16 +78,16 @@ class ChessRuntimeSettings:
     UNKNOWN_LINEUP_PROTECT_THRESHOLD = 0.58
     UNKNOWN_LINEUP_PROTECT_SCALES = (0.90, 0.95, 1.00, 1.05, 1.10)
     SOUL_DISPLAY_NAMES = {
-        entry.key: entry.chinese_name
+        entry.romaji: entry.chinese_name
         for entry in SOUL_ENTRIES
     }
     ATTACK_SOUL_NAMES = {
-        entry.key
+        entry.romaji
         for entry in SOUL_ENTRIES
         if entry.category == 'attack'
     }
     FUNCTIONAL_SOUL_NAMES = {
-        entry.key
+        entry.romaji
         for entry in SOUL_ENTRIES
         if entry.category == 'functional'
     }

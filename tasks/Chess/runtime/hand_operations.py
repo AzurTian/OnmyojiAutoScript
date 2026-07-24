@@ -1643,8 +1643,11 @@ class ChessHandOperationsMixin:
         """卖卡只在调用方指定阶段执行，阶段变化后立刻停止。"""
         return self._read_chess_mode() in allowed_modes
 
-    def _free_one_hand_slot_for_purchase(self) -> dict | None:
-        """手牌满时直接出售最右侧卡牌，为本次购买腾出一格。"""
+    def _free_one_hand_slot_for_purchase(
+        self,
+        handle_souls_first: bool = True,
+    ) -> dict | None:
+        """购买受阻时先处理御魂；重试仍失败才出售最右侧卡牌。"""
 
         mode = self._read_chess_mode()
         if mode not in ('备', '战'):
@@ -1652,6 +1655,40 @@ class ChessHandOperationsMixin:
                 f'Cannot run emergency Chess hand cleanup in mode={mode}'
             )
             return None
+
+        # 手牌只能在商店关闭后完整显示。第一次购买未生效时，先检查并
+        # 装备御魂，再恢复商店让调用方重新尝试购买；只有重试后仍未
+        # 购入，调用方才会以 handle_souls_first=False 进入卖卡兜底。
+        if handle_souls_first and mode == '备':
+            if not self._ensure_shop_closed():
+                logger.warning(
+                    'Cannot inspect Chess hand souls: shop could not be closed'
+                )
+                return None
+            self.screenshot()
+            soul_cards = self._soul_hand_cards()
+            if soul_cards:
+                verified_board_names = {
+                    name
+                    for name in getattr(self, '_board_lineup_names', set())
+                    if name in self.shikigami_deploy_positions
+                }
+                logger.info(
+                    'Chess purchase recovery found souls in hand; '
+                    'equip them before retrying purchase'
+                )
+                equipped = self.equip_souls_from_hand(verified_board_names)
+                if not self._ensure_shop_open():
+                    logger.warning(
+                        'Chess soul recovery completed, but shop could not '
+                        'be reopened'
+                    )
+                    return None
+                self.screenshot()
+                return {
+                    'type': 'souls',
+                    'equipped': equipped,
+                }
 
         result = self.sell_rightmost_hand_card()
 

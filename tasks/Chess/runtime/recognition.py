@@ -15,6 +15,7 @@ from tasks.Chess.strategy.shikigami_catalog import (
     SHIKIGAMI_BONDS_BY_ROMAJI,
     SHIKIGAMI_BY_ROMAJI,
 )
+from tasks.Chess.strategy.soul_catalog import SOUL_BY_ROMAJI
 
 
 CHESS_TASK_DIR = Path(__file__).resolve().parents[1]
@@ -265,8 +266,18 @@ class ChessRecognitionMixin:
 
     @cached_property
     def soul_hand_rules(self) -> list[tuple[str, RuleImage]]:
-        """御魂手牌模板，文件名格式为 `sou_<name>.png`。"""
-        return self._load_hand_template_folder('soul', prefix='sou_')
+        """按拼音文件名加载御魂模板，运行时统一使用拼音键。"""
+        rules = self._load_hand_template_folder('soul', prefix='sou_')
+        normalized = []
+        for romaji, rule in rules:
+            entry = SOUL_BY_ROMAJI.get(romaji)
+            if entry is None:
+                logger.warning(
+                    f'Ignore unregistered Chess soul template: {romaji}'
+                )
+                continue
+            normalized.append((entry.romaji, rule))
+        return normalized
 
     def classify_hand_card(self, card_roi: tuple[int, int, int, int]) -> dict:
         """识别一个已定位的手牌框，未收录时返回 `unknown`。"""

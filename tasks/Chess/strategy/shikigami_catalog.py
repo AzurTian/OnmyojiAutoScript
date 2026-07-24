@@ -15,6 +15,8 @@
 import re
 from dataclasses import dataclass
 
+from tasks.Chess.strategy.soul_catalog import resolve_soul
+
 
 @dataclass(frozen=True, slots=True)
 class ShikigamiEntry:
@@ -201,19 +203,82 @@ def resolve_shikigami(value: str) -> ShikigamiEntry | None:
     )
 
 
-def build_lineup_shikigami(position_by_identity: dict[str, int]) -> dict[str, dict]:
-    """把阵容的编号或中文名配置转换成以罗马音为唯一键的运行配置。"""
+def build_lineup_shikigami(position_by_identity: dict) -> dict[str, dict]:
+    """转换阵容配置，并兼容旧版纯站位及旧御魂元组。"""
     result = {}
-    for identity, position in position_by_identity.items():
+    for identity, raw_config in position_by_identity.items():
         entry = resolve_shikigami(identity)
         if entry is None:
             raise KeyError(f'式神目录不存在: {identity}')
         if entry.romaji in result:
             raise ValueError(f'阵容重复配置式神: {entry.romaji}')
+
+        deploy_weight = 1
+        equip_protect = False
+        if isinstance(raw_config, dict):
+            position = raw_config['position']
+            deploy_weight = raw_config.get('weight', 1)
+            soul_values = raw_config.get('souls', ())
+            equip_protect = raw_config.get('protect', False)
+        elif isinstance(raw_config, (tuple, list)):
+            if not raw_config:
+                raise ValueError(f'阵容式神配置不能为空: {identity}')
+            # 新格式：(上阵权重, 站位, (限定御魂...), 是否装守护之印)
+            if (
+                len(raw_config) == 4
+                and isinstance(raw_config[2], (tuple, list, set))
+            ):
+                deploy_weight, position, soul_values, equip_protect = (
+                    raw_config
+                )
+            else:
+                # 兼容旧格式：(站位, 御魂1, 御魂2, ...)
+                position, *soul_values = raw_config
+        else:
+            position = raw_config
+            soul_values = ()
+
+        if isinstance(soul_values, str):
+            soul_values = (soul_values,)
+        deploy_weight = int(deploy_weight)
+        position = int(position)
+        if deploy_weight < 0:
+            raise ValueError(f'上阵权重不能小于 0: {identity}')
+        if not 1 <= position <= 12:
+            raise ValueError(f'上阵位置必须为 1-12: {identity}')
+
+        preferred_souls = []
+        for soul_value in soul_values:
+            if str(soul_value).strip() == '守护之印':
+                # 兼容旧元组；守护之印不是御魂，单独登记开关。
+                equip_protect = True
+                continue
+            soul = resolve_soul(soul_value)
+            if soul is None:
+                raise KeyError(
+                    f'御魂目录不存在: {soul_value} '
+                    f'(式神={entry.chinese_name})'
+                )
+            soul_key = soul.romaji
+            if soul_key not in preferred_souls:
+                preferred_souls.append(soul_key)
+
+        if equip_protect:
+            if (
+                equip_protect is not True
+                and str(equip_protect).strip() != '守护之印'
+            ):
+                raise ValueError(
+                    f'守护之印配置必须为 True/False 或“守护之印”: {identity}'
+                )
+
         result[entry.romaji] = {
             'catalog_key': entry.key,
             'display_name': entry.chinese_name,
-            'position': int(position),
+            'deploy_weight': deploy_weight,
+            'position': position,
+            'preferred_souls': tuple(preferred_souls),
+            'equip_hakuzosu_protect': bool(equip_protect),
             'hand_images': (entry.hand_image,),
             'shop_images': (entry.shop_image,),
         }

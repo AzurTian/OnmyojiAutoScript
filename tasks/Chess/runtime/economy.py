@@ -709,6 +709,7 @@ class ChessEconomyMixin:
             expected_name=matched_name,
         )
         attempts = 0
+        handled_souls_before_sale = False
 
         while current_match is not None and time.monotonic() < deadline:
             if not self._is_purchase_allowed():
@@ -760,12 +761,20 @@ class ChessEconomyMixin:
                     f'Chess shop slot {slot_index} still matches '
                     f'{matched_name} after click, free hand space and retry'
                 )
-                if self._free_one_hand_slot_for_purchase() is None:
+                recovery = self._free_one_hand_slot_for_purchase(
+                    handle_souls_first=not handled_souls_before_sale,
+                )
+                if recovery is None:
                     logger.warning(
                         f'Chess buy {matched_name} is still unconfirmed and '
                         'no safe hand card can be cleared; block shop refresh'
                     )
                     return False
+                if recovery.get('type') == 'souls':
+                    handled_souls_before_sale = True
+                    logger.debug(
+                        f'Retry Chess buy {matched_name} after equipping souls'
+                    )
 
         if current_match is None:
             logger.debug(
