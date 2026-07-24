@@ -45,6 +45,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, GoryouRealmAssets):
                 3: GoryouClass.Dark_Black_Panther,
                 4: GoryouClass.Dark_Peacock,
             }[randint(1, 4)]
+        self.click(self.C_GR_LEVEL_3)
         while 1:
             self.screenshot()
             if self.appear(self.I_GR_FIRE):
