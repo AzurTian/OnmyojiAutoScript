@@ -291,18 +291,26 @@ class ChessRoundStateMixin:
         return None
 
     def _read_remaining_time(self) -> int | None:
-        """读取第一套回合布局的剩余时间；前三回合禁止调用该 OCR。"""
-        if self._is_early_round_layout():
-            return None
-        raw = self._normalize_ocr_text(
-            self.O_NOW_TIME.ocr(self.device.image)
+        """读取剩余时间；第二套布局复用第一套阶段框中的数字。"""
+        primary_raw, use_alternate_layout = (
+            self._read_primary_round_layout()
+        )
+        raw = (
+            primary_raw
+            if use_alternate_layout
+            else self._normalize_ocr_text(
+                self.O_NOW_TIME.ocr(self.device.image)
+            )
         )
         matched = re.search(r'\d+', raw)
         if matched is None:
             logger.warning(f'Chess remaining time OCR invalid: [{raw}]')
             return None
         remaining = int(matched.group(0))
-        logger.debug(f'Chess remaining time: [{raw}] -> {remaining}')
+        logger.debug(
+            f'Chess remaining time: [{raw}] -> {remaining}, '
+            f'alternate_layout={use_alternate_layout}'
+        )
         return remaining
 
     def _read_game_rank(self) -> tuple[int | None, str]:

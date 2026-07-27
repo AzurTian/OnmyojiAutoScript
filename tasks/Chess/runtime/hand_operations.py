@@ -4,6 +4,7 @@
 
 import random
 import time
+from collections import Counter
 
 import cv2
 import numpy as np
@@ -18,6 +19,52 @@ from tasks.Chess.strategy.shikigami_catalog import SHIKIGAMI_BONDS_BY_ROMAJI
 
 class ChessHandOperationsMixin:
     """Internal mixin; use through ``ScriptTask`` only."""
+
+    def _shikigami_attributes(
+        self,
+        name: str,
+    ) -> tuple[str | None, str | None, str | None]:
+        """返回式神本局属性：(守护之印, 御魂1, 御魂2)。"""
+        attributes = getattr(self, '_board_shikigami_attributes', {})
+        return attributes.get(name, (None, None, None))
+
+    def _set_shikigami_attributes(
+        self,
+        name: str,
+        values: tuple[str | None, str | None, str | None],
+    ) -> None:
+        attributes = dict(
+            getattr(self, '_board_shikigami_attributes', {})
+        )
+        attributes[name] = values
+        self._board_shikigami_attributes = attributes
+        logger.debug(f'Chess shikigami attributes: {name}={values}')
+
+    def _shikigami_name_at_set(self, set_index: int) -> str | None:
+        """按阵容配置和已确认上阵名单反查指定站位的目标式神。"""
+        deployed_names = set(getattr(self, '_board_lineup_names', set()))
+        return next((
+            name
+            for name in deployed_names
+            if self.shikigami_deploy_positions.get(name) == set_index
+        ), None)
+
+    def _record_shikigami_soul(self, name: str, soul_name: str) -> bool:
+        """写入普通御魂槽；重复御魂或两槽已满时拒绝写入。"""
+        protect, soul_1, soul_2 = self._shikigami_attributes(name)
+        if soul_name in (soul_1, soul_2):
+            return False
+        if soul_1 is None:
+            soul_1 = soul_name
+        elif soul_2 is None:
+            soul_2 = soul_name
+        else:
+            return False
+        self._set_shikigami_attributes(
+            name,
+            (protect, soul_1, soul_2),
+        )
+        return True
 
     @staticmethod
     def _rule_center(rule: RuleImage | RuleClick) -> tuple[int, int]:
@@ -330,6 +377,18 @@ class ChessHandOperationsMixin:
             'position': (x + width // 2, y + height // 2),
         }
 
+    def _hakuzosu_protect_hand_count(self) -> int:
+        """统计完整手牌区中的守护之印数量。"""
+        if self._hakuzosu_protect_target_position() is None:
+            return 0
+        return len(self.hakuzosu_protect_rule.match_all_any(
+            self.device.image,
+            roi=list(self.HAND_AREA),
+            threshold=self.hakuzosu_protect_rule.threshold,
+            nms_threshold=0.3,
+            frame_id=self.device.image_frame_id,
+        ))
+
     def _hakuzosu_protect_match_in_card(
         self,
         card_roi: tuple[int, int, int, int],
@@ -364,6 +423,12 @@ class ChessHandOperationsMixin:
         )
         if target_position is None:
             return False
+        target_name = self._shikigami_name_at_set(target_position)
+        if target_name is None:
+            return False
+        protect, soul_1, soul_2 = self._shikigami_attributes(target_name)
+        if protect is not None:
+            return False
         if not self._is_preparation_mode():
             return False
         card = self._find_hakuzosu_protect_hand_card()
@@ -377,6 +442,7 @@ class ChessHandOperationsMixin:
             f'检测到{card["display_name"]}(功能)，'
             f'移动到{target_position}号位'
         )
+        protect_before = self._hakuzosu_protect_hand_count()
         if not self._equip_soul_card(
             source=card['position'],
             set_index=int(target_position),
@@ -385,6 +451,22 @@ class ChessHandOperationsMixin:
             return False
         time.sleep(self.SOUL_EQUIP_WAIT)
         self.screenshot()
+        protect_after = self._hakuzosu_protect_hand_count()
+        if protect_after >= protect_before:
+            logger.warning(
+                'Chess Hakuzosu protect equip not confirmed: '
+                f'{target_name} at set {target_position}, '
+                f'hand_count={protect_before}->{protect_after}'
+            )
+            return False
+        self._set_shikigami_attributes(
+            target_name,
+            (self.HAKUZOSU_PROTECT_DISPLAY_NAME, soul_1, soul_2),
+        )
+        logger.info(
+            'Chess Hakuzosu protect equip confirmed: '
+            f'{target_name} at set {target_position}'
+        )
         return True
 
     def _equip_soul_card(
@@ -467,14 +549,9 @@ class ChessHandOperationsMixin:
             not target_occupied_before and target_occupied_after
         )
 
-        # 同名手牌可能有多张。旧逻辑只检查原横坐标附近是否仍有同名
-        # 模板，手牌重排后会把另一张同名牌误当作“拖动失败”。现在改为
-        # 比较整片手牌区的同名数量，并结合人数和目标格占位交叉确认。
-        succeeded = (
-            count_increased
-            or target_became_occupied
-            or (hand_count_decreased and target_occupied_after)
-        )
+        # 与御魂装备采用同一确认逻辑：比较完整手牌区中同名卡数量，
+        # 数量减少即确认本次上阵成功。人数和目标格只保留为诊断信息。
+        succeeded = hand_count_decreased
         if succeeded:
             logger.debug(
                 f'Chess shikigami deploy confirmed: {name} -> set {set_index}, '
@@ -683,15 +760,21 @@ class ChessHandOperationsMixin:
         verified_names: set[str],
     ) -> list[tuple[int, tuple[int, int]]]:
         """优先返回阵容专属御魂目标，否则按原类型规则选位。"""
-        full_positions = set(getattr(self, '_soul_full_positions', set()))
         strategy_shikigami = self.get_lineup_strategy()['shikigami']
+        def can_equip(name: str) -> bool:
+            _, soul_1, soul_2 = self._shikigami_attributes(name)
+            return (
+                soul_name not in (soul_1, soul_2)
+                and (soul_1 is None or soul_2 is None)
+            )
+
         preferred_positions = sorted(
             int(strategy_shikigami[name]['position'])
             for name in verified_names
             if name in strategy_shikigami
             and soul_name
             in strategy_shikigami[name].get('preferred_souls', ())
-            and int(strategy_shikigami[name]['position']) not in full_positions
+            and can_equip(name)
         )
         if preferred_positions:
             return [
@@ -718,9 +801,11 @@ class ChessHandOperationsMixin:
         wanted_parity = 0 if category == 'attack' else 1
         targets = []
         for set_index in active_positions:
+            target_name = self._shikigami_name_at_set(set_index)
             if (
                 set_index % 2 != wanted_parity
-                or set_index in full_positions
+                or target_name is None
+                or not can_equip(target_name)
             ):
                 continue
             # 前排奇数位统一使用向北偏移后的御魂投放位置。
@@ -1014,7 +1099,7 @@ class ChessHandOperationsMixin:
         self,
         verified_names: set[str] | None = None,
     ) -> list[str]:
-        """给已确认角色装备御魂；同一位置失败两次后轮换下一目标。"""
+        """给已确认式神装备御魂，并用完整手牌同名数量减少确认。"""
         if not self._is_preparation_mode():
             logger.debug(
                 'Skip equipping Chess souls: preparation was interrupted or '
@@ -1082,6 +1167,12 @@ class ChessHandOperationsMixin:
                 break
 
             set_index, _ = selected_target
+            target_name = self._shikigami_name_at_set(set_index)
+            if target_name is None:
+                break
+            hand_counts_before = Counter(
+                card['name'] for card in self._soul_hand_cards()
+            )
             logger.info(
                 f'检测到{selected["text"]}'
                 f'({self._soul_category_display(selected["category"])})，'
@@ -1095,18 +1186,13 @@ class ChessHandOperationsMixin:
                 break
             time.sleep(self.SOUL_EQUIP_WAIT)
             self.screenshot()
-
-            # 御魂仍在原横坐标附近表示本次装备没有成功。连续两次失败后，
-            # 上面的目标枚举会自动跳过该式神，转向下一个同奇偶站位。
-            remains = any(
-                candidate['name'] == selected['name']
-                and abs(
-                    candidate['position'][0]
-                    - selected['position'][0]
-                ) <= 28
-                for candidate in self._soul_hand_cards()
+            hand_counts_after = Counter(
+                card['name'] for card in self._soul_hand_cards()
             )
-            if remains:
+            if (
+                hand_counts_after[selected['name']]
+                >= hand_counts_before[selected['name']]
+            ):
                 attempts = repeated_attempts[
                     (
                         selected['name'],
@@ -1117,30 +1203,28 @@ class ChessHandOperationsMixin:
                 logger.warning(
                     f'Chess soul equip not confirmed: '
                     f'{selected["text"]} -> set {set_index}, '
-                    f'attempt={attempts}/2; '
-                    + (
-                        'try the same target once more'
-                        if attempts < 2
-                        else 'switch to next same-category target'
-                    )
+                    f'hand_count={hand_counts_before[selected["name"]]}'
+                    f'->{hand_counts_after[selected["name"]]}, '
+                    f'attempt={attempts}/2'
                 )
-                if attempts >= 2:
-                    full_positions = set(
-                        getattr(self, '_soul_full_positions', set())
-                    )
-                    full_positions.add(set_index)
-                    self._soul_full_positions = full_positions
-                    logger.debug(
-                        f'Chess soul target set {set_index} marked full '
-                        f'for current game; full_positions='
-                        f'{sorted(full_positions)}'
-                    )
                 continue
 
+            if not self._record_shikigami_soul(
+                target_name,
+                selected['name'],
+            ):
+                logger.warning(
+                    'Chess soul disappeared from hand but target attributes '
+                    f'rejected it: target={target_name}, '
+                    f'soul={selected["text"]}'
+                )
+                continue
             equipped.append(selected['name'])
             logger.debug(
                 f'Chess soul equip confirmed: '
-                f'{selected["text"]} -> set {set_index}'
+                f'{selected["text"]} -> {target_name} at set {set_index}, '
+                f'hand_count={hand_counts_before[selected["name"]]}'
+                f'->{hand_counts_after[selected["name"]]}'
             )
         else:
             logger.warning(
@@ -1311,6 +1395,15 @@ class ChessHandOperationsMixin:
             deployed.append(candidate['name'])
             deployed_names.add(candidate['name'])
             self._board_lineup_names = deployed_names
+            if candidate['name'] not in getattr(
+                self,
+                '_board_shikigami_attributes',
+                {},
+            ):
+                self._set_shikigami_attributes(
+                    candidate['name'],
+                    (None, None, None),
+                )
             player_positions = set(
                 getattr(self, '_player_deployed_positions', set())
             )

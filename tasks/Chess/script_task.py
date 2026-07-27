@@ -226,13 +226,19 @@ class ScriptTask(
 
             if mode in ('战', '鬼', '待'):
                 if mode == '战':
-                    if not battle_economy_done:
-                        self._run_battle_economy_until_budget_limit()
-                        battle_economy_done = True
                     if not battle_hand_cleanup_done:
                         battle_hand_cleanup_done = (
                             self._handle_battle_sell_stage()
                         )
+                    # 战阶段必须先完成非体系卡清理，再进入刷新升级。
+                    # 若卖卡过程中阶段发生变化，本回目不再启动经济循环。
+                    if (
+                        battle_hand_cleanup_done
+                        and not battle_economy_done
+                        and self._read_chess_mode() == '战'
+                    ):
+                        self._run_battle_economy_until_budget_limit()
+                        battle_economy_done = True
                     self._handle_passive_stage('战')
                 else:
                     self._handle_passive_stage(mode)
@@ -320,13 +326,13 @@ class ScriptTask(
                 return
             if self.appear(self.I_SELECT_BUFF):
                 return
-            # 只有升级/刷新循环受剩余时间限制；第二套布局没有 now_time
-            # OCR，_read_remaining_time 会返回 None，因此不会误打断购买。
+            # 只有升级/刷新循环受剩余时间限制；第二套布局从第一套阶段
+            # 框读取倒计时，第一套布局使用独立 now_time 区域。
             remaining = self._read_remaining_time()
-            if remaining is not None and remaining <= 15:
+            if remaining is not None and remaining < 15:
                 logger.info(
                     'Stop Chess preparation upgrade/refresh loop: '
-                    f'remaining_time={remaining} <= 15'
+                    f'remaining_time={remaining} < 15'
                 )
                 return
             result = self._run_economy_atomic_batch(battle_mode=False)
@@ -335,7 +341,12 @@ class ScriptTask(
             self.screenshot()
 
     def _run_battle_economy_until_budget_limit(self) -> None:
-        """战阶段续跑升级/刷新循环；同样受剩余时间 <= 15 保护。"""
+        """战阶段购买体系卡后续跑升级/刷新，并受 15 秒保护。"""
+        if self._read_chess_mode() != '战':
+            return
+        # 与备阶段使用同一入口：先确保商店打开并购买当前体系卡，
+        # 再根据金币门槛进入升级/刷新循环。
+        self.purchase_lineup_cards_once()
         if self._read_chess_mode() != '战':
             return
         self._schedule_economy_cycle()
@@ -344,10 +355,10 @@ class ScriptTask(
             and getattr(self, '_economy_pending', False)
         ):
             remaining = self._read_remaining_time()
-            if remaining is not None and remaining <= 15:
+            if remaining is not None and remaining < 15:
                 logger.info(
                     'Stop Chess battle upgrade/refresh loop: '
-                    f'remaining_time={remaining} <= 15'
+                    f'remaining_time={remaining} < 15'
                 )
                 return
             result = self._run_economy_atomic_batch(battle_mode=True)
@@ -552,9 +563,9 @@ class ScriptTask(
     def _start_chess_game(self) -> None:
         """从棋局大厅开战，确认进入局内后直接开始回合流程。"""
         logger.debug('Chess game start')
-        # 御魂容量只在单局内记忆。新对局重新允许所有已上阵式神接受
-        # 御魂，避免上一局的“已满”状态污染下一局。
-        self._soul_full_positions = set()
+        # 式神本局属性：(守护之印, 御魂1, 御魂2)。
+        # 守护之印不占普通御魂槽，三个属性均允许为空。
+        self._board_shikigami_attributes = {}
         self._board_lineup_names = set()
         self._player_deployed_positions = set()
         self._arakawa_goldfish_current_position = None
