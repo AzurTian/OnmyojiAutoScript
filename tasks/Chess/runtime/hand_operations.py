@@ -177,17 +177,34 @@ class ChessHandOperationsMixin:
         self,
         verified_names: set[str] | None = None,
     ) -> int | None:
-        """从式神专属御魂配置读取守护之印目标位置。"""
+        """从阵容级配置读取守护之印目标位置。"""
         strategy = self.get_lineup_strategy()
         if self.HAKUZOSU_NAME not in strategy['shikigami']:
             return None
+        position = strategy.get('hakuzosu_protect_position')
+        if position is not None:
+            position = int(position)
+            target_name = next((
+                name
+                for name, config in strategy['shikigami'].items()
+                if int(config['position']) == position
+            ), None)
+            if (
+                target_name is not None
+                and (
+                    verified_names is None
+                    or target_name in verified_names
+                )
+            ):
+                return position
+
+        # 兼容尚未迁移的第三方四元组阵容配置。
         for name, config in strategy['shikigami'].items():
             if verified_names is not None and name not in verified_names:
                 continue
             if config.get('equip_hakuzosu_protect', False):
                 return int(config['position'])
-        # 兼容尚未迁移的第三方阵容配置。
-        return 1
+        return None
 
     def _arakawa_goldfish_target_position(self) -> int | None:
         """返回当前阵容配置的荒川金鱼目标格。"""

@@ -223,14 +223,15 @@ def build_lineup_shikigami(position_by_identity: dict) -> dict[str, dict]:
         elif isinstance(raw_config, (tuple, list)):
             if not raw_config:
                 raise ValueError(f'阵容式神配置不能为空: {identity}')
-            # 新格式：(上阵权重, 站位, (限定御魂...), 是否装守护之印)
+            # 新格式：(上阵权重, 站位, (限定御魂...))
             if (
-                len(raw_config) == 4
+                len(raw_config) in (3, 4)
                 and isinstance(raw_config[2], (tuple, list, set))
             ):
-                deploy_weight, position, soul_values, equip_protect = (
-                    raw_config
-                )
+                deploy_weight, position, soul_values = raw_config[:3]
+                # 兼容旧四元组；新阵容改用阵容级守护之印目标位置。
+                if len(raw_config) == 4:
+                    equip_protect = raw_config[3]
             else:
                 # 兼容旧格式：(站位, 御魂1, 御魂2, ...)
                 position, *soul_values = raw_config

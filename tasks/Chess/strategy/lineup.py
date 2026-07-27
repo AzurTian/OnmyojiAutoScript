@@ -12,6 +12,7 @@ OASX 下拉选项和主任务运行时选择均由本注册表生成。
 from enum import Enum
 
 from tasks.Chess.strategy.lineup_strategy import (
+    ARAKAWA,
     DAJIANGSHAN,
     HAIGUO,
     HUYAO,
@@ -45,6 +46,10 @@ LINEUP_REGISTRY = {
     'liuhuo': {
         'display_name': '流火',
         'strategy': LIUHUO,
+    },
+    'arakawa': {
+        'display_name': '荒川',
+        'strategy': ARAKAWA,
     },
 }
 
