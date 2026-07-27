@@ -243,15 +243,19 @@ class ChessHandOperationsMixin:
         self,
         predicted_position: int | None,
     ) -> int | None:
-        """逐格打开详情，名称严格等于“金鱼”时返回所在格。"""
+        """严格按 12→11→10→9 逐格打开详情确认金鱼。"""
         candidates = list(self.ARAKAWA_GOLDFISH_SPAWN_POSITIONS)
-        if predicted_position in candidates:
-            candidates.remove(predicted_position)
-            candidates.insert(0, predicted_position)
 
         for set_index in candidates:
-            if not self._board_set_has_shikigami(set_index):
-                continue
+            predicted = set_index == predicted_position
+            occupied = self._board_set_has_shikigami(set_index)
+            logger.debug(
+                'Chess Arakawa goldfish inspect candidate: '
+                f'set={set_index}, predicted={predicted}, '
+                f'occupied={occupied}'
+            )
+            # 金鱼刚生成时勾玉图标可能尚未稳定。所有候选位都必须
+            # 实际点击确认，occupied 只用于日志诊断，不能用于跳过。
             x, y = self._set_position(set_index)
             inspect_rule = RuleClick(
                 roi_front=(x - 8, y - 8, 16, 16),
@@ -785,13 +789,16 @@ class ChessHandOperationsMixin:
                 and (soul_1 is None or soul_2 is None)
             )
 
+        preferred_names = {
+            name
+            for name, config in strategy_shikigami.items()
+            if soul_name in config.get('preferred_souls', ())
+        }
+        active_preferred_names = preferred_names & verified_names
         preferred_positions = sorted(
             int(strategy_shikigami[name]['position'])
-            for name in verified_names
-            if name in strategy_shikigami
-            and soul_name
-            in strategy_shikigami[name].get('preferred_souls', ())
-            and can_equip(name)
+            for name in active_preferred_names
+            if can_equip(name)
         )
         if preferred_positions:
             return [
@@ -799,12 +806,9 @@ class ChessHandOperationsMixin:
                 for set_index in preferred_positions
             ]
 
-        # 只要该御魂已被当前阵容指定，就不回退到通用奇偶站位；等待
-        # 指定式神上阵或目标空出后再处理。
-        if any(
-            soul_name in config.get('preferred_souls', ())
-            for config in strategy_shikigami.values()
-        ):
+        # 专属目标已经上阵时保持硬优先；若目标式神尚未上阵，则不再
+        # 把御魂留在手牌，直接回退到普通攻/功能御魂分配规则。
+        if active_preferred_names:
             return []
 
         active_positions = sorted(
