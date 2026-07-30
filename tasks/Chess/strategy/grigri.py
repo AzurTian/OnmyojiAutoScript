@@ -1,6 +1,7 @@
 """Chess 符咒名称解析与评分入口。"""
 
 from difflib import SequenceMatcher
+import math
 import re
 from collections import Counter
 
@@ -11,61 +12,44 @@ from tasks.Chess.badge.badge_hand_icons import (
 from tasks.Chess.strategy.shikigami_catalog import SHIKIGAMI_BONDS_BY_ROMAJI
 
 
-# 只有经济、经验需要维护静态分数；未登记项按 0 分处理。
-ECONOMY_GRIGRI_SCORE_BY_NAME: dict[str, float] = {
-    '轮入之道': 10,
-    '轮入之道·贰': 10,
-    '轮入之道·叁': 10,
-    '折上加折': 10,
-    '卜卦·吉': 9,
-    '卜卦·正吉': 9,
-    '金运·小吉': 9,
-    '金运·中吉': 9,
-    '金运·大吉': 9,
-    '剥金符咒': 8,
-    '剥金符咒·贰': 8,
-    '剥金符咒·叁': 8,
-    '鬼神助力': 8,
-    '鬼神助力·贰': 8,
-    '鬼神助力·叁': 8,
-    '赏金': 8,
-    '赏金·贰': 8,
-    '化厄为吉': 7,
-    '化厄为吉·贰': 7,
-    '招财吉鬼': 7,
-    '招财吉鬼·贰': 7,
-    '招财吉鬼·叁': 7,
-    '吉运达摩': 7,
-    '厚积薄发': 6,
-    '厚积薄发·贰': 6,
-    '百鬼夜行': 6,
-    '百鬼夜行·贰': 6,
-    '洪福·大': 6,
-    '洪福·小': 6,
-    '修行·大': 5,
-    '修行·小': 5,
-    '吞金鬼咒': 5,
-    '吞金鬼咒·贰': 5,
-    '不为所动': 5,
-    '索签': 4,
-    '奉纳符': 0,
-    '奉纳符·贰': 0,
+# 直接记录各符咒的实际收益；最终选择不再按类别分层。
+GRIGRI_BENEFIT_BY_NAME: dict[str, float] = {
+    # 金
+    '金运·大吉': 56, '修行·大': 20, '卜卦·吉': 26,
+    '卜卦·正吉': 45, '剥金符咒·叁': 36, '返金符咒·贰': 48,
+    '经验御守·叁': 36, '折上加折': 74, '轮入之道·叁': 70,
+    '鬼神助力·叁': 41, '紫气东来': 18, '多号机·贰': 24,
+    '升贺之礼': 22,
+    # 银
+    '金运·中吉': 26, '洪福·大': 30, '修行·小': 15,
+    '赏金·贰': 14, '奉纳符·贰': 4, '吞金鬼咒·贰': 18,
+    '剥金符咒·贰': 25, '化厄为吉·贰': 14, '返金符咒': 40,
+    '厚积薄发·贰': 8, '经验御守·贰': 28, '招福达摩·贰': 22,
+    '捷径·贰': 36, '寻山问卦': 10, '寻山问卦·贰': 14,
+    '百鬼夜行·贰': 33, '轮入之道·贰': 30, '齐心协力': 5,
+    '鬼神助力·贰': 38, '天降之鬼': 20, '中坚之力': 8,
+    '多号机': 17, '惊喜召唤': 10,
+    '破势御祝': 12, '网切御祝': 10, '被服御祝': 10,
+    '阴摩罗御祝': 10, '青女房御祝': 10, '蚌之御祝': 6,
+    '蝠之御祝': 6, '镜之御祝': 6,
+    # 铜
+    '金运·小吉': 8, '吉运达摩': 10, '洪福·小': 10,
+    '赏金': 8, '祸福相依': 0, '奉纳符': 2, '吞金鬼咒': 8,
+    '剥金符咒': 14, '纵横急行': 4, '化厄为吉': 9,
+    '厚积薄发': 10, '经验御守': 16, '招福达摩': 10,
+    '切磋技艺': 14, '捷径': 24, '索签': 18, '百鬼夜行': 14,
+    '轮入之道': 15, '不为所动': 8, '鬼神助力': 15,
+    '招财吉鬼': 11, '招财吉鬼·贰': 16, '招财吉鬼·叁': 23,
+    '蓝调': 2, '蓝调·贰': 12, '优选御魂': 6,
+    '首领猎人': 6, '秘魂上宾': 5, '随机纹章': 5,
 }
-EXPERIENCE_GRIGRI_SCORE_BY_NAME: dict[str, float] = {
-    '捷径': 10,
-    '捷径·贰': 10,
-    '返金符咒': 10,
-    '返金符咒·贰': 10,
-    '寻山问卦': 9,
-    '寻山问卦·贰': 9,
-    '切磋技艺': 9,
-    '经验御守': 8,
-    '经验御守·贰': 8,
-    '经验御守·叁': 8,
-    '招福达摩': 7,
-    '招福达摩·贰': 7,
+
+DEFAULT_BENEFIT_BY_QUALITY = {
+    'gold': 6.0,
+    'silver': 4.0,
+    'copper': 3.0,
 }
-DEFAULT_GRIGRI_SCORE = 0.0
+SILVER_SOUL_DEFAULT_BENEFIT = 3.0
 
 
 def _names(value: str) -> frozenset[str]:
@@ -128,19 +112,6 @@ GRIGRI_CATEGORY_BY_NAME = {
     for category, names in GRIGRI_NAMES_BY_CATEGORY.items()
     for name in names
 }
-
-# 数值越大，跨类别选择时越优先。
-GRIGRI_CATEGORY_TIER = {
-    'economy': 3,
-    'experience': 3,
-    'bond': 2,
-    'emblem': 2,
-    'soul': 1,
-    'functional': 1,
-    'shikigami': 1,
-    'unknown': 0,
-}
-
 
 def normalize_grigri_name(value) -> str:
     """统一 OCR 文本；兼容缺失/误识别的名称中点。"""
@@ -214,41 +185,67 @@ def lineup_bond_context(strategy: dict) -> dict:
 
 
 def grigri_score(name: str | None, lineup=None) -> float:
+    """返回实际收益；动态羁绊/纹章按当前阵容计算。"""
+    if not name:
+        return 0.0
     category = grigri_category(name)
-    if category == 'economy':
-        scores = ECONOMY_GRIGRI_SCORE_BY_NAME
-    elif category == 'experience':
-        scores = EXPERIENCE_GRIGRI_SCORE_BY_NAME
-    elif category in ('bond', 'emblem'):
+    quality = BADGE_QUALITY_INDEX.get(name)
+    if category in ('bond', 'emblem') and name != '随机纹章':
         bond = grigri_bond_name(name)
         if isinstance(lineup, dict):
             context = lineup_bond_context(lineup)
             if bond == context['primary']:
-                return 10.0
+                return 22.0 if quality == 'gold' else 16.0
+            if bond == '易形':
+                if bond in context['secondary']:
+                    return 20.0 if quality == 'gold' else 14.0
+                if context['has_yixing']:
+                    return 18.0 if quality == 'gold' else 10.0
+                return 6.0 if quality == 'gold' else 4.0
             if bond in context['secondary']:
-                return 9.0
-            if bond == '易形' and context['has_yixing']:
-                return 8.0
-            return 0.0
+                return 14.0 if quality == 'gold' else 8.0
+            return DEFAULT_BENEFIT_BY_QUALITY.get(quality, 3.0)
         lineup_display_name = str(lineup or '')
-        return 10.0 if bond == lineup_display_name else 0.0
-    else:
-        return DEFAULT_GRIGRI_SCORE
-    return float(scores.get(name, DEFAULT_GRIGRI_SCORE))
+        if bond == lineup_display_name:
+            return 22.0 if quality == 'gold' else 16.0
+    if category == 'soul' and quality == 'silver':
+        return float(GRIGRI_BENEFIT_BY_NAME.get(
+            name,
+            SILVER_SOUL_DEFAULT_BENEFIT,
+        ))
+    return float(GRIGRI_BENEFIT_BY_NAME.get(
+        name,
+        DEFAULT_BENEFIT_BY_QUALITY.get(quality, 0.0),
+    ))
+
+
+def grigri_keep_names(
+    quality: str | None,
+    lineup=None,
+    keep_ratio: float = 0.4,
+) -> frozenset[str]:
+    """按当前品质总数排名，严格返回收益前40%的符咒名称。"""
+    names = grigri_names_for_quality(quality)
+    if not names:
+        return frozenset()
+    catalog_order = {name: index for index, name in enumerate(names)}
+    ranked = sorted(
+        names,
+        key=lambda name: (
+            -grigri_score(name, lineup),
+            catalog_order[name],
+        ),
+    )
+    keep_count = max(1, math.ceil(len(ranked) * keep_ratio))
+    return frozenset(ranked[:keep_count])
 
 
 def grigri_selection_key(
     name: str | None,
     lineup=None,
-) -> tuple[int, float, int, int]:
-    """类别优先、同类别再比分数；经验优先经济，纹章优先朱印。"""
-    category = grigri_category(name)
-    return (
-        GRIGRI_CATEGORY_TIER[category],
-        grigri_score(name, lineup),
-        int(category == 'experience'),
-        int(category == 'emblem'),
-    )
+) -> tuple[float]:
+    """只按实际收益选择；类别不再提供额外优先级。"""
+    return (grigri_score(name, lineup),)
 
 
 def grigri_file(name: str) -> str:

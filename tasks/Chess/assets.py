@@ -168,3 +168,7 @@ class ChessAssets:
 	O_GRIGRI_OPTION_NAME_2 = RuleOcr(roi=(548,370,191,45), area=(548,370,191,45), mode="Single", method="Default", keyword="", name="grigri_option_name_2")
 	#
 	O_GRIGRI_OPTION_NAME_3 = RuleOcr(roi=(825,370,191,45), area=(825,370,191,45), mode="Single", method="Default", keyword="", name="grigri_option_name_3")
+	#
+	O_FREE_REFRESH_COUNT = RuleOcr(roi=(1183,392,38,24), area=(1183,392,38,24), mode="Single", method="Default", keyword="", name="free_refresh_count")
+
+

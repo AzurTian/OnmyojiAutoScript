@@ -13,6 +13,7 @@ from module.logger import logger
 from tasks.Chess.strategy.grigri import (
     grigri_category,
     grigri_file,
+    grigri_keep_names,
     grigri_names_for_quality,
     grigri_score,
     grigri_selection_key,
@@ -136,7 +137,7 @@ class ChessRoundStateMixin:
                 'Chess grigri option: '
                 f'option={index}, quality={quality or "unknown"}, '
                 f'ocr=[{raw}], name={name or "未知"}, '
-                f'category={category}, score={score:g}, '
+                f'category={category}, benefit={score:g}, '
                 f'icon={icon_name or "未命中"}({icon_score:.3f})'
             )
         return result
@@ -158,7 +159,7 @@ class ChessRoundStateMixin:
             return False
         logger.info(
             f'Refresh low-score Chess grigri: '
-            f'option={index}, score={option["score"]:g}, '
+            f'option={index}, benefit={option["score"]:g}, '
             f'remaining={remaining}'
         )
         refresh_rule = getattr(self, f'C_GRIGRI_REFRESH_{index}')
@@ -186,7 +187,7 @@ class ChessRoundStateMixin:
         return True
 
     def _continue_grigri_refresh_below_nine(self) -> bool:
-        """读取是否在最高分不足9分时继续刷新剩余位置。"""
+        """读取是否启用“刷新收益排名非前40%选项”。"""
         chess_task_config = getattr(self.config, 'chess', None)
         chess_config = getattr(chess_task_config, 'chess_config', None)
         return bool(getattr(
@@ -207,25 +208,38 @@ class ChessRoundStateMixin:
         ]
         if not candidates:
             return None
-
         if not self._continue_grigri_refresh_below_nine():
-            candidates = [
-                item
-                for item in candidates
-                if item['score'] < self.GRIGRI_REFRESH_SCORE_THRESHOLD
-            ]
-        else:
-            # 6分及以上属于本轮保留项，即使尚未出现9/10分，也不能
-            # 为了耗尽刷新次数把6、7、8分位置继续刷新掉。
-            candidates = [
-                item
-                for item in candidates
-                if item['score'] < self.GRIGRI_KEEP_SCORE_THRESHOLD
-            ]
+            return None
+        if any(item['quality'] is None for item in candidates):
+            logger.warning(
+                'Skip Chess grigri refresh: quality is unknown, '
+                'top-40-percent ranking cannot be calculated safely'
+            )
+            return None
+
+        lineup_strategy = self.get_lineup_strategy()
+        keep_names = {
+            quality: grigri_keep_names(
+                quality,
+                lineup_strategy,
+            )
+            for quality in {item['quality'] for item in candidates}
+        }
+        logger.debug(
+            'Chess grigri top-40-percent keep counts: '
+            f'{ {quality: len(names) for quality, names in keep_names.items()} }'
+        )
+        # 以当前品质的图鉴总数为基数，严格按数量保留前40%；
+        # 同收益只在最终选取时随机，排行榜边界使用固定图鉴顺序。
+        candidates = [
+            item
+            for item in candidates
+            if item['name'] not in keep_names[item['quality']]
+        ]
         if not candidates:
             return None
 
-        # 刷新标准只看评分，不受最终选取时的类别优先级影响。
+        # 刷新标准只看实际收益，不受符咒类别影响。
         lowest_score = min(item['score'] for item in candidates)
         return random.choice([
             item
@@ -242,13 +256,6 @@ class ChessRoundStateMixin:
         self._grigri_refresh_remaining = [1, 1, 1]
         options = self._recognize_grigri_options()
         for _ in range(self.GRIGRI_REFRESH_MAXIMUM):
-            best_score = max(item['score'] for item in options)
-            if best_score >= 9:
-                logger.info(
-                    'Stop Chess grigri refresh: '
-                    f'high-score option found, best_score={best_score:g}'
-                )
-                break
             refresh_target = self._next_refreshable_grigri_option(
                 options
             )
@@ -270,7 +277,8 @@ class ChessRoundStateMixin:
         logger.debug(
             f'Chess grigri option locked: option={selected["index"]}, '
             f'name={selected["name"] or "未知"}, '
-            f'category={selected["category"]}, score={selected["score"]:g}; '
+            f'category={selected["category"]}, '
+            f'benefit={selected["score"]:g}; '
             'retry until selection panel closes'
         )
         while time.monotonic() < deadline:

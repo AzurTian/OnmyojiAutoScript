@@ -259,5 +259,14 @@
     "method": "Default",
     "keyword": "",
     "description": ""
+  },
+  {
+    "itemName": "free_refresh_count",
+    "roiFront": "1183,392,38,24",
+    "roiBack": "1183,392,38,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
   }
 ]

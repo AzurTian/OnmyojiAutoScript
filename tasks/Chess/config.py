@@ -34,11 +34,12 @@ class ChessConfig(ConfigBase):
         description='勾选后检测到鼬乐币已满时立即结束百鬼棋局',
     )
     continue_grigri_refresh_below_nine: bool = Field(
-        title='符咒低于9分继续刷新',
+        title='刷新非前40%符咒',
         default=True,
         description=(
-            '开启后，在没有9分或10分选项时继续刷新低于6分且尚有'
-            '次数的位置；6分及以上选项保留'
+            '按当前品质符咒总数的实际收益排名，保留排名前40%的'
+            '选项，只刷新其余仍有刷新次数的位置；同收益边界按'
+            '固定图鉴顺序确定名次'
         ),
     )
 
