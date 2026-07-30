@@ -252,8 +252,8 @@
     "description": ""
   },
   {
-    "itemName": "check_goldfish_name",
-    "imageName": "c_check_goldfish_name.png",
+    "itemName": "check_goldfish",
+    "imageName": "c_check_goldfish.png",
     "roiFront": "924,291,192,49",
     "roiBack": "924,291,192,49",
     "method": "Template matching",

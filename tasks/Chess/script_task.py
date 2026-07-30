@@ -569,6 +569,7 @@ class ScriptTask(
         self._board_lineup_names = set()
         self._player_deployed_positions = set()
         self._arakawa_goldfish_current_position = None
+        self._board_special_units = {}
         self._last_game_rank = None
         self._reset_economy_state()
         strategy = self.get_lineup_strategy()

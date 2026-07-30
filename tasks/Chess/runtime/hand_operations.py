@@ -47,6 +47,12 @@ class ChessHandOperationsMixin:
 
     def _shikigami_name_at_set(self, set_index: int) -> str | None:
         """按阵容配置和已确认上阵名单反查指定站位的目标式神。"""
+        if (
+            getattr(self, '_arakawa_goldfish_current_position', None)
+            == set_index
+        ):
+            # 荒川金鱼属于特殊单位，不能成为任何装备的目标。
+            return None
         deployed_names = set(getattr(self, '_board_lineup_names', set()))
         return next((
             name
@@ -227,6 +233,25 @@ class ChessHandOperationsMixin:
             in SHIKIGAMI_BONDS_BY_ROMAJI.get(name, ())
         }
 
+    def _record_arakawa_goldfish_position(self, set_index: int) -> None:
+        """登记本局金鱼状态；金鱼不占人口且不能佩戴任何装备。"""
+        set_index = int(set_index)
+        self._arakawa_goldfish_current_position = set_index
+        units = dict(getattr(self, '_board_special_units', {}))
+        units['arakawa_goldfish'] = {
+            'display_name': '金鱼',
+            'position': set_index,
+            'counts_toward_capacity': False,
+            'can_equip_soul': False,
+            'can_equip_emblem': False,
+            'can_equip_hakuzosu_protect': False,
+        }
+        self._board_special_units = units
+        logger.debug(
+            'Chess special board unit state: '
+            f'arakawa_goldfish={units["arakawa_goldfish"]}'
+        )
+
     def _predict_arakawa_goldfish_spawn(
         self,
         deploying_set_index: int,
@@ -261,12 +286,18 @@ class ChessHandOperationsMixin:
             )
             # 金鱼只会因前一候选位已有式神而依次前移。候选位按
             # 12→11→10→9 排列，一旦遇到空位，后续位置不可能有金鱼。
-            if not occupied:
+            if set_index != 12 and not occupied:
                 logger.info(
                     'Stop Chess Arakawa goldfish inspection at first empty '
                     f'candidate: set={set_index}'
                 )
                 break
+            if set_index == 12 and not occupied:
+                logger.info(
+                    'Chess Arakawa goldfish set 12 occupancy is not ready; '
+                    'open specifics directly because spawn animation may '
+                    'hide the jade marker'
+                )
 
             x, y = self._set_position(set_index)
             inspect_rule = RuleClick(
@@ -295,7 +326,7 @@ class ChessHandOperationsMixin:
                     break
 
             if detail_opened:
-                is_goldfish = self.appear(self.I_CHECK_GOLDFISH_NAME)
+                is_goldfish = self.appear(self.I_CHECK_GOLDFISH)
                 logger.info(
                     'Chess goldfish name image identification: '
                     f'set={set_index}, '
@@ -333,7 +364,7 @@ class ChessHandOperationsMixin:
             logger.warning('Chess Arakawa goldfish position was not found')
             return False
         # 发现后立即登记。若后续拖动或复核失败，本局仍记得它原本所在格。
-        self._arakawa_goldfish_current_position = source_position
+        self._record_arakawa_goldfish_position(source_position)
         protected_before = set(
             getattr(self, '_player_deployed_positions', set())
         )
@@ -373,7 +404,7 @@ class ChessHandOperationsMixin:
             self._player_deployed_positions = protected_before
             return False
 
-        self._arakawa_goldfish_current_position = confirmed_position
+        self._record_arakawa_goldfish_position(confirmed_position)
         protected_positions = set(protected_before)
         # 金鱼最终所在格必须进入下阵保护。若目标格原本就是脚本上阵的
         # 式神，拖动会发生交换，该式神落到源格后也应继续受保护。
@@ -1330,7 +1361,6 @@ class ChessHandOperationsMixin:
                     'could not be confirmed'
                 )
                 break
-            lineup_full = capacity['full']
             candidate = self._find_best_shikigami_hand_card(
                 excluded_names=(
                     deployed_names
@@ -1356,25 +1386,13 @@ class ChessHandOperationsMixin:
                 f'position={candidate["position"]}'
             )
             set_index = self.shikigami_deploy_positions[candidate['name']]
-            if lineup_full:
-                recalled_set = self._recall_one_system_board_card(
-                    preferred_set_index=set_index,
-                )
-                if recalled_set is None:
-                    logger.warning(
-                        'Stop deploying Chess hand cards: lineup is full and '
-                        'no removable system-deployed card was found at '
-                        f'{self.BOARD_RECALL_POSITIONS}'
-                    )
-                    break
-                capacity = self._read_lineup_capacity_status()
-                if capacity is None or capacity['full']:
-                    logger.warning(
-                        'Stop deploying Chess hand cards: system card recall '
-                        f'at set {recalled_set} did not free lineup capacity'
-                    )
-                    break
-
+            # 每次上阵前都检查系统自动上阵区域。若存在未由脚本登记的
+            # 单位，先将其中一个下阵；只有系统位为空时才以动态人数
+            # 判断是否还能直接上阵。
+            recalled_set = self._recall_one_system_board_card(
+                preferred_set_index=set_index,
+            )
+            if recalled_set is not None:
                 # 下阵卡进入手牌后会让整排手牌重新布局。下阵前保存的
                 # candidate.position 已失效，必须基于新截图重新定位同名卡。
                 self.screenshot()
@@ -1402,6 +1420,13 @@ class ChessHandOperationsMixin:
                     f'to set {set_index}, refreshed_position='
                     f'{candidate["position"]}'
                 )
+            elif capacity['full']:
+                logger.warning(
+                    'Stop deploying Chess hand cards: runtime lineup is full '
+                    'and no removable system-deployed card was found at '
+                    f'{self.BOARD_RECALL_POSITIONS}'
+                )
+                break
 
             arakawa_names = self._lineup_arakawa_names()
             should_locate_goldfish = (

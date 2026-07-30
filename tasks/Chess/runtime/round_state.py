@@ -425,36 +425,47 @@ class ChessRoundStateMixin:
         return self._read_board_position_count()
 
     def _read_lineup_capacity_status(self) -> dict | None:
-        """以阶数为式神容量；荒川金鱼出现后额外增加一个单位位。"""
-        count = self._read_shikigami_count()
+        """以本局已确认上阵名单统计人口；金鱼等特殊单位不计人口。"""
         level = self._read_level()
-        if count is None or level is None:
+        if level is None:
             logger.warning(
                 'Chess lineup capacity unavailable: '
-                f'count={count}, level={level}'
+                f'level={level}'
             )
             return None
 
-        current = count['current']
-        goldfish_present = (
-            getattr(self, '_arakawa_goldfish_current_position', None)
-            is not None
+        deployed_names = {
+            name
+            for name in getattr(self, '_board_lineup_names', set())
+            if name in self.shikigami_deploy_positions
+        }
+        player_positions = set(
+            getattr(self, '_player_deployed_positions', set())
         )
-        capacity = level + int(goldfish_present)
+        current = len(deployed_names)
+        capacity = level
         full = current >= capacity
         logger.debug(
-            'Chess lineup capacity by level: '
-            f'current={current}, capacity={capacity}, level={level}, '
-            f'arakawa_goldfish={goldfish_present}, full={full}, '
-            f'count_ocr=[{count["raw"]}]'
+            'Chess lineup capacity by runtime state: '
+            f'population={current}, '
+            f'capacity={capacity}, level={level}, '
+            f'deployed={sorted(deployed_names)}, '
+            f'player_positions={sorted(player_positions)}, '
+            f'arakawa_goldfish='
+            f'{getattr(self, "_arakawa_goldfish_current_position", None)}, '
+            f'full={full}'
         )
         return {
             'current': current,
             'capacity': capacity,
             'level': level,
-            'arakawa_goldfish': goldfish_present,
+            'deployed_names': deployed_names,
+            'player_positions': player_positions,
+            'arakawa_goldfish': (
+                getattr(self, '_arakawa_goldfish_current_position', None)
+                is not None
+            ),
             'full': full,
-            'count': count,
         }
 
     def _read_level(self) -> int | None:
