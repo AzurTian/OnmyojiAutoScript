@@ -871,6 +871,23 @@ class ChessEconomyMixin:
                 matched_name=target['matched_name'],
             ):
                 purchased.append(target['matched_name'])
+                if target['matched_name'] in getattr(
+                    self,
+                    '_board_lineup_names',
+                    set(),
+                ):
+                    pending = set(getattr(
+                        self,
+                        '_board_position_reconcile_pending',
+                        set(),
+                    ))
+                    pending.add(target['matched_name'])
+                    self._board_position_reconcile_pending = pending
+                    logger.info(
+                        'Chess duplicate lineup purchase may move a merged '
+                        f'unit; schedule board position reconciliation: '
+                        f'name={target["matched_name"]}'
+                    )
                 # 第一张卡购买/升星动画会短暂覆盖其他商店格。等待稳定并
                 # 刷新截图后再处理目标列表中的下一格，重复卡也逐格购买。
                 time.sleep(self.SHOP_POST_PURCHASE_SETTLE_WAIT)

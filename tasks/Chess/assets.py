@@ -150,6 +150,8 @@ class ChessAssets:
 	O_SHIKIGAMI_SKILL_5 = RuleOcr(roi=(372,165,94,94), area=(372,165,94,94), mode="Single", method="Default", keyword="", name="shikigami_skill_5")
 	#
 	O_RANK = RuleOcr(roi=(443,193,417,204), area=(443,193,417,204), mode="Single", method="Default", keyword="", name="rank")
+	# 式神详情页名称
+	O_SHIKIGAMI_SPECIFICS_NAME = RuleOcr(roi=(997,101,193,36), area=(997,101,193,36), mode="Single", method="Default", keyword="", name="shikigami_specifics_name")
 	#
 	O_SHIKIGAMI_NAME_1 = RuleOcr(roi=(1097,261,117,33), area=(1097,261,117,33), mode="Single", method="Default", keyword="", name="shikigami_name_1")
 	#

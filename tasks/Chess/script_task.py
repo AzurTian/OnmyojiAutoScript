@@ -297,6 +297,22 @@ class ScriptTask(
             return False
         if not self._is_preparation_mode():
             return False
+        if getattr(self, '_board_position_reconcile_pending', set()):
+            if not self._ensure_shop_closed():
+                logger.warning(
+                    'Stop Chess preparation: shop could not be closed '
+                    'before merged-unit position reconciliation'
+                )
+                return False
+            self.screenshot()
+            if not self.reconcile_pending_lineup_positions():
+                logger.warning(
+                    'Pause Chess formation: merged-unit position '
+                    'reconciliation is still pending'
+                )
+                return False
+            if not self._is_preparation_mode():
+                return False
         # deploy_shikigami_from_hand 内部负责确认商店关闭、人数上限和
         # 每次拖动后的重新定位，准备阶段不重复实现这些约束。
         self.deploy_shikigami_from_hand()
@@ -567,6 +583,9 @@ class ScriptTask(
         # 守护之印不占普通御魂槽，三个属性均允许为空。
         self._board_shikigami_attributes = {}
         self._board_lineup_names = set()
+        self._board_actual_positions = {}
+        self._board_position_reconcile_pending = set()
+        self._board_transferred_names = set()
         self._player_deployed_positions = set()
         self._arakawa_goldfish_current_position = None
         self._board_special_units = {}

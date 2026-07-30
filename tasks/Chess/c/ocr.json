@@ -180,6 +180,15 @@
     "description": ""
   },
   {
+    "itemName": "shikigami_specifics_name",
+    "roiFront": "997,101,193,36",
+    "roiBack": "997,101,193,36",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "式神详情页名称"
+  },
+  {
     "itemName": "shikigami_name_1",
     "roiFront": "1097,261,117,33",
     "roiBack": "1097,261,117,33",

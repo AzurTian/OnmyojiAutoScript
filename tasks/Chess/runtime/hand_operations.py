@@ -19,7 +19,10 @@ from tasks.Chess.strategy.grigri import (
     grigri_category,
     resolve_grigri_name,
 )
-from tasks.Chess.strategy.shikigami_catalog import SHIKIGAMI_BONDS_BY_ROMAJI
+from tasks.Chess.strategy.shikigami_catalog import (
+    SHIKIGAMI_BONDS_BY_ROMAJI,
+    SHIKIGAMI_BY_CHINESE_NAME,
+)
 
 
 class ChessHandOperationsMixin:
@@ -46,7 +49,7 @@ class ChessHandOperationsMixin:
         logger.debug(f'Chess shikigami attributes: {name}={values}')
 
     def _shikigami_name_at_set(self, set_index: int) -> str | None:
-        """按阵容配置和已确认上阵名单反查指定站位的目标式神。"""
+        """按本局实际位置反查指定站位的目标式神。"""
         if (
             getattr(self, '_arakawa_goldfish_current_position', None)
             == set_index
@@ -54,11 +57,227 @@ class ChessHandOperationsMixin:
             # 荒川金鱼属于特殊单位，不能成为任何装备的目标。
             return None
         deployed_names = set(getattr(self, '_board_lineup_names', set()))
+        actual_positions = getattr(self, '_board_actual_positions', {})
         return next((
             name
             for name in deployed_names
-            if self.shikigami_deploy_positions.get(name) == set_index
+            if actual_positions.get(
+                name,
+                self.shikigami_deploy_positions.get(name),
+            ) == set_index
         ), None)
+
+    def _resolve_board_specifics_name(self, raw: str) -> str | None:
+        """把详情页 OCR 中文名映射为当前阵容的内部名称。"""
+        text = self._normalize_ocr_text(raw)
+        entry = SHIKIGAMI_BY_CHINESE_NAME.get(text)
+        if (
+            entry is None
+            or entry.romaji
+            not in self.get_lineup_strategy()['shikigami']
+        ):
+            return None
+        return entry.romaji
+
+    def _inspect_board_set_shikigami(
+        self,
+        set_index: int,
+        *,
+        require_occupied: bool = True,
+    ) -> str | None:
+        """打开指定站位详情并返回识别到的阵容式神内部名称。"""
+        if (
+            require_occupied
+            and not self._board_set_has_shikigami(set_index)
+        ):
+            return None
+        self.close_shikigami_specifics_if_open()
+        x, y = self._set_position(set_index)
+        inspect_rule = RuleClick(
+            roi_front=(x - 8, y - 8, 16, 16),
+            roi_back=(x - 8, y - 8, 16, 16),
+            name=f'chess_inspect_lineup_set_{set_index}',
+        )
+        for attempt in range(1, 4):
+            self.click(inspect_rule, interval=0.1)
+            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+            self.screenshot()
+            if not self.appear(self.I_SHIKIGAMI_SPECIFICS):
+                continue
+            raw = self.O_SHIKIGAMI_SPECIFICS_NAME.ocr(
+                self.device.image
+            )
+            name = self._resolve_board_specifics_name(raw)
+            logger.info(
+                'Chess board lineup identity: '
+                f'set={set_index}, raw=[{raw}], '
+                f'name={name or "unknown"}, attempt={attempt}/3'
+            )
+            self.close_shikigami_specifics_if_open()
+            self.screenshot()
+            return name
+        logger.debug(
+            f'Chess board specifics did not open: set={set_index}'
+        )
+        return None
+
+    def _record_actual_lineup_position(
+        self,
+        name: str,
+        set_index: int,
+    ) -> None:
+        positions = dict(getattr(self, '_board_actual_positions', {}))
+        positions[name] = int(set_index)
+        self._board_actual_positions = positions
+
+    def _reconcile_lineup_position(self, name: str) -> bool:
+        """查找同名合成后的式神并尽量拖回阵容预设位置。"""
+        desired = self.shikigami_deploy_positions.get(name)
+        if desired is None:
+            return True
+
+        # 购买已上阵的同名式神后，先只检查原预设位是否仍有式神。
+        # 原位仍被占用就认为没有发生系统位合成迁移，不打开详情扫描。
+        original_present = self._board_set_has_shikigami(desired)
+        if not original_present:
+            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+            self.screenshot()
+            original_present = self._board_set_has_shikigami(desired)
+        if original_present:
+            self._record_actual_lineup_position(name, desired)
+            protected = set(getattr(
+                self,
+                '_player_deployed_positions',
+                set(),
+            ))
+            protected.add(desired)
+            self._player_deployed_positions = protected
+            transferred = set(getattr(
+                self,
+                '_board_transferred_names',
+                set(),
+            ))
+            transferred.discard(name)
+            self._board_transferred_names = transferred
+            logger.debug(
+                'Chess duplicate purchase kept lineup unit at original '
+                f'position: name={name}, set={desired}'
+            )
+            return True
+
+        # 原位为空才记录为已转移，并只去系统自动上阵候选位查找。
+        transferred = set(getattr(
+            self,
+            '_board_transferred_names',
+            set(),
+        ))
+        transferred.add(name)
+        self._board_transferred_names = transferred
+        logger.info(
+            'Chess lineup unit original position became empty after '
+            f'duplicate purchase; mark transferred: '
+            f'name={name}, original_set={desired}'
+        )
+
+        source = None
+        scan_order = [
+            set_index
+            for set_index in self.BOARD_RECALL_POSITIONS
+            if set_index != desired
+        ]
+        for set_index in scan_order:
+            if self._inspect_board_set_shikigami(set_index) == name:
+                source = set_index
+                break
+        if source is None:
+            logger.warning(
+                'Chess merged lineup unit was not found; keep pending: '
+                f'name={name}, desired_set={desired}'
+            )
+            return False
+
+        # 找到后先保护实际位置，避免后续系统卡回收误伤二星式神。
+        protected = set(getattr(
+            self,
+            '_player_deployed_positions',
+            set(),
+        ))
+        protected.discard(desired)
+        protected.add(source)
+        self._player_deployed_positions = protected
+        self._record_actual_lineup_position(name, source)
+
+        Press_and_Drag(
+            self.device,
+            p1=self._set_position(source),
+            p2=self._set_position(desired),
+            hold_duration=0.5,
+            point_random=(-2, -2, 2, 2),
+            swipe_duration=0.5,
+            name=(
+                f'CHESS_RESTORE_MERGED_{name.upper()}_'
+                f'SET_{source}_TO_{desired}'
+            ),
+        )
+        time.sleep(self.BOARD_REDEPLOY_SETTLE_WAIT)
+        self.screenshot()
+        if self._inspect_board_set_shikigami(
+            desired,
+            require_occupied=False,
+        ) != name:
+            protected = set(getattr(
+                self,
+                '_player_deployed_positions',
+                set(),
+            ))
+            protected.update((source, desired))
+            self._player_deployed_positions = protected
+            logger.warning(
+                'Chess merged lineup move was not confirmed; '
+                f'name={name}, actual_set={source}, desired_set={desired}'
+            )
+            return False
+
+        self._record_actual_lineup_position(name, desired)
+        protected = set(getattr(
+            self,
+            '_player_deployed_positions',
+            set(),
+        ))
+        protected.discard(source)
+        protected.add(desired)
+        self._player_deployed_positions = protected
+        transferred = set(getattr(
+            self,
+            '_board_transferred_names',
+            set(),
+        ))
+        transferred.discard(name)
+        self._board_transferred_names = transferred
+        logger.info(
+            'Chess merged lineup position restored: '
+            f'name={name}, set={source}->{desired}'
+        )
+        return True
+
+    def reconcile_pending_lineup_positions(self) -> bool:
+        """复核所有可能因同名合成而迁位的阵容式神。"""
+        pending = set(getattr(
+            self,
+            '_board_position_reconcile_pending',
+            set(),
+        ))
+        if not pending:
+            return True
+        unresolved = set()
+        for name in sorted(pending):
+            if not self._is_preparation_mode():
+                unresolved.add(name)
+                continue
+            if not self._reconcile_lineup_position(name):
+                unresolved.add(name)
+        self._board_position_reconcile_pending = unresolved
+        return not unresolved
 
     def _record_shikigami_soul(self, name: str, soul_name: str) -> bool:
         """写入普通御魂槽；重复御魂或两槽已满时拒绝写入。"""
@@ -1462,6 +1681,10 @@ class ChessHandOperationsMixin:
             deployed.append(candidate['name'])
             deployed_names.add(candidate['name'])
             self._board_lineup_names = deployed_names
+            self._record_actual_lineup_position(
+                candidate['name'],
+                set_index,
+            )
             if candidate['name'] not in getattr(
                 self,
                 '_board_shikigami_attributes',
@@ -2108,7 +2331,14 @@ class ChessHandOperationsMixin:
                     self._board_lineup_names = {
                         name
                         for name in tracked_names
-                        if self.shikigami_deploy_positions.get(name)
+                        if getattr(
+                            self,
+                            '_board_actual_positions',
+                            {},
+                        ).get(
+                            name,
+                            self.shikigami_deploy_positions.get(name),
+                        )
                         != set_index
                     }
                     logger.debug(
@@ -2138,6 +2368,7 @@ class ChessHandOperationsMixin:
             logger.debug('Chess board is already empty; skip recall')
             self._board_lineup_names = set()
             self._player_deployed_positions = set()
+            self._board_actual_positions = {}
             return True
 
         tracked_names = set(getattr(self, '_board_lineup_names', set()))
@@ -2236,8 +2467,20 @@ class ChessHandOperationsMixin:
         self._board_lineup_names = {
             name
             for name in tracked_names
-            if self.shikigami_deploy_positions.get(name)
+            if getattr(self, '_board_actual_positions', {}).get(
+                name,
+                self.shikigami_deploy_positions.get(name),
+            )
             not in recall_positions
+        }
+        self._board_actual_positions = {
+            name: set_index
+            for name, set_index in getattr(
+                self,
+                '_board_actual_positions',
+                {},
+            ).items()
+            if set_index not in recall_positions
         }
         self._player_deployed_positions = (
             player_positions - set(recall_positions)
@@ -2245,6 +2488,7 @@ class ChessHandOperationsMixin:
         if count is not None and count['current'] == 0:
             self._board_lineup_names = set()
             self._player_deployed_positions = set()
+            self._board_actual_positions = {}
         if count is None:
             logger.debug('Chess board recall completed; count is unavailable')
         else:
