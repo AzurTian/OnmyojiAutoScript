@@ -525,24 +525,19 @@ class ChessHandOperationsMixin:
                 name=f'chess_inspect_goldfish_set_{set_index}',
             )
 
-            detail_opened = False
-            for open_attempt in range(
-                1,
-                self.ARAKAWA_GOLDFISH_OPEN_ATTEMPTS + 1,
-            ):
-                self.click(inspect_rule, interval=0.1)
-                time.sleep(self.ARAKAWA_GOLDFISH_CLICK_INTERVAL)
-                self.screenshot()
-                detail_opened = self.appear(self.I_SHIKIGAMI_SPECIFICS)
-                logger.info(
-                    'Chess Arakawa goldfish open specifics: '
-                    f'set={set_index}, '
-                    f'attempt={open_attempt}/'
-                    f'{self.ARAKAWA_GOLDFISH_OPEN_ATTEMPTS}, '
-                    f'opened={detail_opened}'
-                )
-                if detail_opened:
-                    break
+            # 每个候选位只点击一次。等待详情图案稳定后立即判断，
+            # 不是金鱼（或未打开详情）便继续检查下一个位置，避免在
+            # 12号位连续点击多次。
+            self.click(inspect_rule, interval=0.1)
+            time.sleep(self.ARAKAWA_GOLDFISH_CLICK_INTERVAL)
+            self.screenshot()
+            detail_opened = self.appear(self.I_SHIKIGAMI_SPECIFICS)
+            logger.info(
+                'Chess Arakawa goldfish open specifics: '
+                f'set={set_index}, wait='
+                f'{self.ARAKAWA_GOLDFISH_CLICK_INTERVAL:.1f}s, '
+                f'opened={detail_opened}'
+            )
 
             if detail_opened:
                 is_goldfish = self.appear(self.I_CHECK_GOLDFISH)
@@ -580,10 +575,16 @@ class ChessHandOperationsMixin:
             predicted_position
         )
         if source_position is None:
+            self._arakawa_goldfish_last_failed_round = getattr(
+                self,
+                '_current_round_no',
+                None,
+            )
             logger.warning('Chess Arakawa goldfish position was not found')
             return False
         # 发现后立即登记。若后续拖动或复核失败，本局仍记得它原本所在格。
         self._record_arakawa_goldfish_position(source_position)
+        self._arakawa_goldfish_last_failed_round = None
         protected_before = set(
             getattr(self, '_player_deployed_positions', set())
         )
@@ -646,6 +647,40 @@ class ChessHandOperationsMixin:
             f'{source_position} -> {target_position}'
         )
         return True
+
+    def retry_arakawa_goldfish_after_soul_equipment(self) -> bool:
+        """上一回目漏检金鱼时，在下一回目装配御魂后补检一次。"""
+        if self._arakawa_goldfish_target_position() is None:
+            return False
+        if getattr(self, '_arakawa_goldfish_current_position', None) is not None:
+            return True
+
+        deployed_arakawa = (
+            set(getattr(self, '_board_lineup_names', set()))
+            & self._lineup_arakawa_names()
+        )
+        if len(deployed_arakawa) <= 2:
+            return False
+
+        failed_round = getattr(
+            self,
+            '_arakawa_goldfish_last_failed_round',
+            None,
+        )
+        current_round = getattr(self, '_current_round_no', None)
+        if (
+            failed_round is None
+            or current_round is None
+            or int(current_round) <= int(failed_round)
+        ):
+            return False
+
+        logger.info(
+            'Retry Chess Arakawa goldfish after soul equipment: '
+            f'failed_round={failed_round}, current_round={current_round}, '
+            f'arakawa_count={len(deployed_arakawa)}'
+        )
+        return self.relocate_arakawa_goldfish(None)
 
     def _find_hakuzosu_protect_hand_card(self) -> dict | None:
         """定位手牌中的守护之印。"""

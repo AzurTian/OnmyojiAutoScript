@@ -157,6 +157,7 @@ class ScriptTask(
 
     def run_one_round(self, round_no: int) -> int | None:
         """执行一个回目：回合开始 -> 备 -> 战/鬼/待 -> 等待新回合。"""
+        self._current_round_no = int(round_no)
         logger.debug(f'Chess round {round_no}')
         phase = 'await_preparation'
         preparation_done = False
@@ -329,6 +330,7 @@ class ScriptTask(
             if name in self.shikigami_deploy_positions
         }
         self.equip_souls_from_hand(verified_board_names)
+        self.retry_arakawa_goldfish_after_soul_equipment()
         return self._is_preparation_mode()
 
     def _run_preparation_economy_until_time_limit(self) -> None:

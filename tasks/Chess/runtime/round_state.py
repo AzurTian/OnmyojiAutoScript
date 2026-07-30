@@ -214,8 +214,16 @@ class ChessRoundStateMixin:
                 for item in candidates
                 if item['score'] < self.GRIGRI_REFRESH_SCORE_THRESHOLD
             ]
-            if not candidates:
-                return None
+        else:
+            # 6分及以上属于本轮保留项，即使尚未出现9/10分，也不能
+            # 为了耗尽刷新次数把6、7、8分位置继续刷新掉。
+            candidates = [
+                item
+                for item in candidates
+                if item['score'] < self.GRIGRI_KEEP_SCORE_THRESHOLD
+            ]
+        if not candidates:
+            return None
 
         # 刷新标准只看评分，不受最终选取时的类别优先级影响。
         lowest_score = min(item['score'] for item in candidates)
