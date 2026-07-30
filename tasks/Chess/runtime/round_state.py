@@ -150,83 +150,112 @@ class ChessRoundStateMixin:
 
     def _refresh_grigri_option(self, option: dict) -> bool:
         index = option['index']
-        done_rule = getattr(self, f'I_GRIGRI_FRESH_DONE_{index}')
-        none_rule = getattr(self, f'I_GRIGRI_FRESH_NONE_{index}')
-        if self.appear(none_rule):
-            logger.debug(f'Chess grigri option {index} was already refreshed')
-            return False
-        if not self.appear(done_rule):
-            logger.warning(
-                f'Chess grigri refresh state is unknown: option={index}'
+        remaining = self._grigri_refresh_remaining
+        if remaining[index - 1] <= 0:
+            logger.debug(
+                f'Chess grigri option {index} has no refresh remaining'
             )
             return False
         logger.info(
             f'Refresh low-score Chess grigri: '
-            f'option={index}, score={option["score"]:g}'
+            f'option={index}, score={option["score"]:g}, '
+            f'remaining={remaining}'
         )
-        self.click(done_rule)
-        deadline = time.monotonic() + self.GRIGRI_REFRESH_CONFIRM_TIMEOUT
-        while time.monotonic() < deadline:
+        refresh_rule = getattr(self, f'C_GRIGRI_REFRESH_{index}')
+        for click_index in range(1, 3):
+            click_x, click_y = refresh_rule.coord()
+            self.device.click(
+                x=click_x,
+                y=click_y,
+                control_name=(
+                    f'{refresh_rule.name}_{click_index}'
+                ),
+            )
+            logger.debug(
+                f'Chess grigri refresh click: '
+                f'option={index}, click={click_index}/2'
+            )
             time.sleep(self.GRIGRI_REFRESH_WAIT)
-            self.screenshot()
-            if self.appear(none_rule):
-                logger.info(
-                    'Chess grigri refresh confirmed: '
-                    f'option={index}, state=none'
-                )
-                return True
-        logger.warning(
-            'Chess grigri refresh was not confirmed: '
-            f'option={index}, none marker did not appear'
+        remaining[index - 1] -= 1
+        logger.info(
+            f'Chess grigri refresh recorded: '
+            f'option={index}, remaining={remaining}'
         )
-        return False
+        time.sleep(self.GRIGRI_REFRESH_WAIT)
+        self.screenshot()
+        return True
 
-    def _best_refreshable_grigri_option(
+    def _continue_grigri_refresh_below_nine(self) -> bool:
+        """读取是否在最高分不足9分时继续刷新剩余位置。"""
+        chess_task_config = getattr(self.config, 'chess', None)
+        chess_config = getattr(chess_task_config, 'chess_config', None)
+        return bool(getattr(
+            chess_config,
+            'continue_grigri_refresh_below_nine',
+            True,
+        ))
+
+    def _next_refreshable_grigri_option(
         self,
         options: list[dict],
-    ) -> tuple[dict, bool]:
-        """同分低分选项优先挑仍有刷新次数的位置。"""
-        best_key = max(item['selection_key'] for item in options)
-        tied = [
-            item for item in options if item['selection_key'] == best_key
-        ]
-        refreshable = [
+    ) -> dict | None:
+        """选择下一项要刷新的位置；优先刷新当前评分最低项。"""
+        candidates = [
             item
-            for item in tied
-            if (
-                item['score'] < self.GRIGRI_REFRESH_SCORE_THRESHOLD
-                and self.appear(getattr(
-                    self,
-                    f'I_GRIGRI_FRESH_DONE_{item["index"]}',
-                ))
-            )
+            for item in options
+            if self._grigri_refresh_remaining[item['index'] - 1] > 0
         ]
-        if refreshable:
-            return random.choice(refreshable), True
-        return random.choice(tied), False
+        if not candidates:
+            return None
+
+        if not self._continue_grigri_refresh_below_nine():
+            candidates = [
+                item
+                for item in candidates
+                if item['score'] < self.GRIGRI_REFRESH_SCORE_THRESHOLD
+            ]
+            if not candidates:
+                return None
+
+        # 刷新标准只看评分，不受最终选取时的类别优先级影响。
+        lowest_score = min(item['score'] for item in candidates)
+        return random.choice([
+            item
+            for item in candidates
+            if item['score'] == lowest_score
+        ])
 
     def select_grigri(self) -> bool:
         """识别、评分并选择符咒；低分时对目标选项刷新一次。"""
         if not self.appear(self.I_SELECT_GRIGRI):
             return False
 
+        # 每次进入新的选符咒界面，三个位置各允许刷新一次。
+        self._grigri_refresh_remaining = [1, 1, 1]
         options = self._recognize_grigri_options()
-        selected = None
         for _ in range(self.GRIGRI_REFRESH_MAXIMUM):
-            selected, refreshable = (
-                self._best_refreshable_grigri_option(options)
-            )
-            if not refreshable:
+            best_score = max(item['score'] for item in options)
+            if best_score >= 9:
+                logger.info(
+                    'Stop Chess grigri refresh: '
+                    f'high-score option found, best_score={best_score:g}'
+                )
                 break
-            if not self._refresh_grigri_option(selected):
+            refresh_target = self._next_refreshable_grigri_option(
+                options
+            )
+            if refresh_target is None:
+                logger.info(
+                    'Stop Chess grigri refresh: '
+                    f'no refreshable position, '
+                    f'remaining={self._grigri_refresh_remaining}'
+                )
+                break
+            if not self._refresh_grigri_option(refresh_target):
                 break
             options = self._recognize_grigri_options()
-        else:
-            selected, _ = self._best_refreshable_grigri_option(options)
 
-        if selected is None:
-            selected = self._best_grigri_option(options)
-
+        selected = self._best_grigri_option(options)
         selected_rule = selected['rule']
         deadline = time.monotonic() + self.GRIGRI_SELECT_TIMEOUT
         attempts = 0

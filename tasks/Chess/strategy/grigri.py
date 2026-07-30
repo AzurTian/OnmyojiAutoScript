@@ -241,7 +241,7 @@ def grigri_selection_key(
     name: str | None,
     lineup=None,
 ) -> tuple[int, float, int, int]:
-    """层级、分数、同分类型优先：经验优先经济，纹章优先朱印。"""
+    """类别优先、同类别再比分数；经验优先经济，纹章优先朱印。"""
     category = grigri_category(name)
     return (
         GRIGRI_CATEGORY_TIER[category],

@@ -198,60 +198,6 @@
     "description": ""
   },
   {
-    "itemName": "grigri_fresh_none_1",
-    "imageName": "c_grigri_fresh_none_1.png",
-    "roiFront": "300,600,122,40",
-    "roiBack": "300,600,122,40",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "grigri_fresh_done_1",
-    "imageName": "c_grigri_fresh_done_1.png",
-    "roiFront": "300,600,122,40",
-    "roiBack": "300,600,122,40",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "grigri_fresh_done_2",
-    "imageName": "c_grigri_fresh_done_2.png",
-    "roiFront": "587,596,122,40",
-    "roiBack": "587,596,122,40",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "grigri_fresh_none_2",
-    "imageName": "c_grigri_fresh_none_2.png",
-    "roiFront": "587,596,122,40",
-    "roiBack": "587,596,122,40",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "grigri_fresh_none_3",
-    "imageName": "c_grigri_fresh_none_3.png",
-    "roiFront": "862,599,122,40",
-    "roiBack": "862,599,122,40",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "grigri_fresh_done_3",
-    "imageName": "c_grigri_fresh_done_3.png",
-    "roiFront": "862,599,122,40",
-    "roiBack": "862,599,122,40",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
     "itemName": "check_goldfish",
     "imageName": "c_check_goldfish.png",
     "roiFront": "924,291,192,49",

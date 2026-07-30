@@ -54,6 +54,24 @@
     "description": "右侧符咒选项卡面"
   },
   {
+    "itemName": "grigri_refresh_1",
+    "roiFront": "300,600,122,40",
+    "roiBack": "300,600,122,40",
+    "description": "左侧符咒刷新"
+  },
+  {
+    "itemName": "grigri_refresh_2",
+    "roiFront": "587,596,122,40",
+    "roiBack": "587,596,122,40",
+    "description": "中间符咒刷新"
+  },
+  {
+    "itemName": "grigri_refresh_3",
+    "roiFront": "862,599,122,40",
+    "roiBack": "862,599,122,40",
+    "description": "右侧符咒刷新"
+  },
+  {
     "itemName": "click_close_specifics_area",
     "roiFront": "193,95,91,430",
     "roiBack": "193,95,91,430",

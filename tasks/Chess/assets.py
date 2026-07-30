@@ -29,6 +29,12 @@ class ChessAssets:
 	C_GRIGRI_OPTION_2 = RuleClick(roi_front=(598,205,90,130), roi_back=(598,205,90,130), name="grigri_option_2")
 	# 右侧符咒选项卡面
 	C_GRIGRI_OPTION_3 = RuleClick(roi_front=(875,205,90,130), roi_back=(875,205,90,130), name="grigri_option_3")
+	# 左侧符咒刷新
+	C_GRIGRI_REFRESH_1 = RuleClick(roi_front=(300,600,122,40), roi_back=(300,600,122,40), name="grigri_refresh_1")
+	# 中间符咒刷新
+	C_GRIGRI_REFRESH_2 = RuleClick(roi_front=(587,596,122,40), roi_back=(587,596,122,40), name="grigri_refresh_2")
+	# 右侧符咒刷新
+	C_GRIGRI_REFRESH_3 = RuleClick(roi_front=(862,599,122,40), roi_back=(862,599,122,40), name="grigri_refresh_3")
 	# 关闭式神详情界面
 	C_CLICK_CLOSE_SPECIFICS_AREA = RuleClick(roi_front=(193,95,91,430), roi_back=(193,95,91,430), name="click_close_specifics_area")
 
@@ -78,18 +84,6 @@ class ChessAssets:
 	I_GRIGRI_SILVER = RuleImage(roi_front=(584,142,122,40), roi_back=(584,142,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_silver.png")
 	#
 	I_GRIGRI_COPPER = RuleImage(roi_front=(584,142,122,40), roi_back=(584,142,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_copper.png")
-	#
-	I_GRIGRI_FRESH_NONE_1 = RuleImage(roi_front=(300,600,122,40), roi_back=(300,600,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_fresh_none_1.png")
-	#
-	I_GRIGRI_FRESH_DONE_1 = RuleImage(roi_front=(300,600,122,40), roi_back=(300,600,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_fresh_done_1.png")
-	#
-	I_GRIGRI_FRESH_DONE_2 = RuleImage(roi_front=(587,596,122,40), roi_back=(587,596,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_fresh_done_2.png")
-	#
-	I_GRIGRI_FRESH_NONE_2 = RuleImage(roi_front=(587,596,122,40), roi_back=(587,596,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_fresh_none_2.png")
-	#
-	I_GRIGRI_FRESH_NONE_3 = RuleImage(roi_front=(862,599,122,40), roi_back=(862,599,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_fresh_none_3.png")
-	#
-	I_GRIGRI_FRESH_DONE_3 = RuleImage(roi_front=(862,599,122,40), roi_back=(862,599,122,40), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_grigri_fresh_done_3.png")
 	#
 	I_CHECK_GOLDFISH = RuleImage(roi_front=(924,291,192,49), roi_back=(924,291,192,49), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_goldfish.png")
 
