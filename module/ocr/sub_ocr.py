@@ -122,7 +122,7 @@ class Digit(Single):
         """
         result = self.ocr_single(image)
 
-        if result.isdigit():
+        if result and str(result).isdigit():
             return int(result)
         return 0
 
