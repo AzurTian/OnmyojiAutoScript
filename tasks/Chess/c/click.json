@@ -1,56 +1,62 @@
 [
   {
-    "itemName": "market",
-    "imageName": "c_market.png",
-    "roiFront": "1159,614,89,26",
-    "roiBack": "1159,614,89,26",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "商店"
+    "itemName": "shikigami_5",
+    "roiFront": "350,61,167,140",
+    "roiBack": "350,61,167,140",
+    "description": "商店式神5"
   },
   {
-    "itemName": "experience",
-    "imageName": "c_experience.png",
-    "roiFront": "37,641,102,26",
-    "roiBack": "37,641,102,26",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "购买经验"
+    "itemName": "shikigami_4",
+    "roiFront": "537,61,167,140",
+    "roiBack": "537,61,167,140",
+    "description": "商店式神4"
   },
   {
-    "itemName": "open_lineup",
-    "imageName": "c_open_lineup.png",
-    "roiFront": "85,15,137,43",
-    "roiBack": "264,12,47,44",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "打开阵容预设"
+    "itemName": "shikigami_3",
+    "roiFront": "724,61,167,140",
+    "roiBack": "724,61,167,140",
+    "description": "商店式神3"
   },
   {
-    "itemName": "refresh",
-    "imageName": "c_refresh.png",
-    "roiFront": "1169,419,65,64",
-    "roiBack": "1169,419,65,64",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "商店刷新"
+    "itemName": "shikigami_2",
+    "roiFront": "911,61,167,140",
+    "roiBack": "911,61,167,140",
+    "description": "商店式神2"
   },
   {
-    "itemName": "refresh_not_gold",
-    "imageName": "c_refresh_not_gold.png",
-    "roiFront": "1169,419,65,64",
-    "roiBack": "1169,419,65,64",
-    "method": "Template matching",
-    "threshold": 0.8,
+    "itemName": "shikigami_1",
+    "roiFront": "1098,61,167,140",
+    "roiBack": "1098,61,167,140",
+    "description": "商店式神1"
+  },
+  {
+    "itemName": "shikigami_store",
+    "roiFront": "344,55,925,241",
+    "roiBack": "344,55,925,241",
     "description": ""
   },
   {
-    "itemName": "skip",
-    "imageName": "c_skip.png",
-    "roiFront": "1148,39,77,22",
-    "roiBack": "1148,39,77,22",
-    "method": "Template matching",
-    "threshold": 0.8,
+    "itemName": "buff_option_1",
+    "roiFront": "320,205,90,130",
+    "roiBack": "320,205,90,130",
+    "description": "Buff左侧选项卡面"
+  },
+  {
+    "itemName": "buff_option_2",
+    "roiFront": "598,205,90,130",
+    "roiBack": "598,205,90,130",
+    "description": "Buff中间选项卡面"
+  },
+  {
+    "itemName": "buff_option_3",
+    "roiFront": "875,205,90,130",
+    "roiBack": "875,205,90,130",
+    "description": "Buff右侧选项卡面"
+  },
+  {
+    "itemName": "click_close_specifics_area",
+    "roiFront": "16,163,109,380",
+    "roiBack": "16,163,109,380",
     "description": ""
   }
 ]

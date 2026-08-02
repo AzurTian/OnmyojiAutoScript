@@ -34,15 +34,15 @@ QIJIAOSHAN_CONFIG = {
     'key': 'qijiaoshan',
     'display_name': '七角山',
     'shikigami_positions': {
-        '1-4': 1,   # 薰
-        '1-3': 2,   # 白狼
-        '3-14': 3,  # 御馔津
-        '2-8': 4,   # 小松丸
-        '3-8': 5,   # 一目连
-        '5-4': 6,   # 寻森小鹿男
-        '2-9': 7,   # 萤草
-        '3-7': 8,   # 山风
-        '4-9': 9,   # 梦山白藏主
+        '薰': 1,   # 薰
+        '白狼': 2,   # 白狼
+        '御馔津': 3,  # 御馔津
+        '小松丸': 4,   # 小松丸
+        '一目连': 5,   # 一目连
+        '寻森小鹿男': 6,   # 寻森小鹿男
+        '萤草': 7,   # 萤草
+        '山风': 8,   # 山风
+        '梦山白藏主': 9,   # 梦山白藏主
     },
     'hakuzosu_protect_position': 1,
 }
@@ -68,3 +68,23 @@ HAIGUO_CONFIG = {
 
 
 HAIGUO = build_lineup_strategy(HAIGUO_CONFIG)
+
+
+DAJIANGSHAN_CONFIG = {
+    'key': 'dajiangshan',
+    'display_name': '大江山',
+    'shikigami_positions': {
+        '雪女': 1,
+        '觉': 2,
+        '鲸汐千姬': 3,
+        '鬼切': 4,
+        '狸猫': 5,
+        '茨木童子': 6,
+        '山童': 7,
+        '薰': 8,
+        '酒吞童子': 10,
+    },
+}
+
+
+DAJIANGSHAN = build_lineup_strategy(DAJIANGSHAN_CONFIG)

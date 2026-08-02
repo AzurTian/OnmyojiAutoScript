@@ -14,6 +14,7 @@ from module.atom.image import RuleImage
 from module.exception import GameStuckError, TaskEnd
 from module.logger import logger
 from tasks.Chess.assets import ChessAssets
+from tasks.Chess.board_positions import SET_JADE_AREAS, SET_POSITIONS
 from tasks.Chess.config import Chess
 from tasks.Chess.lineup import (
     DEFAULT_LINEUP_KEY as REGISTERED_DEFAULT_LINEUP_KEY,
@@ -33,6 +34,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     HAND_AREA = (179, 540, 957, 158)
     HAND_TEMPLATE_THRESHOLD = 0.8
     SHOP_TEMPLATE_THRESHOLD = 0.7
+    SHOP_GLOW_TEMPLATE_THRESHOLD = 0.58
     HAND_DEPLOY_WAIT = 0.6
     HAND_DEPLOY_SAFETY_LIMIT = 20
     HAND_CLEANUP_SAFETY_LIMIT = 30
@@ -54,6 +56,8 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     BOARD_STAR_ROI_OFFSET = (-75, -105, 70, 70)
     BOARD_STAR_SCALES = (1.10, 1.15, 1.20, 1.25)
     BOARD_STAR_THRESHOLD = 0.65
+    SET_JADE_EDGE_THRESHOLD = 0.035
+    SET_JADE_STD_THRESHOLD = 18.0
     ROUND_CONFIRM_FRAMES = 2
     RESULT_EMPTY_CONFIRM_FRAMES = 3
     ALIVE_PLAYERS_CONFIRM_FRAMES = 2
@@ -92,7 +96,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     SOUL_TEMPLATE_THRESHOLD = 0.60
     SOUL_TEMPLATE_SCALES = (0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20)
     UNKNOWN_SELL_CONFIRM_FRAMES = 3
-    UNKNOWN_LINEUP_PROTECT_THRESHOLD = 0.70
+    UNKNOWN_LINEUP_PROTECT_THRESHOLD = 0.58
     UNKNOWN_LINEUP_PROTECT_SCALES = (0.90, 0.95, 1.00, 1.05, 1.10)
     SOUL_DISPLAY_NAMES = {
         'poshang': '破势',
@@ -443,6 +447,24 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         x, y, width, height = rule.roi_back
         return x + width // 2, y + height // 2
 
+    def _set_position(self, set_index: int) -> tuple[int, int]:
+        """读取独立配置中维护的 1-12 号纯站位坐标。"""
+        try:
+            return tuple(SET_POSITIONS[int(set_index)])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f'Chess board set position is not configured: {set_index}'
+            ) from exc
+
+    def _set_jade_area(self, set_index: int) -> tuple[int, int, int, int]:
+        """读取独立配置中维护的 1-12 号勾玉占位检测区域。"""
+        try:
+            return tuple(SET_JADE_AREAS[int(set_index)])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f'Chess board jade area is not configured: {set_index}'
+            ) from exc
+
     @staticmethod
     def _hand_card_star_at(
         position: tuple[int, int],
@@ -462,9 +484,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
     def _board_set_star(self, set_index: int) -> int | None:
         """在 set 左上方的小区域内识别当前场上式神星级。"""
-        center_x, center_y = self._rule_center(
-            getattr(self, f'C_SET_{set_index}')
-        )
+        center_x, center_y = self._set_position(set_index)
         offset_x, offset_y, width, height = self.BOARD_STAR_ROI_OFFSET
         roi_x = max(0, center_x + offset_x)
         roi_y = max(0, center_y + offset_y)
@@ -540,6 +560,32 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             swipe_duration=0.5,
             name='CHESS_SELL_UNKNOWN_HAND_CARD',
         )
+        self.close_shikigami_specifics_if_open()
+
+    def close_shikigami_specifics_if_open(self) -> bool:
+        """卖卡/上卡误打开式神详情页时，点击安全区域直到关闭。"""
+        if not hasattr(self, 'I_SHIKIGAMI_SPECIFICS'):
+            return False
+        if not self.appear(self.I_SHIKIGAMI_SPECIFICS):
+            return False
+
+        logger.warning(
+            'Chess shikigami specifics opened unexpectedly, close it'
+        )
+        closed = False
+        for attempt in range(1, 8):
+            self.click(self.C_CLICK_CLOSE_SPECIFICS_AREA, interval=0.1)
+            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+            self.screenshot()
+            if not self.appear(self.I_SHIKIGAMI_SPECIFICS):
+                logger.info(
+                    f'Chess shikigami specifics closed, attempts={attempt}'
+                )
+                closed = True
+                break
+        if not closed:
+            logger.warning('Chess shikigami specifics still visible')
+        return closed
 
     def sell_rightmost_one_star_lineup_card(self) -> dict | None:
         """紧急腾位时从右向左出售一张未受三星保护的一星阵容卡。"""
@@ -770,9 +816,14 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             logger.warning(f'Chess shikigami has no deploy position: {name}')
             return False
 
+        if not self._ensure_shop_closed():
+            logger.warning(
+                f'Abort Chess shikigami deployment: shop is not closed '
+                f'before dragging {name}'
+            )
+            return False
         count_before = self._read_shikigami_count()
-        target = getattr(self, f'C_SET_{set_index}')
-        target_position = self._rule_center(target)
+        target_position = self._set_position(set_index)
         logger.info(
             f'Deploy Chess shikigami {name} to set {set_index}, '
             f'source={source}, target={target_position}'
@@ -786,6 +837,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             swipe_duration=0.5,
             name=f'CHESS_DEPLOY_{name.upper()}_SET_{set_index}',
         )
+        self.close_shikigami_specifics_if_open()
         time.sleep(self.HAND_DEPLOY_WAIT)
         self.screenshot()
         count_after = self._read_shikigami_count()
@@ -840,36 +892,65 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         self,
         excluded_names: set[str] | None = None,
     ) -> dict | None:
-        """搜索可上阵式神；同类型有多张时只选择最左侧最高级卡。"""
+        """搜索可上阵式神；限定在已定位手牌框内，避免整区误匹配。"""
         excluded_names = excluded_names or set()
         hand_cards = self._hand_card_detections()
-        best = None
-        for name, rule in self.lineup_shikigami_hand_rules:
-            if name in excluded_names:
+        candidates = []
+        for card in hand_cards:
+            card_roi = card['roi']
+            best_in_card = None
+            for name, rule in self.lineup_shikigami_hand_rules:
+                if name in excluded_names:
+                    continue
+                matches = rule.match_all_any(
+                    self.device.image,
+                    roi=list(card_roi),
+                    threshold=rule.threshold,
+                    nms_threshold=0.3,
+                    frame_id=self.device.image_frame_id,
+                )
+                if not matches:
+                    continue
+                score, x, y, width, height = max(
+                    matches,
+                    key=lambda item: item[0],
+                )
+                if best_in_card is None or score > best_in_card['score']:
+                    best_in_card = {
+                        'name': name,
+                        'score': score,
+                        'position': (x + width // 2, y + height // 2),
+                        'star': card['star'],
+                        'roi': card_roi,
+                    }
+            if best_in_card is None:
                 continue
-            matches = rule.match_all_any(
-                self.device.image,
-                roi=list(self.HAND_AREA),
-                threshold=rule.threshold,
-                nms_threshold=0.3,
-                frame_id=self.device.image_frame_id,
+            candidates.append(best_in_card)
+            logger.info(
+                'Chess lineup hand card candidate: '
+                f'name={best_in_card["name"]}, '
+                f'star={best_in_card["star"]}, '
+                f'score={best_in_card["score"]:.3f}, '
+                f'roi={best_in_card["roi"]}, '
+                f'position={best_in_card["position"]}'
             )
-            if not matches:
-                continue
-            # 同类型卡从左到右按等级递减，重上阵必须选择最左侧。
-            score, x, y, width, height = min(
-                matches,
-                key=lambda item: (item[1], -item[0]),
-            )
-            position = (x + width // 2, y + height // 2)
-            if best is None or score > best['score']:
-                best = {
-                    'name': name,
-                    'score': score,
-                    'position': position,
-                    'star': self._hand_card_star_at(position, hand_cards),
-                }
-        return best
+
+        if not candidates:
+            logger.info('No deployable Chess lineup hand card detected')
+            return None
+
+        # 同名多张时选最左侧；不同名之间按手牌从左到右处理，避免高分
+        # 模板长期压住后续体系卡，导致 2/3 这种未满员场景不上人。
+        selected_by_name = {}
+        for candidate in sorted(
+            candidates,
+            key=lambda item: (item['roi'][0], -item['score']),
+        ):
+            selected_by_name.setdefault(candidate['name'], candidate)
+        return min(
+            selected_by_name.values(),
+            key=lambda item: item['roi'][0],
+        )
 
     def _soul_category(self, name: str) -> str | None:
         if name in self.ATTACK_SOUL_NAMES:
@@ -880,7 +961,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
     def _soul_target_position(self, set_index: int) -> tuple[int, int]:
         """返回御魂类卡牌的投放位置；奇数位统一向北偏移 5 像素。"""
-        x, y = self._rule_center(getattr(self, f'C_SET_{set_index}'))
+        x, y = self._set_position(set_index)
         if set_index % 2 == 1:
             y += self.SOUL_ODD_SET_Y_OFFSET
         return x, y
@@ -1327,6 +1408,12 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     'mode is no longer preparation'
                 )
                 break
+            if not self._ensure_shop_closed():
+                logger.warning(
+                    'Stop deploying Chess hand cards: shop reopened or '
+                    'could not be confirmed closed before capacity check'
+                )
+                break
 
             capacity = self._read_lineup_capacity_status()
             if capacity is None:
@@ -1337,6 +1424,13 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 break
             count = capacity['count']
             lineup_full = capacity['full']
+            if lineup_full:
+                logger.info(
+                    'Stop deploying Chess hand cards: lineup is full '
+                    f'({capacity["current"]}/{capacity["capacity"]}), '
+                    f'occupied={count.get("occupied_positions", [])}'
+                )
+                break
 
             candidate = self._find_best_shikigami_hand_card(
                 excluded_names=(
@@ -1377,15 +1471,11 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     f'{board_star} -> {hand_star}'
                 )
             elif candidate['name'] in deployed_names:
-                # 已知场上有该式神但本帧星标受动画遮挡时保守跳过，避免
-                # 因一次漏识别把同星卡再次拖到同一位置。
-                logger.info(
-                    f'Protect existing Chess shikigami from duplicate '
-                    f'deployment: {candidate["name"]} set={set_index}, '
-                    'board star is temporarily unavailable'
+                logger.warning(
+                    f'Chess board star is unavailable for tracked shikigami '
+                    f'{candidate["name"]} set={set_index}; retry deployment '
+                    'instead of trusting stale board record'
                 )
-                star_checked_names.add(candidate['name'])
-                continue
             elif lineup_full:
                 logger.info(
                     f'Skip Chess deployment because lineup is full and '
@@ -1510,7 +1600,14 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         sold = []
         clean_confirm_frames = 0
+        strategy = self.get_lineup_strategy()
+        logger.info(
+            'Chess hand cleanup lineup protection: '
+            f'lineup={strategy["key"]}, '
+            f'names={list(strategy["shikigami"].keys())}'
+        )
         for cleanup_pass in range(1, self.HAND_CLEANUP_SAFETY_LIMIT + 1):
+            self.close_shikigami_specifics_if_open()
             mode = self._read_chess_mode()
             if not self._is_hand_cleanup_allowed(allowed_modes):
                 logger.info(
@@ -1787,7 +1884,13 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         # 除 11 号位的针对性确认外，其余候选格连续拖完后再统一截图，
         # 避免每个空位都产生一次截图等待。
         for set_index in recall_positions:
-            source = self._rule_center(getattr(self, f'C_SET_{set_index}'))
+            if not self._board_set_has_shikigami(set_index):
+                logger.info(
+                    f'Skip Chess recall set {set_index}: '
+                    'jade marker is not detected'
+                )
+                continue
+            source = self._set_position(set_index)
             Press_and_Drag(
                 self.device,
                 p1=source,
@@ -2017,37 +2120,64 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         # 不能和真正的 OCR 空结果混为一谈，否则会误累计结算空帧。
         return raw or None
 
-    def _read_shikigami_count(self) -> dict | None:
-        """读取场上人数 m/n；无法解析时返回 None。"""
-        raw = self._normalize_ocr_text(
-            self.O_SHIKIGAMI_COUNT.ocr(self.device.image)
+    def _board_set_has_shikigami(self, set_index: int) -> bool:
+        """检测对应站位是否存在式神：勾玉区域有明显图标特征即视为有人。"""
+        x, y, width, height = self._set_jade_area(set_index)
+        image_height, image_width = self.device.image.shape[:2]
+        if (
+            x < 0
+            or y < 0
+            or x >= image_width
+            or y >= image_height
+        ):
+            logger.warning(
+                f'Chess set jade area is outside screenshot: '
+                f'set={set_index}, area={(x, y, width, height)}'
+            )
+            return False
+        width = min(width, image_width - x)
+        height = min(height, image_height - y)
+        if width <= 0 or height <= 0:
+            logger.warning(
+                f'Chess set jade area is empty after clipping: '
+                f'set={set_index}, area={(x, y, width, height)}'
+            )
+            return False
+
+        source = self.device.image[y:y + height, x:x + width]
+        gray = cv2.cvtColor(source, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(gray, 50, 150)
+        edge_ratio = float(np.count_nonzero(edges)) / float(edges.size)
+        std = float(np.std(gray))
+        occupied = (
+            edge_ratio >= self.SET_JADE_EDGE_THRESHOLD
+            and std >= self.SET_JADE_STD_THRESHOLD
         )
-        matched = re.search(r'(\d+)[/／](\d+)', raw)
-        if matched is None:
-            # 小尺寸人数文本中的斜杠偶尔会被 OCR 丢弃，例如 1/2 -> 12。
-            # 目前棋盘人数上限为一位数，仅对恰好两位数字做保守恢复。
-            compact = re.fullmatch(r'(\d)(\d)', raw)
-            if compact is not None:
-                current, total = (int(value) for value in compact.groups())
-                if 0 <= current <= total and total > 0:
-                    logger.info(
-                        f'Chess shikigami count recovered: [{raw}] -> '
-                        f'{current}/{total}'
-                    )
-                    return {
-                        'current': current,
-                        'total': total,
-                        'raw': raw,
-                    }
-        if matched is None:
-            logger.warning(f'Chess shikigami count OCR invalid: [{raw}]')
-            return None
-        current, total = (int(value) for value in matched.groups())
-        if total <= 0:
-            logger.warning(f'Chess shikigami count total is invalid: [{raw}]')
-            return None
-        logger.info(f'Chess shikigami count: {current}/{total}')
-        return {'current': current, 'total': total, 'raw': raw}
+        return occupied
+
+    def _read_board_position_count(self) -> dict:
+        """统计 12 个站位勾玉区域中检测到图标的位置数量。"""
+        occupied_positions = [
+            set_index
+            for set_index in range(1, 13)
+            if self._board_set_has_shikigami(set_index)
+        ]
+        count = len(occupied_positions)
+        raw = ','.join(str(index) for index in occupied_positions)
+        logger.info(
+            'Chess board position count by jade: '
+            f'{count}/12, occupied={occupied_positions}'
+        )
+        return {
+            'current': count,
+            'total': 12,
+            'raw': raw,
+            'occupied_positions': occupied_positions,
+        }
+
+    def _read_shikigami_count(self) -> dict | None:
+        """读取场上人数：统计 12 个站位勾玉区域是否有式神。"""
+        return self._read_board_position_count()
 
     def _read_lineup_capacity_status(self) -> dict | None:
         """以场上人数为当前值、当前阶数为最大上阵人数。"""
@@ -2077,9 +2207,6 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
     def _read_round_resources(self, round_no: int, mode: str | None) -> dict:
         """记录一个新回合需要检查的五项信息。"""
         snapshot = {
-            'experience': self._normalize_ocr_text(
-                self.O_CHECK_EXPERIENCE.ocr(self.device.image)
-            ),
             'gold': self.O_GOLD.ocr(self.device.image),
             'round': round_no,
             'level': self._read_level(),
@@ -2088,8 +2215,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         logger.info(
             'Chess round snapshot: '
             f'round={snapshot["round"]}, mode={snapshot["chess_mode"]}, '
-            f'level={snapshot["level"]}, experience={snapshot["experience"]}, '
-            f'gold={snapshot["gold"]}'
+            f'level={snapshot["level"]}, gold={snapshot["gold"]}'
         )
         return snapshot
 
@@ -2262,6 +2388,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         visible = (
             self.appear(self.I_REFRESH)
             or self.appear(self.I_REFRESH_NOT_GOLD)
+            or self._is_shop_price_panel_visible()
         )
         if visible:
             self._shop_assumed_open = True
@@ -2272,6 +2399,21 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
             getattr(self, '_economy_battle_mode', False)
             and getattr(self, '_shop_assumed_open', False)
         )
+
+    def _is_shop_price_panel_visible(self) -> bool:
+        """商店价格区有数字时，视为商店仍展开。"""
+        for index in range(1, 6):
+            rule = getattr(self, f'O_SHIKIGAMI_GOLD_{index}', None)
+            if rule is None:
+                continue
+            raw = self._normalize_ocr_text(rule.ocr(self.device.image))
+            if re.search(r'\d+', raw):
+                logger.info(
+                    'Chess shop panel visible by price OCR: '
+                    f'slot={index}, raw=[{raw}]'
+                )
+                return True
+        return False
 
     def _is_preparation_mode(self) -> bool:
         """只有无 Buff 弹窗的“备”可继续操作；弹窗出现立即中断。"""
@@ -2483,6 +2625,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         shop_visible = (
             self.appear(self.I_REFRESH)
             or self.appear(self.I_REFRESH_NOT_GOLD)
+            or self._is_shop_price_panel_visible()
         )
         shop_assumed_open = getattr(self, '_shop_assumed_open', False)
         if not shop_visible and not shop_assumed_open:
@@ -2580,6 +2723,77 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     'score': float(score),
                     'position': (x + width // 2, y + height // 2),
                 }
+        if best is not None:
+            return best
+
+        fallback = self._match_shop_shikigami_avatar_glow_fallback(
+            click_rule,
+            expected_name=expected_name,
+        )
+        if fallback is not None:
+            logger.warning(
+                'Chess shop avatar matched by glow fallback: '
+                f'name={fallback["name"]}, score={fallback["score"]:.3f}, '
+                f'threshold={self.SHOP_GLOW_TEMPLATE_THRESHOLD}'
+            )
+        return fallback
+
+    @staticmethod
+    def _template_gray(image: np.ndarray) -> np.ndarray:
+        if image.ndim == 2:
+            return image
+        if image.shape[2] == 4:
+            return cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    def _match_shop_shikigami_avatar_glow_fallback(
+        self,
+        click_rule: RuleClick,
+        expected_name: str | None = None,
+    ) -> dict | None:
+        """发光商店卡兜底：用灰度归一化匹配降低光效影响。"""
+        x, y, width, height = click_rule.roi_back
+        source = self.device.image[y:y + height, x:x + width]
+        if source.size == 0:
+            return None
+        source_gray = self._template_gray(source)
+        best = None
+        for name, rule in self.shikigami_shop_rules:
+            if expected_name is not None and name != expected_name:
+                continue
+            template = rule.image
+            if template is None or template.size == 0:
+                continue
+            if (
+                template.shape[0] > source.shape[0]
+                or template.shape[1] > source.shape[1]
+            ):
+                continue
+            template_gray = self._template_gray(template)
+            result = cv2.matchTemplate(
+                source_gray,
+                template_gray,
+                cv2.TM_CCOEFF_NORMED,
+            )
+            _, score, _, location = cv2.minMaxLoc(result)
+            if best is None or score > best['score']:
+                best = {
+                    'name': name,
+                    'score': float(score),
+                    'position': (
+                        x + location[0] + template.shape[1] // 2,
+                        y + location[1] + template.shape[0] // 2,
+                    ),
+                }
+        if best is None:
+            return None
+        if best['score'] < self.SHOP_GLOW_TEMPLATE_THRESHOLD:
+            logger.info(
+                'Chess shop glow fallback best candidate below threshold: '
+                f'name={best["name"]}, score={best["score"]:.3f}, '
+                f'threshold={self.SHOP_GLOW_TEMPLATE_THRESHOLD}'
+            )
+            return None
         return best
 
     def _buy_shop_slot(
@@ -3411,6 +3625,7 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         battle_hand_cleanup_done = False
         post_battle_or_hyakki_wait_pending = False
         last_seconds_deploy_checked = False
+        early_layout_round_start_purchase_done = False
 
         while True:
             self.device.stuck_record_clear()
@@ -3554,6 +3769,24 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                     logger.hr('Chess preparation interrupted by buff selection')
                     self.select_random_buff()
                     continue
+
+                if (
+                    phase == 'await_first_preparation'
+                    and not early_layout_round_start_purchase_done
+                    and self._is_early_round_layout()
+                ):
+                    logger.hr(
+                        'Chess alternate-layout round-start shop purchase'
+                    )
+                    purchased = self.buy_lineup_shikigami_from_shop()
+                    logger.info(
+                        'Chess alternate-layout round-start purchase '
+                        f'complete: purchased={purchased}'
+                    )
+                    early_layout_round_start_purchase_done = True
+                    if not self._is_preparation_mode():
+                        time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+                        continue
 
                 # 已完成当前阶段动作后才属于“无操作”状态。第一套布局在
                 # 备阶段倒计时进入最后 10 秒且阵容未满时，补做一次上阵，

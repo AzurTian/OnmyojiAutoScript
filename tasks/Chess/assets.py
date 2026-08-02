@@ -10,19 +10,27 @@ from module.atom.list import RuleList
 class ChessAssets: 
 
 
-	# Image Rule Assets
-	# 商店 
-	I_MARKET = RuleImage(roi_front=(1159,614,89,26), roi_back=(1159,614,89,26), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_market.png")
-	# 购买经验 
-	I_EXPERIENCE = RuleImage(roi_front=(37,641,102,26), roi_back=(37,641,102,26), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_experience.png")
-	# 打开阵容预设 
-	I_OPEN_LINEUP = RuleImage(roi_front=(85,15,137,43), roi_back=(264,12,47,44), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_open_lineup.png")
-	# 商店刷新 
-	I_REFRESH = RuleImage(roi_front=(1169,419,65,64), roi_back=(1169,419,65,64), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_refresh.png")
+	# Click Rule Assets
+	# 商店式神5 
+	C_SHIKIGAMI_5 = RuleClick(roi_front=(350,61,167,140), roi_back=(350,61,167,140), name="shikigami_5")
+	# 商店式神4 
+	C_SHIKIGAMI_4 = RuleClick(roi_front=(537,61,167,140), roi_back=(537,61,167,140), name="shikigami_4")
+	# 商店式神3 
+	C_SHIKIGAMI_3 = RuleClick(roi_front=(724,61,167,140), roi_back=(724,61,167,140), name="shikigami_3")
+	# 商店式神2 
+	C_SHIKIGAMI_2 = RuleClick(roi_front=(911,61,167,140), roi_back=(911,61,167,140), name="shikigami_2")
+	# 商店式神1 
+	C_SHIKIGAMI_1 = RuleClick(roi_front=(1098,61,167,140), roi_back=(1098,61,167,140), name="shikigami_1")
 	#  
-	I_REFRESH_NOT_GOLD = RuleImage(roi_front=(1169,419,65,64), roi_back=(1169,419,65,64), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_refresh_not_gold.png")
+	C_SHIKIGAMI_STORE = RuleClick(roi_front=(344,55,925,241), roi_back=(344,55,925,241), name="shikigami_store")
+	# Buff左侧选项卡面 
+	C_BUFF_OPTION_1 = RuleClick(roi_front=(320,205,90,130), roi_back=(320,205,90,130), name="buff_option_1")
+	# Buff中间选项卡面 
+	C_BUFF_OPTION_2 = RuleClick(roi_front=(598,205,90,130), roi_back=(598,205,90,130), name="buff_option_2")
+	# Buff右侧选项卡面 
+	C_BUFF_OPTION_3 = RuleClick(roi_front=(875,205,90,130), roi_back=(875,205,90,130), name="buff_option_3")
 	#  
-	I_SKIP = RuleImage(roi_front=(1148,39,77,22), roi_back=(1148,39,77,22), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_skip.png")
+	C_CLICK_CLOSE_SPECIFICS_AREA = RuleClick(roi_front=(16,163,109,380), roi_back=(16,163,109,380), name="click_close_specifics_area")
 
 
 	# Image Rule Assets
@@ -58,6 +66,20 @@ class ChessAssets:
 	I_ENTERTAINMENT_GOTO_CHESS = RuleImage(roi_front=(304,175,41,127), roi_back=(304,175,41,127), threshold=0.8, method="Template matching", file="./tasks/Chess/c/page_entertainment_goto_chess.png")
 	# 百鬼棋局标志 
 	I_CHECK_CHESS = RuleImage(roi_front=(1159,592,66,70), roi_back=(1159,592,66,70), threshold=0.8, method="Template matching", file="./tasks/Chess/c/page_check_chess.png")
+	# 商店 
+	I_MARKET = RuleImage(roi_front=(1159,614,89,26), roi_back=(1159,614,89,26), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_market.png")
+	# 购买经验 
+	I_EXPERIENCE = RuleImage(roi_front=(37,641,102,26), roi_back=(37,641,102,26), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_experience.png")
+	# 打开阵容预设 
+	I_OPEN_LINEUP = RuleImage(roi_front=(85,15,137,43), roi_back=(264,12,47,44), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_open_lineup.png")
+	# 商店刷新 
+	I_REFRESH = RuleImage(roi_front=(1169,419,65,64), roi_back=(1169,419,65,64), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_refresh.png")
+	#  
+	I_REFRESH_NOT_GOLD = RuleImage(roi_front=(1169,419,65,64), roi_back=(1169,419,65,64), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_refresh_not_gold.png")
+	#  
+	I_SKIP = RuleImage(roi_front=(1148,39,77,22), roi_back=(1148,39,77,22), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_skip.png")
+	#  
+	I_SHIKIGAMI_SPECIFICS = RuleImage(roi_front=(1215,106,44,46), roi_back=(1215,106,44,46), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_shikigami_specifics.png")
 
 
 	# Ocr Rule Assets
@@ -79,14 +101,10 @@ class ChessAssets:
 	O_GOLD = RuleOcr(roi=(1198,640,43,32), area=(1198,640,43,32), mode="Digit", method="Default", keyword="", name="gold")
 	# 当前环节 
 	O_CHESS_MODE = RuleOcr(roi=(741,0,32,28), area=(741,0,32,28), mode="Single", method="Default", keyword="", name="chess_mode")
-	# 经验 
-	O_CHECK_EXPERIENCE = RuleOcr(roi=(53,557,67,27), area=(53,557,67,27), mode="Single", method="Default", keyword="", name="check_experience")
 	#  
 	O_ROUND_2 = RuleOcr(roi=(507,0,62,30), area=(507,0,62,30), mode="Single", method="Default", keyword="", name="round_2")
 	#  
 	O_CHESS_MODE_2 = RuleOcr(roi=(706,2,32,28), area=(706,2,32,28), mode="Single", method="Default", keyword="", name="chess_mode_2")
-	#  
-	O_SHIKIGAMI_COUNT = RuleOcr(roi=(576,256,166,55), area=(576,256,166,55), mode="Single", method="Default", keyword="", name="shikigami_count")
 	#  
 	O_BADGE_AREA = RuleOcr(roi=(181,650,945,46), area=(181,650,945,46), mode="Single", method="Default", keyword="", name="badge_area")
 	#  
@@ -109,53 +127,5 @@ class ChessAssets:
 	O_HEALTH_7 = RuleOcr(roi=(1186,448,31,24), area=(1186,448,31,24), mode="Single", method="Default", keyword="", name="health_7")
 	#  
 	O_HEALTH_8 = RuleOcr(roi=(1186,510,31,24), area=(1186,510,31,24), mode="Single", method="Default", keyword="", name="health_8")
-
-
-	# Click Rule Assets
-	# 商店式神5 
-	C_SHIKIGAMI_5 = RuleClick(roi_front=(350,61,167,140), roi_back=(350,61,167,140), name="shikigami_5")
-	# 商店式神4 
-	C_SHIKIGAMI_4 = RuleClick(roi_front=(537,61,167,140), roi_back=(537,61,167,140), name="shikigami_4")
-	# 商店式神3 
-	C_SHIKIGAMI_3 = RuleClick(roi_front=(724,61,167,140), roi_back=(724,61,167,140), name="shikigami_3")
-	# 商店式神2 
-	C_SHIKIGAMI_2 = RuleClick(roi_front=(911,61,167,140), roi_back=(911,61,167,140), name="shikigami_2")
-	# 商店式神1 
-	C_SHIKIGAMI_1 = RuleClick(roi_front=(1098,61,167,140), roi_back=(1098,61,167,140), name="shikigami_1")
-	#  
-	C_SHIKIGAMI_STORE = RuleClick(roi_front=(344,55,925,241), roi_back=(344,55,925,241), name="shikigami_store")
-
-
-	# Click Rule Assets
-	# 1号位 
-	C_SET_1 = RuleClick(roi_front=(350,374,54,55), roi_back=(350,374,54,55), name="set_1")
-	# 2号位 
-	C_SET_2 = RuleClick(roi_front=(322,478,54,55), roi_back=(322,478,54,55), name="set_2")
-	# 3号位 
-	C_SET_3 = RuleClick(roi_front=(446,373,54,55), roi_back=(446,373,54,55), name="set_3")
-	# 4号位 
-	C_SET_4 = RuleClick(roi_front=(434,478,54,55), roi_back=(434,478,54,55), name="set_4")
-	# 5号位 
-	C_SET_5 = RuleClick(roi_front=(548,374,54,55), roi_back=(548,374,54,55), name="set_5")
-	# 6号位 
-	C_SET_6 = RuleClick(roi_front=(542,479,54,55), roi_back=(542,479,54,55), name="set_6")
-	# 7号位 
-	C_SET_7 = RuleClick(roi_front=(649,369,54,55), roi_back=(649,369,54,55), name="set_7")
-	# 8号位 
-	C_SET_8 = RuleClick(roi_front=(651,479,54,55), roi_back=(651,479,54,55), name="set_8")
-	# 9号位 
-	C_SET_9 = RuleClick(roi_front=(751,374,54,55), roi_back=(751,374,54,55), name="set_9")
-	# 10号位 
-	C_SET_10 = RuleClick(roi_front=(768,477,54,55), roi_back=(768,477,54,55), name="set_10")
-	# 11号位 
-	C_SET_11 = RuleClick(roi_front=(850,375,54,55), roi_back=(850,375,54,55), name="set_11")
-	# 12号位 
-	C_SET_12 = RuleClick(roi_front=(875,478,54,55), roi_back=(875,478,54,55), name="set_12")
-	# Buff左侧选项卡面 
-	C_BUFF_OPTION_1 = RuleClick(roi_front=(320,205,90,130), roi_back=(320,205,90,130), name="buff_option_1")
-	# Buff中间选项卡面 
-	C_BUFF_OPTION_2 = RuleClick(roi_front=(598,205,90,130), roi_back=(598,205,90,130), name="buff_option_2")
-	# Buff右侧选项卡面 
-	C_BUFF_OPTION_3 = RuleClick(roi_front=(875,205,90,130), roi_back=(875,205,90,130), name="buff_option_3")
 
 
