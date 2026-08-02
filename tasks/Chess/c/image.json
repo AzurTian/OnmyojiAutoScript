@@ -1,0 +1,146 @@
+[
+  {
+    "itemName": "exit_to_chess",
+    "imageName": "c_exit_to_chess.png",
+    "roiFront": "384,591,172,47",
+    "roiBack": "340,570,270,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "回大厅"
+  },
+  {
+    "itemName": "share",
+    "imageName": "c_share.png",
+    "roiFront": "1138,560,107,113",
+    "roiBack": "1138,560,107,113",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "分享"
+  },
+  {
+    "itemName": "select_buff",
+    "imageName": "c_select_buff.png",
+    "roiFront": "533,74,218,43",
+    "roiBack": "533,74,218,43",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "选buff环节"
+  },
+  {
+    "itemName": "chess_start",
+    "imageName": "c_chess_start.png",
+    "roiFront": "1159,595,65,66",
+    "roiBack": "1159,595,65,66",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "exit_to_chess_2",
+    "imageName": "c_exit_to_chess_2.png",
+    "roiFront": "580,593,123,43",
+    "roiBack": "580,593,123,43",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "check_rank",
+    "imageName": "c_check_rank.png",
+    "roiFront": "14,75,79,38",
+    "roiBack": "14,75,79,38",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "rank_goto_chess",
+    "imageName": "c_rank_goto_chess.png",
+    "roiFront": "66,646,133,42",
+    "roiBack": "66,646,133,42",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "card_1",
+    "imageName": "c_card_1.png",
+    "roiFront": "614,552,27,26",
+    "roiBack": "179,540,957,158",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "一星手牌标志"
+  },
+  {
+    "itemName": "card_2",
+    "imageName": "c_card_2.png",
+    "roiFront": "565,552,27,26",
+    "roiBack": "179,540,957,158",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "二星手牌标志"
+  },
+  {
+    "itemName": "card_3",
+    "imageName": "c_card_3.png",
+    "roiFront": "614,552,27,26",
+    "roiBack": "179,540,957,158",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "三星手牌标志"
+  },
+  {
+    "itemName": "use_soul",
+    "imageName": "c_use_soul.png",
+    "roiFront": "1005,144,172,47",
+    "roiBack": "1005,144,172,47",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "select_soul_1",
+    "imageName": "c_select_soul_1.png",
+    "roiFront": "390,326,70,35",
+    "roiBack": "390,326,70,35",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "select_soul_2",
+    "imageName": "c_select_soul_2.png",
+    "roiFront": "605,326,70,35",
+    "roiBack": "605,326,70,35",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "select_soul_3",
+    "imageName": "c_select_soul_3.png",
+    "roiFront": "821,327,70,35",
+    "roiBack": "821,327,70,35",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "entertainment_goto_chess",
+    "imageName": "page_entertainment_goto_chess.png",
+    "roiFront": "304,175,41,127",
+    "roiBack": "304,175,41,127",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "鼬乐园前往百鬼棋局"
+  },
+  {
+    "itemName": "check_chess",
+    "imageName": "page_check_chess.png",
+    "roiFront": "1159,592,66,70",
+    "roiBack": "1159,592,66,70",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局标志"
+  }
+]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
+from tasks.Chess.assets import ChessAssets
 from tasks.Component.GeneralInvite.assets import GeneralInviteAssets
 from tasks.Component.SwitchAccount.assets import SwitchAccountAssets
 from tasks.Exploration.assets import ExplorationAssets
@@ -190,6 +191,10 @@ page_hyakkiyakou = Page(GameUiAssets.I_CHECK_KYAKKIYAKOU, category="global")
 page_hyakkiyakou.connect(page_town, GlobalGameAssets.I_UI_BACK_RED, key="page_hyakkiyakou->page_town")
 page_town.connect(page_hyakkiyakou, GameUiAssets.I_TOWN_GOTO_HYAKKIYAKOU, key="page_town->page_hyakkiyakou")
 
+page_entertainment = Page(GameUiAssets.I_CHECK_ENTERTAINMENT, category="global")
+page_entertainment.add_enter_success_hooks(ChessAssets.I_SKIP)
+page_town.connect(page_entertainment, GameUiAssets.I_TOWN_GOTO_ENTERTAINMENT, key="page_town->page_entertainment")
+page_entertainment.connect(page_town, GlobalGameAssets.I_UI_BACK_YELLOW, key="page_entertainment->page_town")
 
 # 探索主页。
 page_exploration = Page(GameUiAssets.I_CHECK_EXPLORATION, category="global")

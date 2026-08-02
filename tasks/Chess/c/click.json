@@ -1,0 +1,56 @@
+[
+  {
+    "itemName": "market",
+    "imageName": "c_market.png",
+    "roiFront": "1159,614,89,26",
+    "roiBack": "1159,614,89,26",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "商店"
+  },
+  {
+    "itemName": "experience",
+    "imageName": "c_experience.png",
+    "roiFront": "37,641,102,26",
+    "roiBack": "37,641,102,26",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "购买经验"
+  },
+  {
+    "itemName": "open_lineup",
+    "imageName": "c_open_lineup.png",
+    "roiFront": "85,15,137,43",
+    "roiBack": "264,12,47,44",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "打开阵容预设"
+  },
+  {
+    "itemName": "refresh",
+    "imageName": "c_refresh.png",
+    "roiFront": "1169,419,65,64",
+    "roiBack": "1169,419,65,64",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "商店刷新"
+  },
+  {
+    "itemName": "refresh_not_gold",
+    "imageName": "c_refresh_not_gold.png",
+    "roiFront": "1169,419,65,64",
+    "roiBack": "1169,419,65,64",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "skip",
+    "imageName": "c_skip.png",
+    "roiFront": "1148,39,77,22",
+    "roiBack": "1148,39,77,22",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  }
+]

@@ -1,4 +1,13 @@
 {
+  "Chess": "百鬼棋局",
+  "chess_config": "百鬼棋局配置",
+  "early_exit": "是否提前退出",
+  "early_exit_help": "开启后在存活人数达到设定值时主动退出当前对局",
+  "remaining_players": "剩余人数",
+  "remaining_players_help": "存活人数小于或等于该数值时主动退出，范围0至8；0表示不退出",
+  "run_count": "执行次数",
+  "coin_full_exit": "刷满鼬乐币",
+  "coin_full_exit_help": "检测到鼬乐币为600/600时结束百鬼棋局",
   "boss_limit_time": "单局Boss限制时间",
   "costume_main_13": "云景阆苑",
   "pickup_email": "是否自动领取邮件",

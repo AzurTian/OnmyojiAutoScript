@@ -1,0 +1,92 @@
+[
+  {
+    "itemName": "set_1",
+    "roiFront": "350,374,54,55",
+    "roiBack": "350,374,54,55",
+    "description": "1号位"
+  },
+  {
+    "itemName": "set_2",
+    "roiFront": "322,478,54,55",
+    "roiBack": "322,478,54,55",
+    "description": "2号位"
+  },
+  {
+    "itemName": "set_3",
+    "roiFront": "446,373,54,55",
+    "roiBack": "446,373,54,55",
+    "description": "3号位"
+  },
+  {
+    "itemName": "set_4",
+    "roiFront": "434,478,54,55",
+    "roiBack": "434,478,54,55",
+    "description": "4号位"
+  },
+  {
+    "itemName": "set_5",
+    "roiFront": "548,374,54,55",
+    "roiBack": "548,374,54,55",
+    "description": "5号位"
+  },
+  {
+    "itemName": "set_6",
+    "roiFront": "542,479,54,55",
+    "roiBack": "542,479,54,55",
+    "description": "6号位"
+  },
+  {
+    "itemName": "set_7",
+    "roiFront": "649,369,54,55",
+    "roiBack": "649,369,54,55",
+    "description": "7号位"
+  },
+  {
+    "itemName": "set_8",
+    "roiFront": "651,479,54,55",
+    "roiBack": "651,479,54,55",
+    "description": "8号位"
+  },
+  {
+    "itemName": "set_9",
+    "roiFront": "751,374,54,55",
+    "roiBack": "751,374,54,55",
+    "description": "9号位"
+  },
+  {
+    "itemName": "set_10",
+    "roiFront": "768,477,54,55",
+    "roiBack": "768,477,54,55",
+    "description": "10号位"
+  },
+  {
+    "itemName": "set_11",
+    "roiFront": "850,375,54,55",
+    "roiBack": "850,375,54,55",
+    "description": "11号位"
+  },
+  {
+    "itemName": "set_12",
+    "roiFront": "875,478,54,55",
+    "roiBack": "875,478,54,55",
+    "description": "12号位"
+  },
+  {
+    "itemName": "buff_option_1",
+    "roiFront": "320,205,90,130",
+    "roiBack": "320,205,90,130",
+    "description": "Buff左侧选项卡面"
+  },
+  {
+    "itemName": "buff_option_2",
+    "roiFront": "598,205,90,130",
+    "roiBack": "598,205,90,130",
+    "description": "Buff中间选项卡面"
+  },
+  {
+    "itemName": "buff_option_3",
+    "roiFront": "875,205,90,130",
+    "roiBack": "875,205,90,130",
+    "description": "Buff右侧选项卡面"
+  }
+]

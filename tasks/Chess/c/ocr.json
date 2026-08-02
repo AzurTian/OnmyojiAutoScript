@@ -1,0 +1,218 @@
+[
+  {
+    "itemName": "shikigami_gold_5",
+    "roiFront": "501,261,21,34",
+    "roiBack": "501,261,21,34",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称5"
+  },
+  {
+    "itemName": "shikigami_gold_4",
+    "roiFront": "688,261,21,34",
+    "roiBack": "688,261,21,34",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称4"
+  },
+  {
+    "itemName": "shikigami_gold_3",
+    "roiFront": "875,261,21,34",
+    "roiBack": "875,261,21,34",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称3"
+  },
+  {
+    "itemName": "shikigami_gold_2",
+    "roiFront": "1062,261,21,34",
+    "roiBack": "1062,261,21,34",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称2"
+  },
+  {
+    "itemName": "shikigami_gold_1",
+    "roiFront": "1249,261,21,34",
+    "roiBack": "1249,261,21,34",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称1"
+  },
+  {
+    "itemName": "level",
+    "roiFront": "131,680,47,30",
+    "roiBack": "131,680,47,30",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前等级"
+  },
+  {
+    "itemName": "round",
+    "roiFront": "469,0,67,30",
+    "roiBack": "469,0,67,30",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前回目"
+  },
+  {
+    "itemName": "gold",
+    "roiFront": "1198,640,43,32",
+    "roiBack": "1198,640,43,32",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前金币"
+  },
+  {
+    "itemName": "chess_mode",
+    "roiFront": "741,0,32,28",
+    "roiBack": "741,0,32,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前环节"
+  },
+  {
+    "itemName": "check_experience",
+    "roiFront": "53,557,67,27",
+    "roiBack": "53,557,67,27",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "经验"
+  },
+  {
+    "itemName": "round_2",
+    "roiFront": "507,0,62,30",
+    "roiBack": "507,0,62,30",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "chess_mode_2",
+    "roiFront": "706,2,32,28",
+    "roiBack": "706,2,32,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_count",
+    "roiFront": "576,256,166,55",
+    "roiBack": "576,256,166,55",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "badge_area",
+    "roiFront": "181,650,945,46",
+    "roiBack": "181,650,945,46",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "coin",
+    "roiFront": "141,659,87,25",
+    "roiBack": "141,659,87,25",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "now_time",
+    "roiFront": "768,0,32,28",
+    "roiBack": "768,0,32,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_1",
+    "roiFront": "1186,76,31,24",
+    "roiBack": "1186,76,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_2",
+    "roiFront": "1186,138,31,24",
+    "roiBack": "1186,138,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_3",
+    "roiFront": "1186,200,31,24",
+    "roiBack": "1186,200,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_4",
+    "roiFront": "1186,262,31,24",
+    "roiBack": "1186,262,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_5",
+    "roiFront": "1186,324,31,24",
+    "roiBack": "1186,324,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_6",
+    "roiFront": "1186,386,31,24",
+    "roiBack": "1186,386,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_7",
+    "roiFront": "1186,448,31,24",
+    "roiBack": "1186,448,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "health_8",
+    "roiFront": "1186,510,31,24",
+    "roiBack": "1186,510,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  }
+]
