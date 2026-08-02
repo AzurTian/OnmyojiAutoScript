@@ -14,6 +14,11 @@ from module.atom.image import RuleImage
 from module.logger import logger
 from tasks.Chess.runtime.board_positions import SET_JADE_AREAS, SET_POSITIONS
 from tasks.Chess.runtime.press_and_drag import Press_and_Drag
+from tasks.Chess.strategy.grigri import (
+    grigri_bond_name,
+    grigri_category,
+    resolve_grigri_name,
+)
 from tasks.Chess.strategy.shikigami_catalog import SHIKIGAMI_BONDS_BY_ROMAJI
 
 
@@ -254,42 +259,57 @@ class ChessHandOperationsMixin:
                 f'set={set_index}, predicted={predicted}, '
                 f'occupied={occupied}'
             )
-            # 金鱼刚生成时勾玉图标可能尚未稳定。所有候选位都必须
-            # 实际点击确认，occupied 只用于日志诊断，不能用于跳过。
+            # 金鱼只会因前一候选位已有式神而依次前移。候选位按
+            # 12→11→10→9 排列，一旦遇到空位，后续位置不可能有金鱼。
+            if not occupied:
+                logger.info(
+                    'Stop Chess Arakawa goldfish inspection at first empty '
+                    f'candidate: set={set_index}'
+                )
+                break
+
             x, y = self._set_position(set_index)
             inspect_rule = RuleClick(
                 roi_front=(x - 8, y - 8, 16, 16),
                 roi_back=(x - 8, y - 8, 16, 16),
                 name=f'chess_inspect_goldfish_set_{set_index}',
             )
-            self.click(inspect_rule, interval=0.1)
 
             detail_opened = False
-            recognized_name = ''
-            for _ in range(3):
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+            for open_attempt in range(
+                1,
+                self.ARAKAWA_GOLDFISH_OPEN_ATTEMPTS + 1,
+            ):
+                self.click(inspect_rule, interval=0.1)
+                time.sleep(self.ARAKAWA_GOLDFISH_CLICK_INTERVAL)
                 self.screenshot()
-                if not self.appear(self.I_SHIKIGAMI_SPECIFICS):
-                    continue
-                detail_opened = True
-                recognized_name = self._normalize_ocr_text(
-                    self.O_SHIKIGAMI_SPECIFICS_NAME.ocr(self.device.image)
+                detail_opened = self.appear(self.I_SHIKIGAMI_SPECIFICS)
+                logger.info(
+                    'Chess Arakawa goldfish open specifics: '
+                    f'set={set_index}, '
+                    f'attempt={open_attempt}/'
+                    f'{self.ARAKAWA_GOLDFISH_OPEN_ATTEMPTS}, '
+                    f'opened={detail_opened}'
                 )
-                if recognized_name:
+                if detail_opened:
                     break
 
             if detail_opened:
-                # 必须严格相等，不能用包含关系，否则“金鱼姬”会误判。
-                is_goldfish = recognized_name == '金鱼'
-                logger.debug(
-                    'Chess board specifics identification: '
-                    f'set={set_index}, name={recognized_name or "<empty>"}, '
+                is_goldfish = self.appear(self.I_CHECK_GOLDFISH_NAME)
+                logger.info(
+                    'Chess goldfish name image identification: '
+                    f'set={set_index}, '
                     f'is_goldfish={is_goldfish}'
                 )
                 self.close_shikigami_specifics_if_open()
                 self.screenshot()
                 if is_goldfish:
                     return set_index
+            else:
+                logger.info(
+                    'Chess Arakawa goldfish name image check skipped: '
+                    f'set={set_index}, details_opened=False'
+                )
 
         if predicted_position is not None:
             logger.debug(
@@ -1139,6 +1159,7 @@ class ChessHandOperationsMixin:
             return []
 
         equipped = []
+        equipped.extend(self.equip_emblems_from_hand(verified_names))
         # 守护之印与普通御魂共享阵容优先目标；它使用独立图片模板，
         # 因此在普通 soul 文件夹扫描前单独处理。每次备阶段都会重试，
         # 不再局限于梦山白藏主刚上阵的瞬间。
@@ -1820,6 +1841,149 @@ class ChessHandOperationsMixin:
             return None
         self.screenshot()
         return result
+
+    def _recognized_emblem_hand_cards(self) -> list[dict]:
+        """OCR 识别手牌中的具体纹章，并映射到符咒图鉴标准名称。"""
+        results = self.O_BADGE_AREA.detect_and_ocr(self.device.image)
+        roi_x, roi_y = self.O_BADGE_AREA.roi[:2]
+        cards = []
+        for result in results:
+            text = self._normalize_ocr_text(result.ocr_text).strip(
+                '()（）[]【】'
+            )
+            if not text or text == '发现纹章':
+                continue
+            name, similarity = resolve_grigri_name(text)
+            if name is None or grigri_category(name) != 'emblem':
+                continue
+            points = result.box
+            left = min(int(point[0]) for point in points)
+            right = max(int(point[0]) for point in points)
+            top = min(int(point[1]) for point in points)
+            bottom = max(int(point[1]) for point in points)
+            cards.append({
+                'name': name,
+                'text': text,
+                'similarity': similarity,
+                'score': float(result.score),
+                'position': (
+                    roi_x + (left + right) // 2,
+                    roi_y + (top + bottom) // 2,
+                ),
+            })
+        return sorted(cards, key=lambda item: item['position'][0])
+
+    def _emblem_targets(
+        self,
+        emblem_name: str,
+        verified_names: set[str],
+    ) -> list[tuple[str, int]]:
+        """按站位升序选择不具有目标羁绊、且允许佩戴该纹章的式神。"""
+        bond = grigri_bond_name(emblem_name)
+        strategy_shikigami = self.get_lineup_strategy()['shikigami']
+        lineup_bonds = {
+            item
+            for name in strategy_shikigami
+            for item in SHIKIGAMI_BONDS_BY_ROMAJI.get(name, ())
+        }
+        # 阵容内完全不存在该羁绊时，纹章没有转化目标，直接进入出售。
+        if bond is None or bond not in lineup_bonds:
+            return []
+        targets = []
+        for name in verified_names:
+            config = strategy_shikigami.get(name)
+            if config is None or bond in SHIKIGAMI_BONDS_BY_ROMAJI.get(name, ()):
+                continue
+            preferred_souls = config.get('preferred_souls', ())
+            preferred_emblems = config.get('preferred_emblems', ())
+            # 声明了专属御魂的式神默认不接受纹章；只有显式白名单可放行。
+            if preferred_souls and emblem_name not in preferred_emblems:
+                continue
+            _, soul_1, soul_2 = self._shikigami_attributes(name)
+            if soul_1 is not None and soul_2 is not None:
+                continue
+            targets.append((name, int(config['position'])))
+        return sorted(targets, key=lambda item: item[1])
+
+    def equip_emblems_from_hand(
+        self,
+        verified_names: set[str],
+    ) -> list[str]:
+        """识别并装备纹章；全部候选失败或无合法目标时出售。"""
+        equipped = []
+        for _ in range(self.SOUL_EQUIP_SAFETY_LIMIT):
+            cards = self._recognized_emblem_hand_cards()
+            if not cards:
+                break
+            card = cards[0]
+            targets = self._emblem_targets(card['name'], verified_names)
+            succeeded = False
+            for target_name, set_index in targets:
+                before = sum(
+                    item['name'] == card['name']
+                    for item in self._recognized_emblem_hand_cards()
+                )
+                logger.info(
+                    f'检测到{card["name"]}(纹章)，'
+                    f'尝试移动到{set_index}号位({target_name})'
+                )
+                if not self._equip_soul_card(
+                    source=card['position'],
+                    set_index=set_index,
+                    operation_name=f'EMBLEM_{card["name"]}',
+                ):
+                    continue
+                time.sleep(self.SOUL_EQUIP_WAIT)
+                self.screenshot()
+                after = sum(
+                    item['name'] == card['name']
+                    for item in self._recognized_emblem_hand_cards()
+                )
+                if after >= before:
+                    logger.warning(
+                        f'Chess emblem equip not confirmed: '
+                        f'{card["name"]} -> {target_name} at set {set_index}, '
+                        f'hand_count={before}->{after}'
+                    )
+                    refreshed = next((
+                        item for item in self._recognized_emblem_hand_cards()
+                        if item['name'] == card['name']
+                    ), None)
+                    if refreshed is not None:
+                        card = refreshed
+                    continue
+                if not self._record_shikigami_soul(
+                    target_name,
+                    card['name'],
+                ):
+                    logger.warning(
+                        f'Chess emblem disappeared but state update failed: '
+                        f'{card["name"]} -> {target_name}'
+                    )
+                    break
+                equipped.append(card['name'])
+                succeeded = True
+                logger.info(
+                    f'Chess emblem equip confirmed: '
+                    f'{card["name"]} -> {target_name} at set {set_index}'
+                )
+                break
+
+            if succeeded:
+                continue
+            latest = next((
+                item for item in self._recognized_emblem_hand_cards()
+                if item['name'] == card['name']
+            ), None)
+            if latest is not None:
+                logger.info(
+                    f'Sell Chess emblem after all targets failed: '
+                    f'{card["name"]}, targets={targets}'
+                )
+                self.sell_hand_card(latest['position'])
+                time.sleep(self.HAND_CLEANUP_REFLOW_WAIT)
+                self.screenshot()
+        return equipped
 
     def _find_badge_hand_card(self) -> dict | None:
         """返回 badge_area 内最左侧“纹章”文字的屏幕坐标。"""

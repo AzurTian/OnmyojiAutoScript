@@ -5,60 +5,255 @@
 import random
 import re
 import time
+from functools import cached_property
+from pathlib import Path
 
+import cv2
 from module.logger import logger
+from tasks.Chess.strategy.grigri import (
+    grigri_category,
+    grigri_file,
+    grigri_names_for_quality,
+    grigri_score,
+    grigri_selection_key,
+    resolve_grigri_name,
+)
 
 
 class ChessRoundStateMixin:
     """Internal mixin; use through ``ScriptTask`` only."""
 
-    def select_random_buff(self) -> bool:
-        """随机锁定一个 Buff 选项并持续点击，直到选项面板关闭。
+    @cached_property
+    def grigri_icon_templates(self) -> dict[str, object]:
+        """按中文名缓存全部符咒图标，供 OCR 失败时进行图像兜底。"""
+        badge_dir = Path(__file__).resolve().parents[1] / 'badge'
+        templates = {}
+        for name in grigri_names_for_quality(None):
+            file = badge_dir / grigri_file(name)
+            image = cv2.imread(str(file), cv2.IMREAD_COLOR)
+            if image is None:
+                logger.warning(f'Chess grigri icon is missing: {file}')
+                continue
+            templates[name] = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        logger.debug(f'Loaded {len(templates)} Chess grigri icon templates')
+        return templates
 
-        Buff 优先级表完成前使用该挂机保底逻辑；本方法不使用
-        三个选项底部的刷新按钮。
-        """
-        if not self.appear(self.I_SELECT_BUFF):
+    def _detect_grigri_quality(self) -> str | None:
+        for quality, rule in (
+            ('gold', self.I_GRIGRI_GOLD),
+            ('silver', self.I_GRIGRI_SILVER),
+            ('copper', self.I_GRIGRI_COPPER),
+        ):
+            if self.appear(rule):
+                return quality
+        logger.warning('Chess grigri quality was not recognized')
+        return None
+
+    def _match_grigri_icon(
+        self,
+        option_rule,
+        quality: str | None,
+    ) -> tuple[str | None, float]:
+        x, y, width, height = option_rule.roi_front
+        image_height, image_width = self.device.image.shape[:2]
+        # 点击框略窄于 94px 图标，匹配区向左右各扩 24px。
+        left = max(0, x - 24)
+        top = max(0, y - 8)
+        right = min(image_width, x + width + 24)
+        bottom = min(image_height, y + height)
+        source = self.device.image[top:bottom, left:right]
+        best_name, best_score = None, 0.0
+        for name in grigri_names_for_quality(quality):
+            template = self.grigri_icon_templates.get(name)
+            if (
+                template is None
+                or template.shape[0] > source.shape[0]
+                or template.shape[1] > source.shape[1]
+            ):
+                continue
+            result = cv2.matchTemplate(
+                source,
+                template,
+                cv2.TM_CCOEFF_NORMED,
+            )
+            _, score, _, _ = cv2.minMaxLoc(result)
+            if score > best_score:
+                best_name, best_score = name, float(score)
+        if best_score < self.GRIGRI_ICON_THRESHOLD:
+            return None, best_score
+        return best_name, best_score
+
+    def _recognize_grigri_options(self) -> list[dict]:
+        quality = self._detect_grigri_quality()
+        lineup_strategy = self.get_lineup_strategy()
+        option_rules = (
+            self.C_GRIGRI_OPTION_1,
+            self.C_GRIGRI_OPTION_2,
+            self.C_GRIGRI_OPTION_3,
+        )
+        ocr_rules = (
+            self.O_GRIGRI_OPTION_NAME_1,
+            self.O_GRIGRI_OPTION_NAME_2,
+            self.O_GRIGRI_OPTION_NAME_3,
+        )
+        result = []
+        for index, (option_rule, ocr_rule) in enumerate(
+            zip(option_rules, ocr_rules),
+            start=1,
+        ):
+            raw = self._normalize_ocr_text(ocr_rule.ocr(self.device.image))
+            ocr_name, text_score = resolve_grigri_name(raw, quality)
+            icon_name, icon_score = self._match_grigri_icon(
+                option_rule,
+                quality,
+            )
+            # OCR 已达到图鉴映射阈值时优先采用文字；图像负责校验和兜底。
+            name = ocr_name or icon_name
+            if ocr_name and icon_name and ocr_name != icon_name:
+                logger.warning(
+                    'Chess grigri OCR/icon conflict: '
+                    f'option={index}, ocr={ocr_name}({text_score:.3f}), '
+                    f'icon={icon_name}({icon_score:.3f})'
+                )
+            category = grigri_category(name)
+            score = grigri_score(name, lineup_strategy)
+            selection_key = grigri_selection_key(name, lineup_strategy)
+            item = {
+                'index': index,
+                'quality': quality,
+                'raw': raw,
+                'name': name,
+                'category': category,
+                'score': score,
+                'selection_key': selection_key,
+                'text_score': text_score,
+                'icon_name': icon_name,
+                'icon_score': icon_score,
+                'rule': option_rule,
+            }
+            result.append(item)
+            logger.info(
+                'Chess grigri option: '
+                f'option={index}, quality={quality or "unknown"}, '
+                f'ocr=[{raw}], name={name or "未知"}, '
+                f'category={category}, score={score:g}, '
+                f'icon={icon_name or "未命中"}({icon_score:.3f})'
+            )
+        return result
+
+    @staticmethod
+    def _best_grigri_option(options: list[dict]) -> dict:
+        best_key = max(item['selection_key'] for item in options)
+        return random.choice([
+            item for item in options if item['selection_key'] == best_key
+        ])
+
+    def _refresh_grigri_option(self, option: dict) -> bool:
+        index = option['index']
+        done_rule = getattr(self, f'I_GRIGRI_FRESH_DONE_{index}')
+        none_rule = getattr(self, f'I_GRIGRI_FRESH_NONE_{index}')
+        if self.appear(none_rule):
+            logger.debug(f'Chess grigri option {index} was already refreshed')
+            return False
+        if not self.appear(done_rule):
+            logger.warning(
+                f'Chess grigri refresh state is unknown: option={index}'
+            )
+            return False
+        logger.info(
+            f'Refresh low-score Chess grigri: '
+            f'option={index}, score={option["score"]:g}'
+        )
+        self.click(done_rule)
+        deadline = time.monotonic() + self.GRIGRI_REFRESH_CONFIRM_TIMEOUT
+        while time.monotonic() < deadline:
+            time.sleep(self.GRIGRI_REFRESH_WAIT)
+            self.screenshot()
+            if self.appear(none_rule):
+                logger.info(
+                    'Chess grigri refresh confirmed: '
+                    f'option={index}, state=none'
+                )
+                return True
+        logger.warning(
+            'Chess grigri refresh was not confirmed: '
+            f'option={index}, none marker did not appear'
+        )
+        return False
+
+    def _best_refreshable_grigri_option(
+        self,
+        options: list[dict],
+    ) -> tuple[dict, bool]:
+        """同分低分选项优先挑仍有刷新次数的位置。"""
+        best_key = max(item['selection_key'] for item in options)
+        tied = [
+            item for item in options if item['selection_key'] == best_key
+        ]
+        refreshable = [
+            item
+            for item in tied
+            if (
+                item['score'] < self.GRIGRI_REFRESH_SCORE_THRESHOLD
+                and self.appear(getattr(
+                    self,
+                    f'I_GRIGRI_FRESH_DONE_{item["index"]}',
+                ))
+            )
+        ]
+        if refreshable:
+            return random.choice(refreshable), True
+        return random.choice(tied), False
+
+    def select_grigri(self) -> bool:
+        """识别、评分并选择符咒；低分时对目标选项刷新一次。"""
+        if not self.appear(self.I_SELECT_GRIGRI):
             return False
 
-        options = (
-            self.C_BUFF_OPTION_1,
-            self.C_BUFF_OPTION_2,
-            self.C_BUFF_OPTION_3,
-        )
-        selected = random.choice(options)
-        deadline = time.monotonic() + self.BUFF_SELECT_TIMEOUT
+        options = self._recognize_grigri_options()
+        selected = None
+        for _ in range(self.GRIGRI_REFRESH_MAXIMUM):
+            selected, refreshable = (
+                self._best_refreshable_grigri_option(options)
+            )
+            if not refreshable:
+                break
+            if not self._refresh_grigri_option(selected):
+                break
+            options = self._recognize_grigri_options()
+        else:
+            selected, _ = self._best_refreshable_grigri_option(options)
+
+        if selected is None:
+            selected = self._best_grigri_option(options)
+
+        selected_rule = selected['rule']
+        deadline = time.monotonic() + self.GRIGRI_SELECT_TIMEOUT
         attempts = 0
         logger.debug(
-            f'Random buff option locked: {selected.name}; '
+            f'Chess grigri option locked: option={selected["index"]}, '
+            f'name={selected["name"] or "未知"}, '
+            f'category={selected["category"]}, score={selected["score"]:g}; '
             'retry until selection panel closes'
         )
         while time.monotonic() < deadline:
             self.screenshot()
-            if not self.appear(self.I_SELECT_BUFF):
+            if not self.appear(self.I_SELECT_GRIGRI):
                 logger.debug(
-                    'Chess buff selection confirmed: '
-                    f'option={selected.name}, attempts={attempts}'
+                    'Chess grigri selection confirmed: '
+                    f'option={selected["index"]}, attempts={attempts}'
                 )
                 return True
             attempts += 1
-            logger.debug(
-                f'Click Chess buff option {selected.name}: '
-                f'attempt={attempts}'
-            )
-            self.click(selected)
-            time.sleep(self.BUFF_SELECT_RETRY_INTERVAL)
+            self.click(selected_rule)
+            time.sleep(self.GRIGRI_SELECT_RETRY_INTERVAL)
 
         self.screenshot()
-        if not self.appear(self.I_SELECT_BUFF):
-            logger.debug(
-                'Chess buff selection confirmed at timeout boundary: '
-                f'option={selected.name}, attempts={attempts}'
-            )
+        if not self.appear(self.I_SELECT_GRIGRI):
             return True
         logger.warning(
-            'Chess buff selection did not close after repeated clicks: '
-            f'option={selected.name}, attempts={attempts}'
+            'Chess grigri selection did not close after repeated clicks: '
+            f'option={selected["index"]}, attempts={attempts}'
         )
         return False
 

@@ -67,12 +67,12 @@ class ChessEconomyMixin:
         )
 
     def _is_preparation_mode(self) -> bool:
-        """只有无 Buff 弹窗的“备”可继续操作；弹窗出现立即中断。"""
+        """只有无符咒弹窗的“备”可继续操作；弹窗出现立即中断。"""
         if self._read_chess_mode() != '备':
             return False
-        if self.appear(self.I_SELECT_BUFF):
+        if self.appear(self.I_SELECT_GRIGRI):
             logger.debug(
-                'Interrupt Chess preparation immediately: buff selection '
+                'Interrupt Chess preparation immediately: grigri selection '
                 'panel detected'
             )
             return False
@@ -991,6 +991,110 @@ class ChessEconomyMixin:
 
         return 'no_progress'
 
+    def _shop_slot_refresh_snapshot(self) -> dict[int, dict]:
+        """保存五个商店槽位的身份和低分辨率图像，用于确认刷新。"""
+        snapshot = {}
+        image_height, image_width = self.device.image.shape[:2]
+        for slot_index, click_rule in self._shop_slots():
+            matched = self._recognize_shop_slot(
+                slot_index,
+                click_rule,
+                fallback_rules=self.all_shikigami_shop_rules,
+            )
+            x, y, width, height = click_rule.roi_back
+            x = max(0, int(x))
+            y = max(0, int(y))
+            width = min(int(width), image_width - x)
+            height = min(int(height), image_height - y)
+            crop = self.device.image[y:y + height, x:x + width]
+            if crop.size:
+                gray = self._template_gray(crop)
+                signature = cv2.resize(
+                    gray,
+                    (32, 32),
+                    interpolation=cv2.INTER_AREA,
+                )
+            else:
+                signature = None
+            snapshot[slot_index] = {
+                'name': None if matched is None else matched['name'],
+                'image': signature,
+            }
+        return snapshot
+
+    def _shop_refresh_changed_slots(
+        self,
+        before: dict[int, dict],
+        after: dict[int, dict],
+    ) -> tuple[list[int], dict[int, float]]:
+        """比较对应槽位；身份可用时比较身份，否则以卡面图像差异兜底。"""
+        changed = []
+        image_differences = {}
+        for slot_index in range(1, 6):
+            previous = before[slot_index]
+            current = after[slot_index]
+            previous_name = previous['name']
+            current_name = current['name']
+            previous_image = previous['image']
+            current_image = current['image']
+            difference = 0.0
+            if previous_image is not None and current_image is not None:
+                difference = float(np.mean(cv2.absdiff(
+                    previous_image,
+                    current_image,
+                )))
+            image_differences[slot_index] = difference
+            if previous_name is not None and current_name is not None:
+                slot_changed = previous_name != current_name
+            else:
+                slot_changed = (
+                    difference
+                    >= self.SHOP_REFRESH_SLOT_IMAGE_DIFF_THRESHOLD
+                )
+            if slot_changed:
+                changed.append(slot_index)
+        return changed, image_differences
+
+    def _click_shop_refresh_and_confirm_slots(
+        self,
+        allow_hidden: bool,
+    ) -> str:
+        """点击刷新，以至少三个对应商店槽位变化确认成功。"""
+        if not allow_hidden and not self.appear(self.I_REFRESH):
+            logger.warning('Cannot refresh Chess shop: button is missing')
+            return 'no_progress'
+
+        before = self._shop_slot_refresh_snapshot()
+        for attempt in range(1, self.ECONOMY_CONFIRM_RETRIES + 1):
+            self._clear_economy_click_history()
+            self.click(self.I_REFRESH)
+            time.sleep(self.SHOP_REFRESH_WAIT)
+            self.screenshot()
+            after = self._shop_slot_refresh_snapshot()
+            changed, differences = self._shop_refresh_changed_slots(
+                before,
+                after,
+            )
+            logger.info(
+                'Chess shop refresh slot comparison: '
+                f'attempt={attempt}, changed={changed}, '
+                f'changed_count={len(changed)}/5, '
+                f'before_names='
+                f'{[before[index]["name"] for index in range(5, 0, -1)]}, '
+                f'after_names='
+                f'{[after[index]["name"] for index in range(5, 0, -1)]}, '
+                f'image_diff='
+                f'{[round(differences[index], 2) for index in range(5, 0, -1)]}'
+            )
+            if len(changed) >= self.SHOP_REFRESH_CHANGED_SLOT_MINIMUM:
+                return 'success'
+            before = after
+        logger.warning(
+            'Chess shop refresh was not confirmed: fewer than '
+            f'{self.SHOP_REFRESH_CHANGED_SLOT_MINIMUM} slots changed'
+        )
+        return 'no_progress'
+
     def _economy_sequence_for_level(self, level: int) -> tuple[str, ...]:
         """返回当前阶数的原子操作序列。"""
         if level >= self._lineup_final_level():
@@ -1100,18 +1204,15 @@ class ChessEconomyMixin:
                 # 只有刷新动作要求商店打开；购买经验不改变商店状态。
                 if not self._ensure_shop_open():
                     return 'blocked'
-                result = self._click_economy_button_and_confirm_gold(
-                    self.I_REFRESH,
-                    self.SHOP_REFRESH_COST,
-                    'refresh shop',
+                result = self._click_shop_refresh_and_confirm_slots(
                     allow_hidden=battle_mode,
                 )
                 if result == 'no_progress':
                     return 'blocked'
                 logger.info('Refresh Chess shop completed')
                 self._advance_economy_operation_counter(level)
-                # 金币变化能先于商店换牌动画结束。必须额外等待稳定帧，
-                # 再读取费用和羁绊，否则会把旧卡/动画帧当作刷新结果。
+                # 槽位变化确认时商店已完成换牌；仍额外等待稳定帧，
+                # 再读取费用和羁绊，避免残余动画影响购买识别。
                 time.sleep(self.SHOP_POST_REFRESH_RECOGNITION_WAIT)
                 self.screenshot()
                 purchased = self.purchase_lineup_cards_once()

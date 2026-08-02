@@ -1,12 +1,12 @@
 [
   {
-    "itemName": "select_buff",
-    "imageName": "c_select_buff.png",
+    "itemName": "select_grigri",
+    "imageName": "c_select_grigri.png",
     "roiFront": "533,74,218,43",
     "roiBack": "533,74,218,43",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "选buff环节"
+    "description": "选符咒环节"
   },
   {
     "itemName": "chess_start",
@@ -128,8 +128,8 @@
   {
     "itemName": "shikigami_specifics",
     "imageName": "c_shikigami_specifics.png",
-    "roiFront": "971,191,113,18",
-    "roiBack": "971,191,113,18",
+    "roiFront": "939,223,310,32",
+    "roiBack": "939,223,310,32",
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""
@@ -166,6 +166,96 @@
     "imageName": "c_game_over_2.png",
     "roiFront": "549,401,198,31",
     "roiBack": "549,401,198,31",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_gold",
+    "imageName": "c_grigri_gold.png",
+    "roiFront": "584,142,122,40",
+    "roiBack": "584,142,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_silver",
+    "imageName": "c_grigri_silver.png",
+    "roiFront": "584,142,122,40",
+    "roiBack": "584,142,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_copper",
+    "imageName": "c_grigri_copper.png",
+    "roiFront": "584,142,122,40",
+    "roiBack": "584,142,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_fresh_none_1",
+    "imageName": "c_grigri_fresh_none_1.png",
+    "roiFront": "300,600,122,40",
+    "roiBack": "300,600,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_fresh_done_1",
+    "imageName": "c_grigri_fresh_done_1.png",
+    "roiFront": "300,600,122,40",
+    "roiBack": "300,600,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_fresh_done_2",
+    "imageName": "c_grigri_fresh_done_2.png",
+    "roiFront": "587,596,122,40",
+    "roiBack": "587,596,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_fresh_none_2",
+    "imageName": "c_grigri_fresh_none_2.png",
+    "roiFront": "587,596,122,40",
+    "roiBack": "587,596,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_fresh_none_3",
+    "imageName": "c_grigri_fresh_none_3.png",
+    "roiFront": "862,599,122,40",
+    "roiBack": "862,599,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "grigri_fresh_done_3",
+    "imageName": "c_grigri_fresh_done_3.png",
+    "roiFront": "862,599,122,40",
+    "roiBack": "862,599,122,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "check_goldfish_name",
+    "imageName": "c_check_goldfish_name.png",
+    "roiFront": "924,291,192,49",
+    "roiBack": "924,291,192,49",
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""

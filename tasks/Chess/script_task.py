@@ -251,12 +251,12 @@ class ScriptTask(
                     )
 
             elif mode == '备':
-                # Buff 面板是当前备阶段的高优先级中断事件。选完后不推进
+                # 符咒面板是当前备阶段的高优先级中断事件。选完后不推进
                 # phase/preparation_count；下一轮循环会把它当作新的同阶段备，
                 # 从上式神、上御魂的起点重新执行。
-                if self.appear(self.I_SELECT_BUFF):
-                    logger.debug('Chess preparation interrupted by buff selection')
-                    self.select_random_buff()
+                if self.appear(self.I_SELECT_GRIGRI):
+                    logger.debug('Chess preparation interrupted by grigri selection')
+                    self.select_grigri()
                     continue
 
                 if phase == 'await_preparation':
@@ -291,9 +291,9 @@ class ScriptTask(
             self.device.stuck_record_clear()
 
     def _handle_preparation(self) -> bool:
-        """统一备阶段：Buff 弹窗优先处理，随后上式神、上御魂。"""
-        if self.appear(self.I_SELECT_BUFF):
-            self.select_random_buff()
+        """统一备阶段：符咒弹窗优先处理，随后上式神、上御魂。"""
+        if self.appear(self.I_SELECT_GRIGRI):
+            self.select_grigri()
             return False
         if not self._is_preparation_mode():
             return False
@@ -324,7 +324,7 @@ class ScriptTask(
         while getattr(self, '_economy_pending', False):
             if not self._is_preparation_mode():
                 return
-            if self.appear(self.I_SELECT_BUFF):
+            if self.appear(self.I_SELECT_GRIGRI):
                 return
             # 只有升级/刷新循环受剩余时间限制；第二套布局从第一套阶段
             # 框读取倒计时，第一套布局使用独立 now_time 区域。
@@ -422,15 +422,15 @@ class ScriptTask(
         return True
 
     def _refresh_round_state_screenshot(self) -> bool:
-        """刷新回目状态截图；选 Buff 出现时必须优先处理完毕。"""
+        """刷新回目状态截图；选符咒出现时必须优先处理完毕。"""
         self.screenshot()
-        if not self.appear(self.I_SELECT_BUFF):
+        if not self.appear(self.I_SELECT_GRIGRI):
             return False
         logger.info(
-            'Chess round-state refresh interrupted by buff selection; '
-            'resolve buff before reading round and mode'
+            'Chess round-state refresh interrupted by grigri selection; '
+            'resolve grigri before reading round and mode'
         )
-        self.select_random_buff()
+        self.select_grigri()
         self.screenshot()
         return True
 

@@ -36,22 +36,22 @@
     "description": ""
   },
   {
-    "itemName": "buff_option_1",
+    "itemName": "grigri_option_1",
     "roiFront": "320,205,90,130",
     "roiBack": "320,205,90,130",
-    "description": "Buff左侧选项卡面"
+    "description": "左侧符咒选项卡面"
   },
   {
-    "itemName": "buff_option_2",
+    "itemName": "grigri_option_2",
     "roiFront": "598,205,90,130",
     "roiBack": "598,205,90,130",
-    "description": "Buff中间选项卡面"
+    "description": "中间符咒选项卡面"
   },
   {
-    "itemName": "buff_option_3",
+    "itemName": "grigri_option_3",
     "roiFront": "875,205,90,130",
     "roiBack": "875,205,90,130",
-    "description": "Buff右侧选项卡面"
+    "description": "右侧符咒选项卡面"
   },
   {
     "itemName": "click_close_specifics_area",

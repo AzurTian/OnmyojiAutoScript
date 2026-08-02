@@ -171,15 +171,6 @@
     "description": ""
   },
   {
-    "itemName": "shikigami_specifics_name",
-    "roiFront": "997,101,193,36",
-    "roiBack": "501,261,21,34",
-    "mode": "Single",
-    "method": "Default",
-    "keyword": "",
-    "description": ""
-  },
-  {
     "itemName": "rank",
     "roiFront": "443,193,417,204",
     "roiBack": "443,193,417,204",
@@ -228,6 +219,33 @@
     "itemName": "shikigami_name_5",
     "roiFront": "349,261,117,33",
     "roiBack": "349,261,117,33",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_name_1",
+    "roiFront": "269,370,191,45",
+    "roiBack": "269,370,191,45",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_name_2",
+    "roiFront": "548,370,191,45",
+    "roiBack": "548,370,191,45",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_name_3",
+    "roiFront": "825,370,191,45",
+    "roiBack": "825,370,191,45",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
