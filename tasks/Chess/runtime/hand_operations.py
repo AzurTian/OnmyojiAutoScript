@@ -126,12 +126,21 @@ class ChessHandOperationsMixin:
             'position': position,
         }
 
-    def _hakuzosu_protect_target_position(self) -> int | None:
-        """当前阵容中守护之印的目标位置；没有白藏主则禁用。"""
+    def _hakuzosu_protect_target_position(
+        self,
+        verified_names: set[str] | None = None,
+    ) -> int | None:
+        """从式神专属御魂配置读取守护之印目标位置。"""
         strategy = self.get_lineup_strategy()
         if self.HAKUZOSU_NAME not in strategy['shikigami']:
             return None
-        return int(strategy.get('hakuzosu_protect_position', 1))
+        for name, config in strategy['shikigami'].items():
+            if verified_names is not None and name not in verified_names:
+                continue
+            if config.get('equip_hakuzosu_protect', False):
+                return int(config['position'])
+        # 兼容尚未迁移的第三方阵容配置。
+        return 1
 
     def _arakawa_goldfish_target_position(self) -> int | None:
         """返回当前阵容配置的荒川金鱼目标格。"""
@@ -345,9 +354,14 @@ class ChessHandOperationsMixin:
             'position': (x + width // 2, y + height // 2),
         }
 
-    def equip_hakuzosu_protect_after_deploy(self) -> bool:
-        """梦山白藏主上阵后，立刻尝试给目标位装备守护之印。"""
-        target_position = self._hakuzosu_protect_target_position()
+    def equip_hakuzosu_protect_after_deploy(
+        self,
+        verified_names: set[str] | None = None,
+    ) -> bool:
+        """按阵容专属御魂配置尝试装备守护之印。"""
+        target_position = self._hakuzosu_protect_target_position(
+            verified_names
+        )
         if target_position is None:
             return False
         if not self._is_preparation_mode():
@@ -407,7 +421,7 @@ class ChessHandOperationsMixin:
         name: str,
         source: tuple[int, int],
     ) -> bool:
-        """按当前策略站位拖动式神，并以人数变化确认是否上阵。"""
+        """按当前策略站位拖动式神，并交叉确认是否上阵。"""
         set_index = self.shikigami_deploy_positions.get(name)
         if set_index is None:
             logger.warning(f'Chess shikigami has no deploy position: {name}')
@@ -420,6 +434,8 @@ class ChessHandOperationsMixin:
             )
             return False
         count_before = self._read_shikigami_count()
+        hand_count_before = self._lineup_hand_card_match_count(name)
+        target_occupied_before = self._board_set_has_shikigami(set_index)
         target_position = self._set_position(set_index)
         logger.debug(
             f'Deploy Chess shikigami {name} to set {set_index}, '
@@ -438,52 +454,79 @@ class ChessHandOperationsMixin:
         time.sleep(self.HAND_DEPLOY_WAIT)
         self.screenshot()
         count_after = self._read_shikigami_count()
+        hand_count_after = self._lineup_hand_card_match_count(name)
+        target_occupied_after = self._board_set_has_shikigami(set_index)
 
+        count_increased = False
         if count_before is not None and count_after is not None:
-            succeeded = count_after['current'] > count_before['current']
-            if succeeded:
-                logger.debug(
-                    f'Chess shikigami deploy confirmed: {name} -> '
-                    f'set {set_index}, '
-                    f'{count_before["current"]}/{count_before["total"]} -> '
-                    f'{count_after["current"]}/{count_after["total"]}'
-                )
-                return True
-            else:
-                logger.warning(
-                    f'Chess shikigami count did not confirm deploy: {name} -> '
-                    f'set {set_index}, lineup stayed at '
-                    f'{count_before["current"]}/{count_before["total"]}; '
-                    'verify the hand card before rejecting it'
-                )
+            count_increased = (
+                count_after['current'] > count_before['current']
+            )
+        hand_count_decreased = hand_count_after < hand_count_before
+        target_became_occupied = (
+            not target_occupied_before and target_occupied_after
+        )
 
-        # 人数 OCR 偶尔会被动画遮住或读到不变值。此时不再把一次未确认
-        # 的拖动直接记为成功；检查原横坐标附近是否仍有同名手牌兜底。
+        # 同名手牌可能有多张。旧逻辑只检查原横坐标附近是否仍有同名
+        # 模板，手牌重排后会把另一张同名牌误当作“拖动失败”。现在改为
+        # 比较整片手牌区的同名数量，并结合人数和目标格占位交叉确认。
+        succeeded = (
+            count_increased
+            or target_became_occupied
+            or (hand_count_decreased and target_occupied_after)
+        )
+        if succeeded:
+            logger.debug(
+                f'Chess shikigami deploy confirmed: {name} -> set {set_index}, '
+                f'board_count={count_before["current"] if count_before else "?"}'
+                f'->{count_after["current"] if count_after else "?"}, '
+                f'hand_count={hand_count_before}->{hand_count_after}, '
+                f'target_occupied={target_occupied_before}'
+                f'->{target_occupied_after}'
+            )
+            return True
+
+        logger.warning(
+            f'Chess shikigami deploy not confirmed: {name} -> set {set_index}, '
+            f'board_count={count_before["current"] if count_before else "?"}'
+            f'->{count_after["current"] if count_after else "?"}, '
+            f'hand_count={hand_count_before}->{hand_count_after}, '
+            f'target_occupied={target_occupied_before}'
+            f'->{target_occupied_after}'
+        )
+        return False
+
+    def _lineup_hand_card_match_count(self, name: str) -> int:
+        """统计手牌区内指定阵容式神的实际卡位数量。"""
+        candidates = []
         for rule_name, rule in self.lineup_shikigami_hand_rules:
             if rule_name != name:
                 continue
             matches = rule.match_all_any(
                 self.device.image,
                 roi=list(self.HAND_AREA),
-                threshold=rule.threshold,
+                threshold=self.HAND_DEPLOY_TEMPLATE_THRESHOLD,
                 nms_threshold=0.3,
                 frame_id=self.device.image_frame_id,
             )
-            if any(
-                abs((x + width // 2) - source[0]) <= 45
-                for _, x, _, width, _ in matches
-            ):
-                logger.warning(
-                    f'Chess shikigami deploy not confirmed by hand card: '
-                    f'{name} remains near {source}'
-                )
-                return False
+            candidates.extend(
+                (score, x + width // 2, y + height // 2)
+                for score, x, y, width, height in matches
+            )
 
-        logger.debug(
-            f'Chess shikigami deploy accepted by hand-card disappearance: '
-            f'{name} -> set {set_index}'
-        )
-        return True
+        # 同一个式神若存在多个模板，每张实际手牌可能产生多个重叠命中。
+        # 以人物中心聚类，只计算一次。
+        distinct = []
+        for candidate in sorted(candidates, reverse=True):
+            _, center_x, center_y = candidate
+            if any(
+                abs(center_x - kept_x) <= 32
+                and abs(center_y - kept_y) <= 40
+                for _, kept_x, kept_y in distinct
+            ):
+                continue
+            distinct.append(candidate)
+        return len(distinct)
 
     def _find_best_shikigami_hand_card(
         self,
@@ -545,18 +588,30 @@ class ChessHandOperationsMixin:
             logger.debug('No deployable Chess lineup hand card detected')
             return None
 
-        # 同名多张时选最左侧；不同名之间按手牌从左到右处理，避免高分
-        # 模板长期压住后续体系卡，导致 2/3 这种未满员场景不上人。
+        # 同名多张时先保留最左侧。不同式神先按阵容配置的上阵权重
+        # 排序（数值越低越优先），同权重再保持原有的从左到右顺序。
         selected_by_name = {}
         for candidate in sorted(
             candidates,
             key=lambda item: (item['position'][0], -item['score']),
         ):
             selected_by_name.setdefault(candidate['name'], candidate)
-        return min(
+        strategy_shikigami = self.get_lineup_strategy()['shikigami']
+        selected = min(
             selected_by_name.values(),
-            key=lambda item: item['position'][0],
+            key=lambda item: (
+                int(
+                    strategy_shikigami[item['name']].get(
+                        'deploy_weight', 1
+                    )
+                ),
+                item['position'][0],
+            ),
         )
+        selected['deploy_weight'] = int(
+            strategy_shikigami[selected['name']].get('deploy_weight', 1)
+        )
+        return selected
 
     def _scan_lineup_hand_card_candidates_once(
         self,
@@ -623,15 +678,42 @@ class ChessHandOperationsMixin:
 
     def _soul_targets(
         self,
+        soul_name: str,
         category: str,
         verified_names: set[str],
     ) -> list[tuple[int, tuple[int, int]]]:
-        """返回本局尚未判满的同类型御魂目标。"""
+        """优先返回阵容专属御魂目标，否则按原类型规则选位。"""
         full_positions = set(getattr(self, '_soul_full_positions', set()))
+        strategy_shikigami = self.get_lineup_strategy()['shikigami']
+        preferred_positions = sorted(
+            int(strategy_shikigami[name]['position'])
+            for name in verified_names
+            if name in strategy_shikigami
+            and soul_name
+            in strategy_shikigami[name].get('preferred_souls', ())
+            and int(strategy_shikigami[name]['position']) not in full_positions
+        )
+        if preferred_positions:
+            return [
+                (set_index, self._soul_target_position(set_index))
+                for set_index in preferred_positions
+            ]
+
+        # 只要该御魂已被当前阵容指定，就不回退到通用奇偶站位；等待
+        # 指定式神上阵或目标空出后再处理。
+        if any(
+            soul_name in config.get('preferred_souls', ())
+            for config in strategy_shikigami.values()
+        ):
+            return []
+
         active_positions = sorted(
             self.shikigami_deploy_positions[name]
             for name in verified_names
             if name in self.shikigami_deploy_positions
+            # 声明过专属御魂的式神是硬约束目标，只能接受其列表中的
+            # 御魂；通用输出/功能分类不得再把其他御魂塞给它。
+            and not strategy_shikigami[name].get('preferred_souls', ())
         )
         wanted_parity = 0 if category == 'attack' else 1
         targets = []
@@ -644,6 +726,13 @@ class ChessHandOperationsMixin:
             # 前排奇数位统一使用向北偏移后的御魂投放位置。
             targets.append((set_index, self._soul_target_position(set_index)))
         return targets
+
+    def _is_lineup_preferred_soul(self, soul_name: str) -> bool:
+        """判断御魂是否被当前阵容任一式神列为专属御魂。"""
+        return any(
+            soul_name in config.get('preferred_souls', ())
+            for config in self.get_lineup_strategy()['shikigami'].values()
+        )
 
     def _template_soul_hand_cards(self) -> list[dict]:
         """在手牌区对 soul 模板执行多尺度匹配。"""
@@ -757,8 +846,12 @@ class ChessHandOperationsMixin:
             return None
         return max(matches, key=lambda item: item['score'])
 
-    def _discover_soul_hand_cards(self) -> list[dict]:
-        """使用手牌文字区定位“发现御魂”特殊卡。"""
+    def _discover_named_hand_cards(
+        self,
+        expected_text: str,
+        allow_fuzzy: bool,
+    ) -> list[dict]:
+        """使用完整卡名在手牌文字区定位发现类特殊卡。"""
         results = self.O_BADGE_AREA.detect_and_ocr(self.device.image)
         roi_x, roi_y = self.O_BADGE_AREA.roi[:2]
         cards = []
@@ -768,14 +861,17 @@ class ChessHandOperationsMixin:
             )
             if not text:
                 continue
-            if '发现御魂' in text:
+            if text == expected_text:
                 similarity = 1.0
                 matched = True
-            else:
+            elif allow_fuzzy:
                 matched, similarity, _ = self._fuzzy_text_match(
-                    '发现御魂',
+                    expected_text,
                     text,
                 )
+            else:
+                matched = False
+                similarity = 0.0
             if not matched:
                 continue
 
@@ -785,6 +881,7 @@ class ChessHandOperationsMixin:
             top = min(int(point[1]) for point in points)
             bottom = max(int(point[1]) for point in points)
             cards.append({
+                'kind': expected_text,
                 'text': text,
                 'similarity': similarity,
                 'score': float(result.score),
@@ -794,6 +891,14 @@ class ChessHandOperationsMixin:
                 ),
             })
         return sorted(cards, key=lambda item: item['position'][0])
+
+    def _discover_soul_hand_cards(self) -> list[dict]:
+        """定位“发现御魂”；保留原有 OCR 编辑距离兜底。"""
+        return self._discover_named_hand_cards('发现御魂', allow_fuzzy=True)
+
+    def _discover_badge_hand_cards(self) -> list[dict]:
+        """严格按完整四字定位“发现纹章”，禁止仅匹配“纹章”。"""
+        return self._discover_named_hand_cards('发现纹章', allow_fuzzy=False)
 
     def _wait_for_discover_soul_choices(self) -> list[RuleImage]:
         """等待发现御魂三选一界面，并返回本帧实际出现的选项。"""
@@ -812,7 +917,7 @@ class ChessHandOperationsMixin:
         return []
 
     def discover_souls_from_hand(self) -> int:
-        """优先使用所有“发现御魂”卡，并在出现的选项中随机选择。"""
+        """优先使用所有“发现御魂/发现纹章”卡并随机选择。"""
         used = 0
         for _ in range(self.DISCOVER_SOUL_SAFETY_LIMIT):
             if not self._is_preparation_mode():
@@ -821,13 +926,17 @@ class ChessHandOperationsMixin:
                     'interrupted or has ended'
                 )
                 break
-            cards = self._discover_soul_hand_cards()
+            cards = sorted(
+                self._discover_badge_hand_cards()
+                + self._discover_soul_hand_cards(),
+                key=lambda item: item['position'][0],
+            )
             if not cards:
                 break
 
             card = cards[0]
             logger.debug(
-                'Use Chess discover-soul hand card: '
+                f'Use Chess {card["kind"]} hand card: '
                 f'text={card["text"]}, '
                 f'similarity={card["similarity"]:.3f}, '
                 f'position={card["position"]}'
@@ -835,7 +944,7 @@ class ChessHandOperationsMixin:
             self.device.click(
                 x=card['position'][0],
                 y=card['position'][1],
-                control_name='CHESS_DISCOVER_SOUL_CARD',
+                control_name='CHESS_DISCOVER_CARD',
             )
 
             use_deadline = time.monotonic() + self.DISCOVER_SOUL_UI_TIMEOUT
@@ -852,7 +961,7 @@ class ChessHandOperationsMixin:
                     break
             else:
                 logger.warning(
-                    'Chess discover-soul card selected, but use_soul '
+                    f'Chess {card["kind"]} card selected, but use button '
                     'did not appear; keep the card and stop this pass'
                 )
                 break
@@ -867,7 +976,7 @@ class ChessHandOperationsMixin:
 
             selected = random.choice(options)
             logger.debug(
-                'Random Chess discover-soul option: '
+                f'Random Chess {card["kind"]} option: '
                 f'{selected.name}, available={[rule.name for rule in options]}'
             )
             self.click(selected)
@@ -924,6 +1033,11 @@ class ChessHandOperationsMixin:
             return []
 
         equipped = []
+        # 守护之印与普通御魂共享阵容优先目标；它使用独立图片模板，
+        # 因此在普通 soul 文件夹扫描前单独处理。每次备阶段都会重试，
+        # 不再局限于梦山白藏主刚上阵的瞬间。
+        if self.equip_hakuzosu_protect_after_deploy(verified_names):
+            equipped.append(self.HAKUZOSU_PROTECT_NAME)
         repeated_attempts = {}
         for _ in range(self.SOUL_EQUIP_SAFETY_LIMIT):
             if not self._is_preparation_mode():
@@ -935,8 +1049,16 @@ class ChessHandOperationsMixin:
 
             selected = None
             selected_target = None
-            for candidate in self._soul_hand_cards():
+            soul_candidates = sorted(
+                self._soul_hand_cards(),
+                key=lambda candidate: (
+                    not self._is_lineup_preferred_soul(candidate['name']),
+                    candidate['position'][0],
+                ),
+            )
+            for candidate in soul_candidates:
                 for target in self._soul_targets(
+                    candidate['name'],
                     candidate['category'],
                     verified_names,
                 ):
@@ -1053,6 +1175,13 @@ class ChessHandOperationsMixin:
 
         deployed = []
         deployed_names = set(getattr(self, '_board_lineup_names', set()))
+        player_positions = set(
+            getattr(self, '_player_deployed_positions', set())
+        )
+
+        # 已确认上阵的阵容式神在本局内保持登记。战斗动画、遮挡或勾玉
+        # 模板单帧漏识别不能证明式神已经离场；若据此清除名称，会同时
+        # 导致重复上阵和专属御魂失去目标。
         failed_attempts = {}
         for _ in range(self.HAND_DEPLOY_SAFETY_LIMIT):
             if not self._is_preparation_mode():
@@ -1096,6 +1225,7 @@ class ChessHandOperationsMixin:
             logger.info(
                 f'Chess deploy candidate: '
                 f'{self._shikigami_display_name(candidate["name"])}, '
+                f'weight={candidate.get("deploy_weight", 1)}, '
                 f'score={candidate["score"]:.3f}, '
                 f'position={candidate["position"]}'
             )
@@ -1195,7 +1325,7 @@ class ChessHandOperationsMixin:
                     predicted_goldfish_position
                 )
             if candidate['name'] == self.HAKUZOSU_NAME:
-                self.equip_hakuzosu_protect_after_deploy()
+                self.equip_hakuzosu_protect_after_deploy(deployed_names)
         else:
             logger.warning(
                 'Stop deploying Chess hand cards at safety limit '
@@ -1364,24 +1494,27 @@ class ChessHandOperationsMixin:
             # 御魂图片可能与星级卡框同时命中。先独立识别御魂，避免
             # classify_hand_card 的固定尺寸模板漏检后将它当作 unknown 出售。
             soul_cards = self._soul_hand_cards()
-            discover_soul_cards = self._discover_soul_hand_cards()
+            discover_cards = (
+                self._discover_soul_hand_cards()
+                + self._discover_badge_hand_cards()
+            )
             sell_target = None
             for card_roi in self._hand_card_rois():
                 card_x, _, card_width, _ = card_roi
-                discover_soul = next((
+                discover_card = next((
                     item
-                    for item in discover_soul_cards
+                    for item in discover_cards
                     if (
                         card_x - 8
                         <= item['position'][0]
                         <= card_x + card_width + 8
                     )
                 ), None)
-                if discover_soul is not None:
+                if discover_card is not None:
                     logger.debug(
-                        'Keep unused Chess discover-soul card during cleanup: '
-                        f'text={discover_soul["text"]}, '
-                        f'position={discover_soul["position"]}'
+                        'Keep unused Chess discover card during cleanup: '
+                        f'text={discover_card["text"]}, '
+                        f'position={discover_card["position"]}'
                     )
                     continue
                 soul = self._soul_match_in_card(card_roi, soul_cards)
@@ -1543,7 +1676,13 @@ class ChessHandOperationsMixin:
         matches = []
         roi_x, roi_y = self.O_BADGE_AREA.roi[:2]
         for result in results:
-            text = self._normalize_ocr_text(result.ocr_text)
+            text = self._normalize_ocr_text(result.ocr_text).strip(
+                '()（）[]【】'
+            )
+            # “发现纹章”必须由专用完整卡名流程处理；若这里只按
+            # “纹章”子串判断，会在使用前被当作普通纹章卖掉并卡死。
+            if text == '发现纹章':
+                continue
             if '纹章' not in text:
                 continue
 

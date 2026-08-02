@@ -69,7 +69,9 @@ class ChessAssets:
 	#  
 	I_CANCEL_WAITING = RuleImage(roi_front=(584,597,111,45), roi_back=(584,597,111,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_cancel_waiting.png")
 	#  
-	I_GAME_OVER = RuleImage(roi_front=(549,401,198,31), roi_back=(549,401,198,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_game_over.png")
+	I_GAME_OVER_1 = RuleImage(roi_front=(549,401,198,31), roi_back=(549,401,198,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_game_over_1.png")
+	#  
+	I_GAME_OVER_2 = RuleImage(roi_front=(549,401,198,31), roi_back=(549,401,198,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_game_over_2.png")
 
 
 	# Image Rule Assets

@@ -456,7 +456,7 @@ class ScriptTask(
                     f'reset missing-frame count, context={context}'
                 )
                 return False
-            if self.appear(self.I_GAME_OVER):
+            if self.appear(self.I_GAME_OVER_1) or self.appear(self.I_GAME_OVER_2):
                 rank, raw = self._read_game_rank()
                 self._last_game_rank = rank
                 if rank is None:
