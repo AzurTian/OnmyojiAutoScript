@@ -34,20 +34,10 @@ class ChessAssets:
 
 
 	# Image Rule Assets
-	# 回大厅 
-	I_EXIT_TO_CHESS = RuleImage(roi_front=(384,591,172,47), roi_back=(340,570,270,100), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_exit_to_chess.png")
-	# 分享 
-	I_SHARE = RuleImage(roi_front=(1138,560,107,113), roi_back=(1138,560,107,113), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_share.png")
 	# 选buff环节 
 	I_SELECT_BUFF = RuleImage(roi_front=(533,74,218,43), roi_back=(533,74,218,43), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_select_buff.png")
 	#  
 	I_CHESS_START = RuleImage(roi_front=(1159,595,65,66), roi_back=(1159,595,65,66), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_start.png")
-	#  
-	I_EXIT_TO_CHESS_2 = RuleImage(roi_front=(580,593,123,43), roi_back=(580,593,123,43), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_exit_to_chess_2.png")
-	#  
-	I_CHECK_RANK = RuleImage(roi_front=(14,75,79,38), roi_back=(14,75,79,38), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_rank.png")
-	#  
-	I_RANK_GOTO_CHESS = RuleImage(roi_front=(66,646,133,42), roi_back=(66,646,133,42), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_rank_goto_chess.png")
 	#  
 	I_USE_SOUL = RuleImage(roi_front=(1005,144,172,47), roi_back=(1005,144,172,47), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_use_soul.png")
 	#  
@@ -57,15 +47,15 @@ class ChessAssets:
 	#  
 	I_SELECT_SOUL_3 = RuleImage(roi_front=(821,327,70,35), roi_back=(821,327,70,35), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_select_soul_3.png")
 	# 鼬乐园前往百鬼棋局 
-	I_ENTERTAINMENT_GOTO_CHESS = RuleImage(roi_front=(304,175,41,127), roi_back=(304,175,41,127), threshold=0.8, method="Template matching", file="./tasks/Chess/c/page_entertainment_goto_chess.png")
+	I_ENTERTAINMENT_GOTO_CHESS = RuleImage(roi_front=(304,175,41,127), roi_back=(304,175,41,127), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_entertainment_goto_chess.png")
 	# 百鬼棋局标志 
-	I_CHECK_CHESS = RuleImage(roi_front=(1159,592,66,70), roi_back=(1159,592,66,70), threshold=0.8, method="Template matching", file="./tasks/Chess/c/page_check_chess.png")
+	I_CHECK_CHESS = RuleImage(roi_front=(1159,592,66,70), roi_back=(1159,592,66,70), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_chess.png")
 	# 商店 
 	I_MARKET = RuleImage(roi_front=(1159,614,89,26), roi_back=(1159,614,89,26), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_market.png")
 	# 购买经验 
 	I_EXPERIENCE = RuleImage(roi_front=(37,641,102,26), roi_back=(37,641,102,26), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_experience.png")
 	# 打开阵容预设 
-	I_OPEN_LINEUP = RuleImage(roi_front=(85,15,137,43), roi_back=(264,12,47,44), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_open_lineup.png")
+	I_OPEN_LINEUP = RuleImage(roi_front=(264,12,47,44), roi_back=(264,12,47,44), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_open_lineup.png")
 	# 商店刷新 
 	I_REFRESH = RuleImage(roi_front=(1169,419,65,64), roi_back=(1169,419,65,64), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_refresh.png")
 	#  
@@ -73,28 +63,45 @@ class ChessAssets:
 	#  
 	I_SKIP = RuleImage(roi_front=(1148,39,77,22), roi_back=(1148,39,77,22), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_skip.png")
 	#  
-	I_SHIKIGAMI_SPECIFICS = RuleImage(roi_front=(1215,106,44,46), roi_back=(1215,106,44,46), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_shikigami_specifics.png")
+	I_SHIKIGAMI_SPECIFICS = RuleImage(roi_front=(971,191,113,18), roi_back=(971,191,113,18), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_shikigami_specifics.png")
 	#  
 	I_CHECK_MARKET = RuleImage(roi_front=(1206,319,35,31), roi_back=(1206,319,35,31), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_market.png")
 	#  
+	I_CANCEL_WAITING = RuleImage(roi_front=(584,597,111,45), roi_back=(584,597,111,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_cancel_waiting.png")
+
+
+	# Image Rule Assets
+	# 百鬼棋局局内页面标志 
+	I_CHECK_CHESS_BATTLE = RuleImage(roi_front=(85,15,137,43), roi_back=(264,12,47,44), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_chess_battle.png")
+	# 百鬼棋局主动退出 
 	I_CHESS_EXIT = RuleImage(roi_front=(12,14,48,38), roi_back=(12,14,48,38), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit.png")
-	#  
+	# 百鬼棋局确认退出 
 	I_CHESS_EXIT_CONFIRM = RuleImage(roi_front=(716,409,88,45), roi_back=(716,409,88,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit_confirm.png")
-	#  
+	# 百鬼棋局退出确认弹窗 
 	I_CHESS_EXIT_CANCEL = RuleImage(roi_front=(478,409,88,45), roi_back=(478,409,88,45), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit_cancel.png")
+	# 百鬼棋局正常结算返回大厅 
+	I_CHESS_EXIT_TO_LOBBY = RuleImage(roi_front=(384,591,172,47), roi_back=(340,570,270,100), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit_to_lobby.png")
+	# 百鬼棋局主动退出后返回大厅 
+	I_CHESS_EXIT_TO_LOBBY_2 = RuleImage(roi_front=(580,593,123,43), roi_back=(580,593,123,43), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_exit_to_lobby_2.png")
+	# 百鬼棋局分享页 
+	I_CHESS_SHARE = RuleImage(roi_front=(1138,560,107,113), roi_back=(1138,560,107,113), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_share.png")
+	# 百鬼棋局排名页 
+	I_CHECK_CHESS_RANK = RuleImage(roi_front=(14,75,79,38), roi_back=(14,75,79,38), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_check_chess_rank.png")
+	# 百鬼棋局排名页返回大厅 
+	I_CHESS_RANK_GOTO_LOBBY = RuleImage(roi_front=(66,646,133,42), roi_back=(66,646,133,42), threshold=0.8, method="Template matching", file="./tasks/Chess/c/c_chess_rank_goto_lobby.png")
 
 
 	# Ocr Rule Assets
 	# 商店式神名称5 
-	O_SHIKIGAMI_GOLD_5 = RuleOcr(roi=(501,261,21,34), area=(501,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_gold_5")
+	O_SHIKIGAMI_GOLD_5 = RuleOcr(roi=(501,261,18,34), area=(501,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_5")
 	# 商店式神名称4 
-	O_SHIKIGAMI_GOLD_4 = RuleOcr(roi=(688,261,21,34), area=(688,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_gold_4")
+	O_SHIKIGAMI_GOLD_4 = RuleOcr(roi=(688,261,18,34), area=(688,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_4")
 	# 商店式神名称3 
-	O_SHIKIGAMI_GOLD_3 = RuleOcr(roi=(875,261,21,34), area=(875,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_gold_3")
+	O_SHIKIGAMI_GOLD_3 = RuleOcr(roi=(875,261,18,34), area=(875,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_3")
 	# 商店式神名称2 
-	O_SHIKIGAMI_GOLD_2 = RuleOcr(roi=(1062,261,21,34), area=(1062,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_gold_2")
+	O_SHIKIGAMI_GOLD_2 = RuleOcr(roi=(1062,261,18,34), area=(1062,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_2")
 	# 商店式神名称1 
-	O_SHIKIGAMI_GOLD_1 = RuleOcr(roi=(1249,261,21,34), area=(1249,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_gold_1")
+	O_SHIKIGAMI_GOLD_1 = RuleOcr(roi=(1249,261,18,34), area=(1249,261,18,34), mode="Single", method="Default", keyword="", name="shikigami_gold_1")
 	# 当前等级 
 	O_LEVEL = RuleOcr(roi=(131,680,47,30), area=(131,680,47,30), mode="Single", method="Default", keyword="", name="level")
 	# 当前回目 
@@ -129,5 +136,17 @@ class ChessAssets:
 	O_HEALTH_7 = RuleOcr(roi=(1186,448,31,24), area=(1186,448,31,24), mode="Single", method="Default", keyword="", name="health_7")
 	#  
 	O_HEALTH_8 = RuleOcr(roi=(1186,510,31,24), area=(1186,510,31,24), mode="Single", method="Default", keyword="", name="health_8")
+	#  
+	O_SHIKIGAMI_SKILL_1 = RuleOcr(roi=(1120,165,94,89), area=(1120,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_1")
+	#  
+	O_SHIKIGAMI_SKILL_2 = RuleOcr(roi=(933,165,94,89), area=(933,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_2")
+	#  
+	O_SHIKIGAMI_SKILL_3 = RuleOcr(roi=(746,165,94,89), area=(746,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_3")
+	#  
+	O_SHIKIGAMI_SKILL_4 = RuleOcr(roi=(559,165,94,89), area=(559,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_4")
+	#  
+	O_SHIKIGAMI_SKILL_5 = RuleOcr(roi=(372,165,94,89), area=(372,165,94,89), mode="Single", method="Default", keyword="", name="shikigami_skill_5")
+	#  
+	O_SHIKIGAMI_SPECIFICS_NAME = RuleOcr(roi=(997,101,193,36), area=(501,261,21,34), mode="Single", method="Default", keyword="", name="shikigami_specifics_name")
 
 

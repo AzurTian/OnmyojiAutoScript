@@ -394,6 +394,20 @@ NEW_LINEUP_CONFIG = {
 
 未填写 `hakuzosu_protect_position` 时默认给 1 号位。
 
+如果阵容会触发荒川羁绊召唤物金鱼，再声明金鱼的目标站位：
+
+```python
+NEW_LINEUP_CONFIG = {
+    # ...
+    'arakawa_goldfish_position': 12,
+}
+```
+
+脚本在第二名荒川羁绊式神上阵后，按 `12 → 11 → 10 → 9`
+的召唤顺序逐格打开详情页，通过 `shikigami_specifics_name` OCR
+严格识别名称 `金鱼`，再将其移动到这里配置的位置；`金鱼姬` 不会
+被判为召唤物。未填写时目标位置默认为 `12`。
+
 ### 第四步：注册阵容
 
 在 `strategy/lineup.py` 导入策略对象，并加入 `LINEUP_REGISTRY`：

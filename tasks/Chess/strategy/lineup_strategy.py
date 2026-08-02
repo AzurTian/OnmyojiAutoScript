@@ -8,6 +8,8 @@
   罗马音或中文名，运行时统一解析为罗马音。
 - ``hakuzosu_protect_position``：当阵容包含梦山白藏主时，守护之印
   应装备到的位置；不填写时默认装备到 1 号位。
+- ``arakawa_goldfish_position``：荒川羁绊召唤金鱼后应移动到的位置。
+  金鱼默认从棋盘右侧 12、11、10、9 号位依次寻找生成格。
 
 经济策略属于通用运营流程，写在主任务中，不放入阵容配置。
 """
@@ -27,6 +29,12 @@ def build_lineup_strategy(config: dict) -> dict:
     protect_position = config.get('hakuzosu_protect_position')
     if protect_position is not None:
         strategy['hakuzosu_protect_position'] = int(protect_position)
+    goldfish_position = int(config.get('arakawa_goldfish_position', 12))
+    if not 1 <= goldfish_position <= 12:
+        raise ValueError(
+            'arakawa_goldfish_position must be between 1 and 12'
+        )
+    strategy['arakawa_goldfish_position'] = goldfish_position
     return strategy
 
 
@@ -34,7 +42,7 @@ QIJIAOSHAN_CONFIG = {
     'key': 'qijiaoshan',
     'display_name': '七角山',
     'shikigami_positions': {
-        '御馔津': 1,
+        '古笼火': 1,
         '薰': 2,
         '一目连': 3,
         '白狼': 4,
@@ -44,7 +52,7 @@ QIJIAOSHAN_CONFIG = {
         '山风': 8,
         '寻森小鹿男': 10,
     },
-    'hakuzosu_protect_position': 1,
+    'hakuzosu_protect_position': 2,
 }
 
 
@@ -58,9 +66,9 @@ HAIGUO_CONFIG = {
         '黑童子': 1,
         '蟹姬': 2,
         '化鲸': 3,
-        '铃鹿御前': 4,
+        '久次良': 4,
         '灵海蝶': 5,
-        '久次良': 6,
+        '铃鹿御前': 6,
         '白童子': 7,
         '大岳丸': 8,
     },
@@ -129,3 +137,24 @@ MINGFU_CONFIG = {
 
 
 MINGFU = build_lineup_strategy(MINGFU_CONFIG)
+
+
+LIUHUO_CONFIG = {
+    'key': 'liuhuo',
+    'display_name': '流火',
+    'shikigami_positions': {
+        '思金神': 1,
+        '凤凰火': 2,
+        '古笼火': 3,
+        '阿修罗': 4,
+        '云间不见岳': 5,
+        '天火命铃彦姬': 7,
+        '梦山白藏主': 7,
+        '烬天玉藻前': 8,
+        '金鱼姬': 9,
+    },
+    'hakuzosu_protect_position': 1,
+}
+
+
+LIUHUO = build_lineup_strategy(LIUHUO_CONFIG)

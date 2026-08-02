@@ -13,6 +13,7 @@ from module.atom.image import RuleImage
 from module.logger import logger
 from tasks.Chess.runtime.board_positions import SET_JADE_AREAS, SET_POSITIONS
 from tasks.Chess.runtime.press_and_drag import Press_and_Drag
+from tasks.Chess.strategy.shikigami_catalog import SHIKIGAMI_BONDS_BY_ROMAJI
 
 
 class ChessHandOperationsMixin:
@@ -131,6 +132,173 @@ class ChessHandOperationsMixin:
         if self.HAKUZOSU_NAME not in strategy['shikigami']:
             return None
         return int(strategy.get('hakuzosu_protect_position', 1))
+
+    def _arakawa_goldfish_target_position(self) -> int | None:
+        """返回当前阵容配置的荒川金鱼目标格。"""
+        position = self.get_lineup_strategy().get(
+            'arakawa_goldfish_position'
+        )
+        return None if position is None else int(position)
+
+    def _lineup_arakawa_names(self) -> set[str]:
+        """返回当前阵容中带有荒川羁绊的式神。"""
+        return {
+            name
+            for name in self.get_lineup_strategy()['shikigami']
+            if self.ARAKAWA_BOND_NAME
+            in SHIKIGAMI_BONDS_BY_ROMAJI.get(name, ())
+        }
+
+    def _predict_arakawa_goldfish_spawn(
+        self,
+        deploying_set_index: int,
+    ) -> int | None:
+        """按 12→11→10→9 固定顺序推断金鱼生成位置。"""
+        occupied = {
+            set_index
+            for set_index in self.ARAKAWA_GOLDFISH_SPAWN_POSITIONS
+            if self._board_set_has_shikigami(set_index)
+        }
+        occupied.add(int(deploying_set_index))
+        return next((
+            set_index
+            for set_index in self.ARAKAWA_GOLDFISH_SPAWN_POSITIONS
+            if set_index not in occupied
+        ), None)
+
+    def _identify_arakawa_goldfish_position(
+        self,
+        predicted_position: int | None,
+    ) -> int | None:
+        """逐格打开详情，名称严格等于“金鱼”时返回所在格。"""
+        candidates = list(self.ARAKAWA_GOLDFISH_SPAWN_POSITIONS)
+        if predicted_position in candidates:
+            candidates.remove(predicted_position)
+            candidates.insert(0, predicted_position)
+
+        for set_index in candidates:
+            if not self._board_set_has_shikigami(set_index):
+                continue
+            x, y = self._set_position(set_index)
+            inspect_rule = RuleClick(
+                roi_front=(x - 8, y - 8, 16, 16),
+                roi_back=(x - 8, y - 8, 16, 16),
+                name=f'chess_inspect_goldfish_set_{set_index}',
+            )
+            self.click(inspect_rule, interval=0.1)
+
+            detail_opened = False
+            recognized_name = ''
+            for _ in range(3):
+                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+                self.screenshot()
+                if not self.appear(self.I_SHIKIGAMI_SPECIFICS):
+                    continue
+                detail_opened = True
+                recognized_name = self._normalize_ocr_text(
+                    self.O_SHIKIGAMI_SPECIFICS_NAME.ocr(self.device.image)
+                )
+                if recognized_name:
+                    break
+
+            if detail_opened:
+                # 必须严格相等，不能用包含关系，否则“金鱼姬”会误判。
+                is_goldfish = recognized_name == '金鱼'
+                logger.debug(
+                    'Chess board specifics identification: '
+                    f'set={set_index}, name={recognized_name or "<empty>"}, '
+                    f'is_goldfish={is_goldfish}'
+                )
+                self.close_shikigami_specifics_if_open()
+                self.screenshot()
+                if is_goldfish:
+                    return set_index
+
+        if predicted_position is not None:
+            logger.debug(
+                'Chess Arakawa goldfish was not confirmed by exact specifics '
+                f'OCR; predicted_set={predicted_position}'
+            )
+        return None
+
+    def relocate_arakawa_goldfish(
+        self,
+        predicted_position: int | None,
+    ) -> bool:
+        """识别荒川金鱼并拖到阵容配置的目标格。"""
+        target_position = self._arakawa_goldfish_target_position()
+        if target_position is None:
+            return False
+        source_position = self._identify_arakawa_goldfish_position(
+            predicted_position
+        )
+        if source_position is None:
+            logger.warning('Chess Arakawa goldfish position was not found')
+            return False
+        # 发现后立即登记。若后续拖动或复核失败，本局仍记得它原本所在格。
+        self._arakawa_goldfish_current_position = source_position
+        protected_before = set(
+            getattr(self, '_player_deployed_positions', set())
+        )
+        if source_position == target_position:
+            protected_positions = set(protected_before)
+            protected_positions.add(target_position)
+            self._player_deployed_positions = protected_positions
+            logger.info(
+                f'Chess Arakawa goldfish is already at set {target_position}'
+            )
+            return True
+        if not self._ensure_shop_closed():
+            return False
+        Press_and_Drag(
+            self.device,
+            p1=self._set_position(source_position),
+            p2=self._set_position(target_position),
+            hold_duration=0.5,
+            point_random=(-2, -2, 2, 2),
+            swipe_duration=0.5,
+            name=(
+                f'CHESS_MOVE_ARAKAWA_GOLDFISH_SET_{source_position}'
+                f'_TO_{target_position}'
+            ),
+        )
+        time.sleep(self.BOARD_REDEPLOY_SETTLE_WAIT)
+        self.screenshot()
+        confirmed_position = self._identify_arakawa_goldfish_position(
+            target_position
+        )
+        if confirmed_position is None:
+            logger.warning(
+                'Chess Arakawa goldfish move could not be confirmed; '
+                f'keep remembered position at set {source_position}'
+            )
+            protected_before.add(source_position)
+            self._player_deployed_positions = protected_before
+            return False
+
+        self._arakawa_goldfish_current_position = confirmed_position
+        protected_positions = set(protected_before)
+        # 金鱼最终所在格必须进入下阵保护。若目标格原本就是脚本上阵的
+        # 式神，拖动会发生交换，该式神落到源格后也应继续受保护。
+        protected_positions.discard(source_position)
+        protected_positions.add(confirmed_position)
+        if (
+            confirmed_position == target_position
+            and target_position in protected_before
+        ):
+            protected_positions.add(source_position)
+        self._player_deployed_positions = protected_positions
+        if confirmed_position != target_position:
+            logger.warning(
+                'Chess Arakawa goldfish did not reach target: '
+                f'expected={target_position}, actual={confirmed_position}'
+            )
+            return False
+        logger.info(
+            f'Move Chess Arakawa goldfish: '
+            f'{source_position} -> {target_position}'
+        )
+        return True
 
     def _find_hakuzosu_protect_hand_card(self) -> dict | None:
         """定位手牌中的守护之印。"""
@@ -979,6 +1147,23 @@ class ChessHandOperationsMixin:
                     f'{candidate["position"]}'
                 )
 
+            arakawa_names = self._lineup_arakawa_names()
+            should_locate_goldfish = (
+                self._arakawa_goldfish_target_position() is not None
+                and getattr(
+                    self,
+                    '_arakawa_goldfish_current_position',
+                    None,
+                ) is None
+                and candidate['name'] in arakawa_names
+                and bool(deployed_names & arakawa_names)
+            )
+            predicted_goldfish_position = (
+                self._predict_arakawa_goldfish_spawn(set_index)
+                if should_locate_goldfish
+                else None
+            )
+
             if not self.deploy_shikigami_hand_card(
                 candidate['name'],
                 candidate['position'],
@@ -1005,6 +1190,10 @@ class ChessHandOperationsMixin:
                 'Mark Chess player-deployed position: '
                 f'set={set_index}, name={candidate["name"]}'
             )
+            if should_locate_goldfish:
+                self.relocate_arakawa_goldfish(
+                    predicted_goldfish_position
+                )
             if candidate['name'] == self.HAKUZOSU_NAME:
                 self.equip_hakuzosu_protect_after_deploy()
         else:
@@ -1017,7 +1206,7 @@ class ChessHandOperationsMixin:
         return deployed
 
     def _hand_card_detections(self) -> list[dict]:
-        """直接用式神/御魂素材定位已收录手牌，不依赖场上勾玉图。"""
+        """直接用式神/御魂素材定位已收录手牌，不依赖羁绊 OCR。"""
         template_rules = [
             rule
             for _, rule in (

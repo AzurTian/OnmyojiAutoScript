@@ -5,6 +5,7 @@ import time
 from module.exception import GameStuckError, TaskEnd
 from module.logger import logger
 from tasks.Chess.assets import ChessAssets
+from tasks.Chess.chess_battle import ChessBattleNavigationMixin
 from tasks.Chess.config import Chess
 from tasks.Chess.runtime.economy import ChessEconomyMixin
 from tasks.Chess.runtime.hand_operations import ChessHandOperationsMixin
@@ -13,10 +14,11 @@ from tasks.Chess.runtime.round_state import ChessRoundStateMixin
 from tasks.Chess.runtime.settings import ChessRuntimeSettings
 from tasks.Component.GeneralBattle.general_battle import GeneralBattle
 from tasks.GameUi.game_ui import GameUi
-from tasks.Chess.page import page_chess, random_click
+from tasks.Chess.page import page_chess
 
 
 class ScriptTask(
+    ChessBattleNavigationMixin,
     ChessRecognitionMixin,
     ChessHandOperationsMixin,
     ChessRoundStateMixin,
@@ -184,7 +186,7 @@ class ScriptTask(
                     'Chess rank protection: actively exit this game; '
                     'the game will not count toward completed runs'
                 )
-                if self.active_exit_chess_game():
+                if self.exit_chess_battle():
                     self._rank_protection_exit_succeeded = True
                     return None
                 logger.warning(
@@ -200,7 +202,7 @@ class ScriptTask(
                     if self._confirm_game_end_after_empty_state(
                         f'round_{round_no}'
                     ):
-                        self._return_to_chess_lobby()
+                        self.return_to_chess_lobby()
                         return None
                     empty_frames = 0
                     time.sleep(self.ROUND_STATE_SCREENSHOT_INTERVAL)
@@ -495,7 +497,7 @@ class ScriptTask(
                         if self._confirm_game_end_after_empty_state(
                             'wait_for_round_start'
                         ):
-                            self._return_to_chess_lobby()
+                            self.return_to_chess_lobby()
                             return None
                         empty_frames = 0
                 else:
@@ -511,14 +513,37 @@ class ScriptTask(
         timeout: float,
         retry_start: bool = False,
     ) -> None:
+        """点击开始后等待匹配；匹配状态存在时不计入卡死和超时。"""
         deadline = time.monotonic() + timeout
+        waiting_logged = False
         while time.monotonic() < deadline:
+            # 匹配可能持续很久。截图本身会先检查设备卡死计时，因此必须
+            # 在每次截图之前清除，不能等识别到“取消等待”后才清除。
+            self.device.stuck_record_clear()
             self.screenshot()
-            if self._is_in_chess_game():
+
+            # 只以阵容入口确认真正进入棋局，商店按钮不再作为开局成功
+            # 标志，避免大厅或匹配动画中的相似区域造成误判。
+            if self.appear(self.I_OPEN_LINEUP):
+                logger.info('Chess matchmaking complete: entered battle')
                 return
+
+            if self.appear(self.I_CANCEL_WAITING):
+                if not waiting_logged:
+                    logger.info('Chess matchmaking: waiting for other players')
+                    waiting_logged = True
+                # 只要“取消等待”仍存在，就说明程序没有卡死。刷新进入
+                # 对局的截止时间，使长时间匹配不会触发重启或等待超时。
+                self.device.stuck_record_clear()
+                deadline = time.monotonic() + timeout
+                time.sleep(self.MATCHMAKING_SCREENSHOT_INTERVAL)
+                continue
+
             if retry_start and self.appear(self.I_CHESS_START):
-                self.appear_then_click(self.I_CHESS_START, interval=2.0)
-            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
+                if self.appear_then_click(self.I_CHESS_START, interval=2.0):
+                    self.device.stuck_record_clear()
+                    deadline = time.monotonic() + timeout
+            time.sleep(self.MATCHMAKING_SCREENSHOT_INTERVAL)
         raise GameStuckError('Chess: timeout waiting for in-game markers')
 
     def _start_chess_game(self) -> None:
@@ -529,6 +554,7 @@ class ScriptTask(
         self._soul_full_positions = set()
         self._board_lineup_names = set()
         self._player_deployed_positions = set()
+        self._arakawa_goldfish_current_position = None
         self._round_snapshot = None
         self._reset_economy_state()
         strategy = self.get_lineup_strategy()
@@ -553,15 +579,9 @@ class ScriptTask(
             return False
 
         # 上次可能已经进入结算、分享或排名阶段，直接继续既有返回流程。
-        if (
-            self.appear(self.I_EXIT_TO_CHESS)
-            or self.appear(self.I_EXIT_TO_CHESS_2)
-            or self.appear(self.I_SHARE)
-            or self.appear(self.I_CHECK_RANK)
-            or self.appear(self.I_RANK_GOTO_CHESS)
-        ):
+        if self.chess_result_flow_visible():
             logger.debug('Chess startup recovery: unfinished result flow detected')
-            self._return_to_chess_lobby()
+            self.return_to_chess_lobby()
             return True
 
         mode = self._read_chess_mode()
@@ -571,7 +591,7 @@ class ScriptTask(
         logger.warning(
             f'Chess startup recovery: interrupted in-game state detected, mode={mode}'
         )
-        if not self.active_exit_chess_game():
+        if not self.exit_chess_battle():
             raise GameStuckError(
                 'Chess: interrupted game detected but active exit was unavailable'
             )
@@ -585,183 +605,7 @@ class ScriptTask(
 
     def _finish_chess_game_if_visible(self) -> bool:
         """发现任一结算入口时完成返回大厅流程。"""
-        if not self._chess_result_flow_visible():
+        if not self.chess_result_flow_visible():
             return False
-        self._return_to_chess_lobby()
+        self.return_to_chess_lobby()
         return True
-
-    def active_exit_chess_game(self) -> bool:
-        """Chess 专属主动退出；不扩展通用 GeneralBattle 接口。"""
-        logger.debug('Chess active exit requested')
-        deadline = time.monotonic() + self.RESULT_RETURN_TIMEOUT
-        next_exit_click_at = 0.0
-        next_confirm_click_at = 0.0
-        dialog_seen = False
-        confirm_clicked = False
-
-        while time.monotonic() < deadline:
-            self.device.stuck_record_clear()
-            self.screenshot()
-
-            confirm_visible = self.appear(self.I_CHESS_EXIT_CONFIRM)
-            cancel_visible = self.appear(self.I_CHESS_EXIT_CANCEL)
-            if confirm_visible or cancel_visible:
-                dialog_seen = True
-
-            # 只有确实点击过确认按钮后，它的消失才代表主动退出成功。
-            if dialog_seen and confirm_clicked and not confirm_visible:
-                logger.debug('Chess active exit success')
-                self._return_to_chess_lobby()
-                return True
-
-            now = time.monotonic()
-            if dialog_seen:
-                if confirm_visible and now >= next_confirm_click_at:
-                    self.click(self.I_CHESS_EXIT_CONFIRM)
-                    confirm_clicked = True
-                    next_confirm_click_at = now + 2.0
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
-            if now >= next_exit_click_at:
-                if self.appear(self.I_CHESS_EXIT):
-                    self.click(self.I_CHESS_EXIT)
-                next_exit_click_at = now + 2.0
-            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-
-        logger.warning(
-            'Chess active exit timed out: '
-            f'dialog_seen={dialog_seen}, confirm_clicked={confirm_clicked}'
-        )
-        return False
-
-    def _chess_result_flow_visible(self) -> bool:
-        """检测任一已知结算/返回大厅标志。"""
-        return (
-            self.appear(self.I_CHECK_CHESS)
-            or self.appear(self.I_EXIT_TO_CHESS)
-            or self.appear(self.I_EXIT_TO_CHESS_2)
-            or self.appear(self.I_SHARE)
-            or self.appear(self.I_CHECK_RANK)
-            or self.appear(self.I_RANK_GOTO_CHESS)
-        )
-
-    def _return_to_chess_lobby(self) -> None:
-        """点击返回与分享页，并持续安全点击直到进入可识别页面。"""
-        logger.debug('Chess game finished')
-        deadline = time.monotonic() + self.RESULT_RETURN_TIMEOUT
-        share_seen = False
-        exit_clicked = False
-        safe_clicks = 0
-        rank_recovery_started = False
-        fallback_exit_at = time.monotonic() + 1.5
-        while time.monotonic() < deadline:
-            self.screenshot()
-
-            if (
-                rank_recovery_started
-                and self.appear(self.I_CHECK_CHESS)
-            ):
-                logger.debug('Returned to Chess lobby from recovered rank page')
-                return
-
-            # 任务重启时可能已经停在排名界面，此时没有机会重新经历分享
-            # 页面，保留恢复入口；正常结算只有在分享流程完成后才处理排名。
-            rank_page = self.appear(self.I_CHECK_RANK)
-            rank_button = self.appear(self.I_RANK_GOTO_CHESS)
-            if (rank_page or rank_button) and not exit_clicked:
-                logger.debug('Chess rank page detected, return to Chess lobby')
-                rank_recovery_started = True
-                if rank_button:
-                    self.appear_then_click(self.I_RANK_GOTO_CHESS, interval=1.5)
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
-            if not exit_clicked:
-                if self.appear(self.I_EXIT_TO_CHESS):
-                    logger.debug(
-                        'Chess return-to-lobby button detected, click it; '
-                        'share page is now mandatory'
-                    )
-                    self.appear_then_click(self.I_EXIT_TO_CHESS, interval=1.5)
-                    exit_clicked = True
-                    time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                    continue
-                if self.appear(self.I_EXIT_TO_CHESS_2):
-                    logger.debug(
-                        'Chess active-exit result detected; click it and '
-                        'require share page next'
-                    )
-                    self.appear_then_click(
-                        self.I_EXIT_TO_CHESS_2,
-                        interval=1.5,
-                    )
-                    exit_clicked = True
-                    time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                    continue
-                if self.appear(self.I_SHARE):
-                    # 脚本重启时可能已经点击过返回并停在分享页。
-                    logger.debug(
-                        'Chess return flow resumed from existing share page'
-                    )
-                    exit_clicked = True
-                    share_seen = True
-                    continue
-                if time.monotonic() >= fallback_exit_at:
-                    # 模板偶发未命中时，正常结算按钮位置是固定的。
-                    logger.warning(
-                        'Chess return button image was not detected; '
-                        'click its fixed safe position and require share page'
-                    )
-                    self.click(self.I_EXIT_TO_CHESS)
-                    exit_clicked = True
-                    time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                    continue
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
-            if not share_seen and self.appear(self.I_SHARE):
-                share_seen = True
-                logger.debug(
-                    'Chess share page detected after return-to-lobby click'
-                )
-
-            if not share_seen:
-                # 即便大厅标志发生误命中，也必须先等到分享页，禁止提前
-                # 返回上层循环并开始下一局。
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
-            if rank_page or rank_button:
-                logger.debug(
-                    'Chess rank page detected after share safe clicks'
-                )
-                rank_recovery_started = True
-                if rank_button:
-                    self.appear_then_click(
-                        self.I_RANK_GOTO_CHESS,
-                        interval=1.5,
-                    )
-                time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-                continue
-
-            if self.appear(self.I_CHECK_CHESS):
-                logger.debug(
-                    'Returned to Chess lobby after share flow: '
-                    f'safe_clicks={safe_clicks}'
-                )
-                return
-
-            # 分享页出现后不再限制点击次数。只要尚未进入棋局大厅或
-            # 排名页，就继续点击左侧安全区域推动结算动画和弹窗。
-            safe_click = random_click(
-                ltrb=(True, False, False, False)
-            )
-            safe_clicks += 1
-            logger.debug(
-                'Chess share safe click: '
-                f'{safe_clicks}, target={safe_click.name}'
-            )
-            self.click(safe_click)
-            time.sleep(self.NORMAL_SCREENSHOT_INTERVAL)
-        raise GameStuckError('Chess: failed to return to lobby after result')

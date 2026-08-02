@@ -230,7 +230,7 @@ class ChessRoundStateMixin:
         return self._read_board_position_count()
 
     def _read_lineup_capacity_status(self) -> dict | None:
-        """以场上人数为当前值、当前阶数为最大上阵人数。"""
+        """以阶数为式神容量；荒川金鱼出现后额外增加一个单位位。"""
         count = self._read_shikigami_count()
         level = self._read_level()
         if count is None or level is None:
@@ -241,15 +241,23 @@ class ChessRoundStateMixin:
             return None
 
         current = count['current']
-        full = current >= level
+        goldfish_present = (
+            getattr(self, '_arakawa_goldfish_current_position', None)
+            is not None
+        )
+        capacity = level + int(goldfish_present)
+        full = current >= capacity
         logger.debug(
             'Chess lineup capacity by level: '
-            f'current={current}, capacity={level}, full={full}, '
+            f'current={current}, capacity={capacity}, level={level}, '
+            f'arakawa_goldfish={goldfish_present}, full={full}, '
             f'count_ocr=[{count["raw"]}]'
         )
         return {
             'current': current,
-            'capacity': level,
+            'capacity': capacity,
+            'level': level,
+            'arakawa_goldfish': goldfish_present,
             'full': full,
             'count': count,
         }

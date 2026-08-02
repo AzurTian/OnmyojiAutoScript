@@ -1,23 +1,5 @@
 [
   {
-    "itemName": "exit_to_chess",
-    "imageName": "c_exit_to_chess.png",
-    "roiFront": "384,591,172,47",
-    "roiBack": "340,570,270,100",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "回大厅"
-  },
-  {
-    "itemName": "share",
-    "imageName": "c_share.png",
-    "roiFront": "1138,560,107,113",
-    "roiBack": "1138,560,107,113",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": "分享"
-  },
-  {
     "itemName": "select_buff",
     "imageName": "c_select_buff.png",
     "roiFront": "533,74,218,43",
@@ -31,33 +13,6 @@
     "imageName": "c_chess_start.png",
     "roiFront": "1159,595,65,66",
     "roiBack": "1159,595,65,66",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "exit_to_chess_2",
-    "imageName": "c_exit_to_chess_2.png",
-    "roiFront": "580,593,123,43",
-    "roiBack": "580,593,123,43",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "check_rank",
-    "imageName": "c_check_rank.png",
-    "roiFront": "14,75,79,38",
-    "roiBack": "14,75,79,38",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "rank_goto_chess",
-    "imageName": "c_rank_goto_chess.png",
-    "roiFront": "66,646,133,42",
-    "roiBack": "66,646,133,42",
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""
@@ -100,7 +55,7 @@
   },
   {
     "itemName": "entertainment_goto_chess",
-    "imageName": "page_entertainment_goto_chess.png",
+    "imageName": "c_entertainment_goto_chess.png",
     "roiFront": "304,175,41,127",
     "roiBack": "304,175,41,127",
     "method": "Template matching",
@@ -109,7 +64,7 @@
   },
   {
     "itemName": "check_chess",
-    "imageName": "page_check_chess.png",
+    "imageName": "c_check_chess.png",
     "roiFront": "1159,592,66,70",
     "roiBack": "1159,592,66,70",
     "method": "Template matching",
@@ -137,7 +92,7 @@
   {
     "itemName": "open_lineup",
     "imageName": "c_open_lineup.png",
-    "roiFront": "85,15,137,43",
+    "roiFront": "264,12,47,44",
     "roiBack": "264,12,47,44",
     "method": "Template matching",
     "threshold": 0.8,
@@ -173,8 +128,8 @@
   {
     "itemName": "shikigami_specifics",
     "imageName": "c_shikigami_specifics.png",
-    "roiFront": "1215,106,44,46",
-    "roiBack": "1215,106,44,46",
+    "roiFront": "971,191,113,18",
+    "roiBack": "971,191,113,18",
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""
@@ -189,28 +144,10 @@
     "description": ""
   },
   {
-    "itemName": "chess_exit",
-    "imageName": "c_chess_exit.png",
-    "roiFront": "12,14,48,38",
-    "roiBack": "12,14,48,38",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "chess_exit_confirm",
-    "imageName": "c_chess_exit_confirm.png",
-    "roiFront": "716,409,88,45",
-    "roiBack": "716,409,88,45",
-    "method": "Template matching",
-    "threshold": 0.8,
-    "description": ""
-  },
-  {
-    "itemName": "chess_exit_cancel",
-    "imageName": "c_chess_exit_cancel.png",
-    "roiFront": "478,409,88,45",
-    "roiBack": "478,409,88,45",
+    "itemName": "cancel_waiting",
+    "imageName": "c_cancel_waiting.png",
+    "roiFront": "584,597,111,45",
+    "roiBack": "584,597,111,45",
     "method": "Template matching",
     "threshold": 0.8,
     "description": ""

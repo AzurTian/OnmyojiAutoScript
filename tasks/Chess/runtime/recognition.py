@@ -11,7 +11,10 @@ import cv2
 from module.atom.image import RuleImage
 from module.logger import logger
 from tasks.Chess.strategy.lineup import resolve_lineup_key
-from tasks.Chess.strategy.shikigami_catalog import SHIKIGAMI_BY_ROMAJI
+from tasks.Chess.strategy.shikigami_catalog import (
+    SHIKIGAMI_BONDS_BY_ROMAJI,
+    SHIKIGAMI_BY_ROMAJI,
+)
 
 
 CHESS_TASK_DIR = Path(__file__).resolve().parents[1]
@@ -79,10 +82,11 @@ class ChessRecognitionMixin:
     def _shop_shikigami_summary(self) -> list[str]:
         """汇总当前商店五格中已识别出的式神。"""
         names = []
-        for _, click_rule in self._shop_slots():
-            matched = self._match_shop_shikigami_avatar(
+        for slot_index, click_rule in self._shop_slots():
+            matched = self._recognize_shop_slot(
+                slot_index,
                 click_rule,
-                rules=self.all_shikigami_shop_rules,
+                fallback_rules=self.all_shikigami_shop_rules,
             )
             names.append(
                 self._shikigami_display_name(matched['name'])
@@ -281,6 +285,8 @@ class ChessRecognitionMixin:
                         'position': (x + width // 2, y + height // 2),
                         'action': None,
                     }
+                    if category == 'shikigami':
+                        best['bonds'] = SHIKIGAMI_BONDS_BY_ROMAJI.get(name, ())
 
         if best is not None:
             return best

@@ -1,8 +1,8 @@
 [
   {
     "itemName": "shikigami_gold_5",
-    "roiFront": "501,261,21,34",
-    "roiBack": "501,261,21,34",
+    "roiFront": "501,261,18,34",
+    "roiBack": "501,261,18,34",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -10,8 +10,8 @@
   },
   {
     "itemName": "shikigami_gold_4",
-    "roiFront": "688,261,21,34",
-    "roiBack": "688,261,21,34",
+    "roiFront": "688,261,18,34",
+    "roiBack": "688,261,18,34",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -19,8 +19,8 @@
   },
   {
     "itemName": "shikigami_gold_3",
-    "roiFront": "875,261,21,34",
-    "roiBack": "875,261,21,34",
+    "roiFront": "875,261,18,34",
+    "roiBack": "875,261,18,34",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -28,8 +28,8 @@
   },
   {
     "itemName": "shikigami_gold_2",
-    "roiFront": "1062,261,21,34",
-    "roiBack": "1062,261,21,34",
+    "roiFront": "1062,261,18,34",
+    "roiBack": "1062,261,18,34",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -37,8 +37,8 @@
   },
   {
     "itemName": "shikigami_gold_1",
-    "roiFront": "1249,261,21,34",
-    "roiBack": "1249,261,21,34",
+    "roiFront": "1249,261,18,34",
+    "roiBack": "1249,261,18,34",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -192,6 +192,60 @@
     "itemName": "health_8",
     "roiFront": "1186,510,31,24",
     "roiBack": "1186,510,31,24",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_1",
+    "roiFront": "1120,165,94,89",
+    "roiBack": "1120,165,94,89",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_2",
+    "roiFront": "933,165,94,89",
+    "roiBack": "933,165,94,89",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_3",
+    "roiFront": "746,165,94,89",
+    "roiBack": "746,165,94,89",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_4",
+    "roiFront": "559,165,94,89",
+    "roiBack": "559,165,94,89",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_5",
+    "roiFront": "372,165,94,89",
+    "roiBack": "372,165,94,89",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_specifics_name",
+    "roiFront": "997,101,193,36",
+    "roiBack": "501,261,21,34",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
