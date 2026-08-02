@@ -16,13 +16,6 @@ class ChessConfig(ConfigBase):
         description='选择百鬼棋局使用的阵容羁绊与对应运营策略',
     )
 
-    remaining_players: int = Field(
-        title='剩余人数',
-        default=1,
-        ge=1,
-        le=8,
-        description='存活人数小于或等于该数值时主动退出；1表示不提前退出',
-    )
     rank_protection: bool = Field(
         title='保段位',
         default=False,

@@ -352,25 +352,6 @@ class ChessRoundStateMixin:
         )
         return alive
 
-    def _early_exit_by_alive_players_reached(self) -> bool:
-        """使用回目开始快照中的存活人数判断是否主动退出。"""
-        threshold = getattr(self, '_remaining_players_exit', 1)
-        # 1 表示不启用人数提前退出；因为正常对局最终本来就只剩一人。
-        if threshold <= 1:
-            return False
-
-        snapshot = getattr(self, '_round_snapshot', None) or {}
-        alive = snapshot.get('alive_players')
-        if alive is None:
-            return False
-
-        logger.debug(
-            'Chess early-exit player check from round snapshot: '
-            f'round={snapshot.get("round")}, alive={alive}, '
-            f'threshold={threshold}'
-        )
-        return alive <= threshold
-
     def _try_last_seconds_deploy(self) -> bool:
         """第一套布局备阶段倒计时不超过 10 秒时，空闲补做一次上阵。
 

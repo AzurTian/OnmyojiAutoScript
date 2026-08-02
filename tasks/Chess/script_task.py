@@ -41,7 +41,7 @@ class ScriptTask(
         )
         strategy = self.select_lineup_strategy(selected_lineup)
 
-        # 启动恢复可能主动退出遗留对局；正常对局还可由人数约束退出。
+        # 启动恢复会主动退出遗留对局；正常循环只保留保段位退三局。
         self._recover_interrupted_chess_game()
         self.goto_page(page_chess)
 
@@ -52,13 +52,6 @@ class ScriptTask(
         coin_full_exit = bool(
             getattr(chess_config, 'coin_full_exit', False)
         )
-        self._remaining_players_exit = max(
-            1,
-            min(
-                8,
-                int(getattr(chess_config, 'remaining_players', 1)),
-            ),
-        )
         rank_protection = bool(
             getattr(chess_config, 'rank_protection', False)
         )
@@ -68,7 +61,6 @@ class ScriptTask(
             'Chess task constraints: '
             f'lineup={strategy["key"]} ({strategy["display_name"]}), '
             f'run_count={target_count}, coin_full_exit={coin_full_exit}, '
-            f'remaining_players={self._remaining_players_exit}, '
             f'rank_protection={rank_protection}'
         )
 
@@ -199,19 +191,6 @@ class ScriptTask(
                     'Chess rank-protection exit was unavailable; '
                     'retry on the next state refresh'
                 )
-            if self._early_exit_by_alive_players_reached():
-                logger.warning(
-                    'Chess remaining-player early exit reached: '
-                    f'alive={self._round_snapshot.get("alive_players")}, '
-                    f'threshold={self._remaining_players_exit}'
-                )
-                if self.active_exit_chess_game():
-                    return None
-                logger.warning(
-                    'Chess early-exit condition reached, but active exit '
-                    'button is currently unavailable; retry next frame'
-                )
-
             observed_round = self._read_round_number()
             mode = self._read_chess_mode()
 
