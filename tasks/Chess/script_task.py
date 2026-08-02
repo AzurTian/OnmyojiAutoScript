@@ -2424,11 +2424,9 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
     def _early_exit_by_alive_players_reached(self) -> bool:
         """使用回目开始快照中的存活人数判断是否主动退出。"""
-        threshold = getattr(self, '_remaining_players_exit', 0)
-        if (
-            not getattr(self, '_early_exit_enabled', False)
-            or threshold <= 0
-        ):
+        threshold = getattr(self, '_remaining_players_exit', 1)
+        # 1 表示不启用人数提前退出；因为正常对局最终本来就只剩一人。
+        if threshold <= 1:
             return False
 
         snapshot = getattr(self, '_round_snapshot', None) or {}
@@ -3821,6 +3819,18 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 continue
             if self._finish_chess_game_if_visible():
                 return None
+            if getattr(self, '_rank_protection_exit_requested', False):
+                logger.info(
+                    'Chess rank protection: actively exit this game; '
+                    'the game will not count toward completed runs'
+                )
+                if self.active_exit_chess_game():
+                    self._rank_protection_exit_succeeded = True
+                    return None
+                logger.warning(
+                    'Chess rank-protection exit was unavailable; '
+                    'retry on the next state refresh'
+                )
             if self._early_exit_by_alive_players_reached():
                 logger.warning(
                     'Chess remaining-player early exit reached: '
@@ -3968,26 +3978,31 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
         coin_full_exit = bool(
             getattr(chess_config, 'coin_full_exit', False)
         )
-        self._early_exit_enabled = bool(
-            getattr(chess_config, 'early_exit', False)
-        )
         self._remaining_players_exit = max(
-            0,
+            1,
             min(
                 8,
-                int(getattr(chess_config, 'remaining_players', 0)),
+                int(getattr(chess_config, 'remaining_players', 1)),
             ),
         )
+        rank_protection = bool(
+            getattr(chess_config, 'rank_protection', False)
+        )
         completed = 0
+        rank_protection_exits_remaining = 0
         logger.info(
             'Chess task constraints: '
             f'lineup={strategy["key"]} ({strategy["display_name"]}), '
             f'run_count={target_count}, coin_full_exit={coin_full_exit}, '
-            f'early_exit={self._early_exit_enabled}, '
-            f'remaining_players={self._remaining_players_exit}'
+            f'remaining_players={self._remaining_players_exit}, '
+            f'rank_protection={rank_protection}'
         )
 
-        while target_count == -1 or completed < target_count:
+        while (
+            target_count == -1
+            or completed < target_count
+            or rank_protection_exits_remaining > 0
+        ):
             self.screenshot()
             if coin_full_exit and self._coin_is_full():
                 logger.info(
@@ -4000,11 +4015,32 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
                 f'{completed + 1}/'
                 f'{"infinite" if target_count == -1 else target_count}'
             )
+            self._rank_protection_exit_requested = bool(
+                rank_protection and rank_protection_exits_remaining > 0
+            )
+            self._rank_protection_exit_succeeded = False
             self.run_one_game()
+
+            if (
+                self._rank_protection_exit_requested
+                and self._rank_protection_exit_succeeded
+            ):
+                rank_protection_exits_remaining -= 1
+                logger.info(
+                    'Chess rank-protection exit completed: '
+                    f'remaining={rank_protection_exits_remaining}/3, '
+                    f'completed_games={completed}'
+                )
+                continue
+
             completed += 1
+            if rank_protection:
+                rank_protection_exits_remaining = 3
             logger.info(
                 f'Chess completed games: {completed}/'
-                f'{"infinite" if target_count == -1 else target_count}'
+                f'{"infinite" if target_count == -1 else target_count}, '
+                f'rank_protection_exits_pending='
+                f'{rank_protection_exits_remaining}'
             )
 
             # _run_round_loop 正常返回时已经回到棋局大厅，此处刷新后检查
@@ -4019,7 +4055,8 @@ class ScriptTask(GameUi, GeneralBattle, ChessAssets):
 
         logger.info(
             f'Chess task loop finished: completed={completed}, '
-            f'target={target_count}, coin_full_exit={coin_full_exit}'
+            f'target={target_count}, coin_full_exit={coin_full_exit}, '
+            f'rank_protection={rank_protection}'
         )
         self.set_next_run(task='Chess', success=True, finish=True)
         raise TaskEnd('Chess')
