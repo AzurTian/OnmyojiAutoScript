@@ -236,7 +236,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             self.appear_then_click(self.I_DT_GW_CLEAR_SEARCH)  # 清除搜索框内容
             self.ui_click(self.C_DT_GW_INPUT_SEARCH, self.I_DT_GW_CONFIRM, interval=1.5)  # 点击搜索框
             self.click(self.C_DT_GW_CLICK_INPUT)  # 点击名称输入框
-            self.device.adb.send_keys(name)  # 输入名称
+            self.device.adb_send_keys_yadb(name)  # 使用 yadb 输入名称
             self.ui_click_until_disappear(self.I_DT_GW_CONFIRM, interval=1.5)  # 点击确定
             donate_btn = self.I_DT_GW_DONATE
             if name_check:  # 若有多个相同前缀名称, 则需要取出一样的或最相近的名称

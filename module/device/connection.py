@@ -3,6 +3,7 @@ import ipaddress
 import logging
 import platform
 import re
+import shlex
 import socket
 import subprocess
 import time
@@ -136,7 +137,10 @@ class Connection(ConnectionAttr):
         # To disable it, edit gooey/gui/util/taskkill.py
 
         # No gooey anymore, just shell=False
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=False)
+        kwargs = {}
+        if platform.system() == 'Windows':
+            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=False, **kwargs)
         try:
             stdout, stderr = process.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -513,6 +517,29 @@ class Connection(ConnectionAttr):
         """
         cmd = ['push', local, remote]
         return self.adb_command(cmd)
+
+    def adb_send_keys_yadb(self, text, timeout=10):
+        """
+        使用 yadb 通过 app_process 注入键盘文本, 替代不稳定的 `input text`(支持中文).
+
+        通过 subprocess 直接执行 adb(与手动命令等效), 文本用 shlex.quote 包裹:
+            adb shell "app_process ... -keyboard '<text>'"
+        注意: 不能走 adbutils `shell(list)` 传中文, 实测其多字符只保留第一个字、
+        单字符乱码(adbutils 0.11.0 传参 bug).
+
+        Args:
+            text (str): 要输入的文本
+            timeout (int):
+
+        Returns:
+            str:
+        """
+        self.adb_push(self.config.YADB_FILEPATH_LOCAL, self.config.YADB_FILEPATH_REMOTE)
+        cmd = (
+            f'app_process -Djava.class.path={self.config.YADB_FILEPATH_REMOTE} '
+            f'/data/local/tmp com.ysbing.yadb.Main -keyboard {shlex.quote(text)}'
+        )
+        return self.adb_command(['shell', cmd], timeout=timeout)
 
     @Config.when(DEVICE_OVER_HTTP=False)
     def adb_connect(self, serial):

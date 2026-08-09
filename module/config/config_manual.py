@@ -34,6 +34,10 @@ class ConfigManual:
     DROIDCAST_FILEPATH_LOCAL = './bin/droidcast/DroidCast_raw-release-1.0.apk'
     DROIDCAST_FILEPATH_REMOTE = '/data/local/tmp/DroidCast_raw.apk'
 
+    # yadb 键盘注入(替代不稳定的 input text)
+    YADB_FILEPATH_LOCAL = './bin/yadb'
+    YADB_FILEPATH_REMOTE = '/data/local/tmp/yadb'
+
     MINITOUCH_FILEPATH_REMOTE = '/data/local/tmp/minitouch'
 
     HERMIT_FILEPATH_LOCAL = './bin/hermit/hermit.apk'
