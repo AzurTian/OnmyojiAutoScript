@@ -265,6 +265,7 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         while not timeout_timer.reached():
             self.screenshot()
             if self.appear_then_click(self.I_UI_CONFIRM, interval=0.6):
+                sleep(2)
                 continue
             if self.appear(self.I_DT_GW_SEARCH_EMPTY):
                 logger.warning('Maybe not wish or not find, skip')
@@ -272,6 +273,12 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
                     self.config.notifier.push(title='好友搜索失败', content=f'{name} 搜索失败, 没有搜索到对应用户, 无法捐赠')
                 return False
             if self.appear_then_click(donate_btn, interval=0.6):
+                timeout_timer.reset()
+                continue
+            if self.appear_then_click(self.I_DT_GW_OK, interval=0.6):
+                timeout_timer.reset()
+                continue
+            if self.appear_then_click(self.I_DT_GW_REWARD, self.C_DT_GW_REWARD, interval=0.6):
                 timeout_timer.reset()
                 continue
             if self.appear(self.I_DT_GW_INSUFFICIENT, interval=0.6):

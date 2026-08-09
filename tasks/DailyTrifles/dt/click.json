@@ -10,5 +10,11 @@
     "roiFront": "334,90,554,33",
     "roiBack": "334,90,554,33",
     "description": "点击昵称搜索区域"
+  },
+  {
+    "itemName": "dt_gw_reward",
+    "roiFront": "123,511,931,96",
+    "roiBack": "123,511,931,96",
+    "description": ""
   }
 ]

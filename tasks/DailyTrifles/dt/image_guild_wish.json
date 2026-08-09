@@ -2,8 +2,8 @@
   {
     "itemName": "dt_check_guild_wish",
     "imageName": "dt_dt_check_guild_wish.png",
-    "roiFront": "13,569,76,139",
-    "roiBack": "0,511,124,209",
+    "roiFront": "808,586,101,90",
+    "roiBack": "790,566,132,123",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "寮祈愿页面标志"
@@ -146,8 +146,8 @@
   {
     "itemName": "dt_gw_confirm",
     "imageName": "dt_dt_gw_confirm.png",
-    "roiFront": "1030,12,104,48",
-    "roiBack": "1016,0,127,71",
+    "roiFront": "957,22,104,48",
+    "roiBack": "944,11,127,71",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "搜索确定按钮"
@@ -223,5 +223,23 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "赠送"
+  },
+  {
+    "itemName": "dt_gw_ok",
+    "imageName": "dt_dt_gw_ok.png",
+    "roiFront": "673,401,174,66",
+    "roiBack": "653,385,214,102",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "dt_gw_reward",
+    "imageName": "dt_dt_gw_reward.png",
+    "roiFront": "544,235,178,45",
+    "roiBack": "529,203,214,102",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
   }
 ]
