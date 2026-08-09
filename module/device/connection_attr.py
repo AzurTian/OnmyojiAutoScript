@@ -34,6 +34,13 @@ class ConnectionAttr:
         else:
             self.config = config
 
+        self.serial = str(self.config.script.device.serial)
+        self.is_playcover = self.config.script.device.control_method == 'MacPlayTools'
+        if self.is_playcover:
+            self.config.DEVICE_OVER_HTTP = False
+            logger.attr('PlayCover', self.serial)
+            return
+
         # Init adb client
         logger.attr('AdbBinary', self.adb_binary)
         # Monkey patch to custom adb
@@ -65,7 +72,6 @@ class ConnectionAttr:
 
         # Parse custom serial
         # self.serial = str(self.config.Emulator_Serial)
-        self.serial = str(self.config.script.device.serial)
         self.serial_check()
         self.config.DEVICE_OVER_HTTP = self.is_over_http
 
@@ -282,5 +288,3 @@ class ConnectionAttr:
 
         logger.attr('u2.Device', f'Device(atx_agent_url={device._get_atx_agent_url()})')
         return device
-
-

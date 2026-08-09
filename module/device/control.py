@@ -34,6 +34,7 @@ class Control(Minitouch, Adb, Scrcpy, Window):
             'ADB': self.click_adb,
             'uiautomator2': self.click_uiautomator2,
             'minitouch': self.click_minitouch,
+            'MacPlayTools': self.click_playcover,
             # 'Hermit': self.click_hermit,
             # 'MaaTouch': self.click_maatouch,
         }
@@ -47,7 +48,8 @@ class Control(Minitouch, Adb, Scrcpy, Window):
             'ADB': self.long_click_adb,
             'uiautomator2': self.long_click_uiautomator2,
             'minitouch': self.long_click_minitouch,
-            'scrcpy': self.long_click_scrcpy
+            'scrcpy': self.long_click_scrcpy,
+            'MacPlayTools': self.long_click_playcover,
             # 'Hermit': self.click_hermit,
             # 'MaaTouch': self.click_maatouch,
         }
@@ -119,6 +121,15 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         elapsed = time.perf_counter() - start
         logger.info(f'{self._format_action_duration(elapsed)}Click {point2str(x, y)} @ {control_name} {duration}')
 
+    def click_playcover(self, x, y):
+        self.playcover_client.click(x, y)
+
+    def long_click_playcover(self, x, y, duration=0.8):
+        self.playcover_client.long_click(x, y, duration=duration)
+
+    def swipe_playcover(self, p1, p2, duration=0.1):
+        self.playcover_client.swipe(p1, p2, duration=duration)
+
     def swipe(self, p1, p2, duration=(0.1, 0.2), control_name='SWIPE', distance_check=True):
         self.handle_control_check(control_name)
         p1, p2 = ensure_int(p1, p2)
@@ -133,6 +144,8 @@ class Control(Minitouch, Adb, Scrcpy, Window):
             swipe_log = 'Swipe %s -> %s, %s' % (point2str(*p1), point2str(*p2), duration)
         elif method == 'scrcpy':
             swipe_log = 'Swipe %s -> %s' % (point2str(*p1), point2str(*p2))
+        elif method == 'MacPlayTools':
+            swipe_log = 'Swipe %s -> %s, %s' % (point2str(*p1), point2str(*p2), duration)
         # elif method == 'MaaTouch':
         #     logger.info('Swipe %s -> %s' % (point2str(*p1), point2str(*p2)))
         else:
@@ -164,6 +177,8 @@ class Control(Minitouch, Adb, Scrcpy, Window):
             self.swipe_uiautomator2(p1, p2, duration=duration)
         elif method == 'scrcpy':
             self.swipe_scrcpy(p1, p2)
+        elif method == 'MacPlayTools':
+            self.swipe_playcover(p1, p2, duration=duration)
         # elif method == 'MaaTouch':
         #     self.swipe_maatouch(p1, p2)
         else:
@@ -204,7 +219,12 @@ class Control(Minitouch, Adb, Scrcpy, Window):
         self.handle_control_check(name)
         p1, p2 = ensure_int(p1, p2)
         drag_log = 'Drag %s -> %s' % (point2str(*p1), point2str(*p2))
-        method = self.config.script.emulator.control_method
+        configured_method = self.config.script.device.control_method
+        if configured_method == 'MacPlayTools' or getattr(self, 'is_playcover', False):
+            method = configured_method
+            self._invalidate_image_batch_cache()
+        else:
+            method = self.config.script.emulator.control_method
         start = time.perf_counter()
         if method == 'minitouch':
             self.drag_minitouch(p1, p2, point_random=point_random)
@@ -214,6 +234,8 @@ class Control(Minitouch, Adb, Scrcpy, Window):
                 swipe_duration=swipe_duration, shake_duration=shake_duration)
         elif method == 'scrcpy':
             self.drag_scrcpy(p1, p2, point_random=point_random)
+        elif method == 'MacPlayTools':
+            self.playcover_client.swipe(p1, p2, duration=ensure_time(swipe_duration))
         # elif method == 'MaaTouch':
         #     self.drag_maatouch(p1, p2, point_random=point_random)
         else:
