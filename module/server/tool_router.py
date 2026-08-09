@@ -378,6 +378,7 @@ async def annotator_frame_ws(websocket: WebSocket, session_id: str):
             frame = annotator_manager.latest_emulator_frame(session_id)
             if frame:
                 await websocket.send_bytes(frame)
+                await asyncio.sleep(0.05)
                 continue
 
             status = annotator_manager.emulator_status(session_id)
