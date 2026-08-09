@@ -23,7 +23,7 @@ from module.logger import logger
 class ImageServerSettings:
     """图像服务运行时配置，统一描述缓存 TTL、容量和 worker 数量。"""
 
-    frame_cache_expire_seconds: float = 3.0
+    frame_cache_expire_seconds: float = 120.0
     frame_cache_max_count: int = 24
     template_cache_expire_seconds: int = 3600
     template_cache_max_count: int = 200

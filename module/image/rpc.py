@@ -284,6 +284,32 @@ class ImageClient:
             return None
         return pickle.dumps(image, protocol=4)
 
+    def _invoke(
+        self,
+        method: str,
+        data: Any,
+        rest: list[Any],
+        image: np.ndarray | None = None,
+        frame_id: str | None = None,
+    ) -> Any:
+        """
+        执行一次图像匹配 RPC, 并在服务端帧缓存失效时自动降级重试。
+
+        客户端复用 `frame_id` 可省去重复上传整图; 但服务端帧可能因 TTL 过期
+        或被同配置新截图替换而删除, 此时服务端会抛 `KeyError: Unknown frame id`。
+        若本地仍持有原图, 则改为直接上传图片重试一次, 避免脚本偶发中断。
+        """
+        def _call(fid: str | None, payload: bytes | None) -> Any:
+            return getattr(self.client, method)(data, fid, payload, *rest)
+
+        try:
+            return _call(frame_id, self._encode_image_payload(image=image, frame_id=frame_id))
+        except Exception as exc:
+            if image is not None and "Unknown frame id" in str(exc):
+                logger.warning("Image frame %s 已失效, 改用本地图像上传重试", frame_id)
+                return _call(None, self._encode_image_payload(image=image, frame_id=None))
+            raise
+
     def match_rule(
         self,
         rule_data: dict[str, Any],
@@ -300,8 +326,7 @@ class ImageClient:
             frame_id: 已在服务端注册过的截图引用，优先级高于 `image`。
             threshold: 可选的临时阈值覆盖值；为空时沿用规则自身阈值。
         """
-        payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_rule(rule_data, frame_id, payload, threshold)
+        return self._invoke("match_rule", rule_data, [threshold], image=image, frame_id=frame_id)
 
     def match_rule_with_brightness_window(
         self,
@@ -315,8 +340,7 @@ class ImageClient:
 
         该接口仅适用于普通模板匹配，会在命中后额外校验源区域和模板区域的平均亮度范围。
         """
-        payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_rule_with_brightness_window(rule_data, frame_id, payload, threshold)
+        return self._invoke("match_rule_with_brightness_window", rule_data, [threshold], image=image, frame_id=frame_id)
 
     def match_many(
         self,
@@ -330,8 +354,7 @@ class ImageClient:
 
         适用于 `RuleGif`、`ImageGrid` 这类需要在同帧内判断多个候选模板的场景。
         """
-        payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_many(rules_data, frame_id, payload, threshold)
+        return self._invoke("match_many", rules_data, [threshold], image=image, frame_id=frame_id)
 
     def match_all(
         self,
@@ -347,8 +370,7 @@ class ImageClient:
         Args:
             roi: 可选的搜索区域覆盖值；提供后由服务端在该区域内枚举所有命中。
         """
-        payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_all(rule_data, frame_id, payload, threshold, roi)
+        return self._invoke("match_all", rule_data, [threshold, roi], image=image, frame_id=frame_id)
 
     def match_all_any(
         self,
@@ -365,8 +387,7 @@ class ImageClient:
         Args:
             nms_threshold: NMS 去重阈值，用于移除高度重叠的冗余框。
         """
-        payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_all_any(rule_data, frame_id, payload, threshold, roi, nms_threshold)
+        return self._invoke("match_all_any", rule_data, [threshold, roi, nms_threshold], image=image, frame_id=frame_id)
 
     def match_all_any_many(
         self,
@@ -381,8 +402,7 @@ class ImageClient:
 
         该接口适合一次性拿到多组模板的非冗余命中列表。
         """
-        payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_all_any_many(rules_data, frame_id, payload, threshold, nms_threshold)
+        return self._invoke("match_all_any_many", rules_data, [threshold, nms_threshold], image=image, frame_id=frame_id)
 
     def match_dynamic_template(
         self,
@@ -405,8 +425,17 @@ class ImageClient:
             name: 用于日志输出的匹配名称。
         """
         template_payload = pickle.dumps(template, protocol=4)
-        image_payload = self._encode_image_payload(image=image, frame_id=frame_id)
-        return self.client.match_dynamic_template(template_payload, frame_id, image_payload, roi_back, threshold, name)
+
+        def _call(fid: str | None, payload: bytes | None) -> dict[str, Any]:
+            return self.client.match_dynamic_template(template_payload, fid, payload, roi_back, threshold, name)
+
+        try:
+            return _call(frame_id, self._encode_image_payload(image=image, frame_id=frame_id))
+        except Exception as exc:
+            if image is not None and "Unknown frame id" in str(exc):
+                logger.warning("Image frame %s 已失效, 改用本地图像上传重试", frame_id)
+                return _call(None, self._encode_image_payload(image=image, frame_id=None))
+            raise
 
 
 def get_image_client(address: str | None = None, refresh: bool = False) -> ImageClient:
