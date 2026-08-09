@@ -173,8 +173,8 @@
   {
     "itemName": "flag_1_on",
     "imageName": "gi_flag_1_on.png",
-    "roiFront": "355,131,43,15",
-    "roiBack": "354,128,62,19",
+    "roiFront": "360,132,43,15",
+    "roiBack": "359,131,45,16",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "用来判断当前的列表是哪儿的"
@@ -192,7 +192,7 @@
     "itemName": "flag_2_on",
     "imageName": "gi_flag_2_on.png",
     "roiFront": "472,82,32,11",
-    "roiBack": "454,74,56,26",
+    "roiBack": "459,74,56,26",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"
@@ -218,7 +218,7 @@
   {
     "itemName": "flag_3_off",
     "imageName": "gi_flag_3_off.png",
-    "roiFront": "590,129,41,19",
+    "roiFront": "588,126,41,19",
     "roiBack": "590,126,41,22",
     "method": "Template matching",
     "threshold": 0.8,
@@ -236,7 +236,7 @@
   {
     "itemName": "flag_4_off",
     "imageName": "gi_flag_4_off.png",
-    "roiFront": "703,128,53,21",
+    "roiFront": "700,128,53,21",
     "roiBack": "703,128,53,21",
     "method": "Template matching",
     "threshold": 0.8,
@@ -385,5 +385,59 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "师徒邀请图标"
+  },
+  {
+    "itemName": "flag1_1_on",
+    "imageName": "gi_flag1_1_on.png",
+    "roiFront": "380,131,43,15",
+    "roiBack": "380,131,43,15",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "flag1_1_off",
+    "imageName": "gi_flag1_1_off.png",
+    "roiFront": "380,131,43,15",
+    "roiBack": "380,131,43,15",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "flag1_2_on",
+    "imageName": "gi_flag1_2_on.png",
+    "roiFront": "502,133,40,14",
+    "roiBack": "502,133,40,14",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "flag1_2_off",
+    "imageName": "gi_flag1_2_off.png",
+    "roiFront": "501,133,43,15",
+    "roiBack": "501,133,43,15",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "flag1_3_on",
+    "imageName": "gi_flag1_3_on.png",
+    "roiFront": "614,133,43,15",
+    "roiBack": "614,133,43,15",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
+  },
+  {
+    "itemName": "flag1_3_off",
+    "imageName": "gi_flag1_3_off.png",
+    "roiFront": "614,132,43,15",
+    "roiBack": "614,132,43,15",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": ""
   }
 ]

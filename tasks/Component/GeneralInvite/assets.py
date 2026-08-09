@@ -10,6 +10,44 @@ from module.atom.list import RuleList
 class GeneralInviteAssets: 
 
 
+	# Ocr Rule Assets
+	# Ocr-description 
+	O_TIME_1 = RuleOcr(roi=(541,12,96,33), area=(541,12,96,33), mode="Single", method="Default", keyword="", name="time_1")
+	# 永生之海判断时间 
+	O_TIME_2 = RuleOcr(roi=(538,70,100,34), area=(538,70,100,34), mode="Single", method="Default", keyword="", name="time_2")
+	# 上方好友列表的左边第一个（一般是好友） 
+	O_F_LIST_1 = RuleOcr(roi=(331,81,105,68), area=(331,81,105,68), mode="Single", method="Default", keyword="", name="f_list_1")
+	# Ocr-description 
+	O_F_LIST_2 = RuleOcr(roi=(444,81,106,67), area=(444,81,106,67), mode="Single", method="Default", keyword="", name="f_list_2")
+	# Ocr-description 
+	O_F_LIST_3 = RuleOcr(roi=(557,84,112,59), area=(557,84,112,59), mode="Single", method="Default", keyword="", name="f_list_3")
+	# Ocr-description 
+	O_F_LIST_4 = RuleOcr(roi=(675,81,107,65), area=(675,81,107,65), mode="Single", method="Default", keyword="", name="f_list_4")
+	# 寻找左侧的好友 
+	O_FRIEND_NAME_1 = RuleOcr(roi=(434,185,189,345), area=(434,185,189,345), mode="Full", method="Default", keyword="", name="friend_name_1")
+	# 寻找右侧的好友 
+	O_FRIEND_NAME_2 = RuleOcr(roi=(729,184,196,346), area=(729,184,196,346), mode="Full", method="Default", keyword="", name="friend_name_2")
+	# Ocr-description 
+	O_ONLINE = RuleOcr(roi=(790,102,124,42), area=(790,102,124,42), mode="Single", method="Default", keyword="", name="online")
+	# 好友 
+	O_F_LIST1_1 = RuleOcr(roi=(356,83,101,62), area=(356,83,101,62), mode="Single", method="Default", keyword="", name="f_list1_1")
+	#  
+	O_F_LIST1_2 = RuleOcr(roi=(473,88,100,54), area=(473,88,100,54), mode="Single", method="Default", keyword="", name="f_list1_2")
+	#  
+	O_F_LIST1_3 = RuleOcr(roi=(587,89,100,54), area=(587,89,100,54), mode="Single", method="Default", keyword="", name="f_list1_3")
+
+
+	# Image Rule Assets
+	# description 
+	I_GI_EMOJI_1 = RuleImage(roi_front=(27,526,55,51), roi_back=(27,526,55,51), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_emoji_1.png")
+	# description 
+	I_GI_EMOJI_2 = RuleImage(roi_front=(27,622,55,51), roi_back=(27,622,55,51), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_emoji_1.png")
+	# 判断是不是在庭院界面 
+	I_GI_HOME = RuleImage(roi_front=(361,34,34,46), roi_back=(361,34,34,46), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_home.png")
+	# 判断是不是在探索界面 
+	I_GI_EXPLORE = RuleImage(roi_front=(1138,119,41,48), roi_back=(1138,119,41,48), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_explore.png")
+
+
 	# Image Rule Assets
 	# 中间的邀请图片 
 	I_ADD_1 = RuleImage(roi_front=(596,241,114,51), roi_back=(569,196,186,161), threshold=0.9, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_add_1.png")
@@ -50,21 +88,21 @@ class GeneralInviteAssets:
 	# 判断是否点中好友了 
 	I_SELECTED = RuleImage(roi_front=(895,373,33,32), roi_back=(347,174,589,369), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_selected.png")
 	# 用来判断当前的列表是哪儿的 
-	I_FLAG_1_ON = RuleImage(roi_front=(355,131,43,15), roi_back=(354,128,62,19), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_1_on.png")
+	I_FLAG_1_ON = RuleImage(roi_front=(360,132,43,15), roi_back=(359,131,45,16), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_1_on.png")
 	# description 
 	I_FLAG_1_OFF = RuleImage(roi_front=(353,128,58,20), roi_back=(353,126,58,22), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_1_off.png")
 	# description 
-	I_FLAG_2_ON = RuleImage(roi_front=(472,82,32,11), roi_back=(454,74,56,26), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_2_on.png")
+	I_FLAG_2_ON = RuleImage(roi_front=(472,82,32,11), roi_back=(459,74,56,26), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_2_on.png")
 	# description 
 	I_FLAG_2_OFF = RuleImage(roi_front=(469,131,58,17), roi_back=(469,127,58,21), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_2_off.png")
 	# description 
 	I_FLAG_3_ON = RuleImage(roi_front=(588,131,48,17), roi_back=(588,126,48,22), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_3_on.png")
 	# description 
-	I_FLAG_3_OFF = RuleImage(roi_front=(590,129,41,19), roi_back=(590,126,41,22), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_3_off.png")
+	I_FLAG_3_OFF = RuleImage(roi_front=(588,126,41,19), roi_back=(590,126,41,22), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_3_off.png")
 	# description 
 	I_FLAG_4_ON = RuleImage(roi_front=(713,128,34,21), roi_back=(713,128,34,21), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_4_on.png")
 	# description 
-	I_FLAG_4_OFF = RuleImage(roi_front=(703,128,53,21), roi_back=(703,128,53,21), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_4_off.png")
+	I_FLAG_4_OFF = RuleImage(roi_front=(700,128,53,21), roi_back=(703,128,53,21), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag_4_off.png")
 	# 永生之海添加好友 
 	I_ADD_SEA = RuleImage(roi_front=(836,231,100,100), roi_back=(836,231,100,100), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_add_sea.png")
 	# 队员不接受邀请 
@@ -97,37 +135,17 @@ class GeneralInviteAssets:
 	I_I_ACCEPT_JY = RuleImage(roi_front=(248,258,46,25), roi_back=(231,205,75,326), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_i_accept_jy.png")
 	# 师徒邀请图标 
 	I_I_ACCEPT_APPRENTICE = RuleImage(roi_front=(115,229,55,45), roi_back=(107,209,69,296), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_i_accept_apprentice.png")
-
-
-	# Image Rule Assets
-	# description 
-	I_GI_EMOJI_1 = RuleImage(roi_front=(27,526,55,51), roi_back=(27,526,55,51), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_emoji_1.png")
-	# description 
-	I_GI_EMOJI_2 = RuleImage(roi_front=(27,622,55,51), roi_back=(27,622,55,51), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_emoji_1.png")
-	# 判断是不是在庭院界面 
-	I_GI_HOME = RuleImage(roi_front=(361,34,34,46), roi_back=(361,34,34,46), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_home.png")
-	# 判断是不是在探索界面 
-	I_GI_EXPLORE = RuleImage(roi_front=(1138,119,41,48), roi_back=(1138,119,41,48), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_gi_explore.png")
-
-
-	# Ocr Rule Assets
-	# Ocr-description 
-	O_TIME_1 = RuleOcr(roi=(541,12,96,33), area=(541,12,96,33), mode="Single", method="Default", keyword="", name="time_1")
-	# 永生之海判断时间 
-	O_TIME_2 = RuleOcr(roi=(538,70,100,34), area=(538,70,100,34), mode="Single", method="Default", keyword="", name="time_2")
-	# 上方好友列表的左边第一个（一般是好友） 
-	O_F_LIST_1 = RuleOcr(roi=(346,94,98,41), area=(346,94,98,41), mode="Single", method="Default", keyword="", name="f_list_1")
-	# Ocr-description 
-	O_F_LIST_2 = RuleOcr(roi=(463,94,97,43), area=(463,94,97,43), mode="Single", method="Default", keyword="", name="f_list_2")
-	# Ocr-description 
-	O_F_LIST_3 = RuleOcr(roi=(580,87,91,51), area=(580,87,91,51), mode="Single", method="Default", keyword="", name="f_list_3")
-	# Ocr-description 
-	O_F_LIST_4 = RuleOcr(roi=(688,91,74,45), area=(688,91,74,45), mode="Single", method="Default", keyword="", name="f_list_4")
-	# 寻找左侧的好友 
-	O_FRIEND_NAME_1 = RuleOcr(roi=(434,185,189,345), area=(434,185,189,345), mode="Full", method="Default", keyword="", name="friend_name_1")
-	# 寻找右侧的好友 
-	O_FRIEND_NAME_2 = RuleOcr(roi=(729,184,196,346), area=(729,184,196,346), mode="Full", method="Default", keyword="", name="friend_name_2")
-	# Ocr-description 
-	O_ONLINE = RuleOcr(roi=(790,102,124,42), area=(0,0,100,100), mode="Single", method="Default", keyword="", name="online")
+	#  
+	I_FLAG1_1_ON = RuleImage(roi_front=(380,131,43,15), roi_back=(380,131,43,15), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag1_1_on.png")
+	#  
+	I_FLAG1_1_OFF = RuleImage(roi_front=(380,131,43,15), roi_back=(380,131,43,15), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag1_1_off.png")
+	#  
+	I_FLAG1_2_ON = RuleImage(roi_front=(502,133,40,14), roi_back=(502,133,40,14), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag1_2_on.png")
+	#  
+	I_FLAG1_2_OFF = RuleImage(roi_front=(501,133,43,15), roi_back=(501,133,43,15), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag1_2_off.png")
+	#  
+	I_FLAG1_3_ON = RuleImage(roi_front=(614,133,43,15), roi_back=(614,133,43,15), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag1_3_on.png")
+	#  
+	I_FLAG1_3_OFF = RuleImage(roi_front=(614,132,43,15), roi_back=(614,132,43,15), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralInvite/gi/gi_flag1_3_off.png")
 
 

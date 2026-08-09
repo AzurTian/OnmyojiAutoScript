@@ -19,8 +19,8 @@
   },
   {
     "itemName": "f_list_1",
-    "roiFront": "346,94,98,41",
-    "roiBack": "346,94,98,41",
+    "roiFront": "331,81,105,68",
+    "roiBack": "331,81,105,68",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -28,8 +28,8 @@
   },
   {
     "itemName": "f_list_2",
-    "roiFront": "463,94,97,43",
-    "roiBack": "463,94,97,43",
+    "roiFront": "444,81,106,67",
+    "roiBack": "444,81,106,67",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -37,8 +37,8 @@
   },
   {
     "itemName": "f_list_3",
-    "roiFront": "580,87,91,51",
-    "roiBack": "580,87,91,51",
+    "roiFront": "557,84,112,59",
+    "roiBack": "557,84,112,59",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -46,8 +46,8 @@
   },
   {
     "itemName": "f_list_4",
-    "roiFront": "688,91,74,45",
-    "roiBack": "688,91,74,45",
+    "roiFront": "675,81,107,65",
+    "roiBack": "675,81,107,65",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
@@ -74,10 +74,37 @@
   {
     "itemName": "online",
     "roiFront": "790,102,124,42",
-    "roiBack": "0,0,100,100",
+    "roiBack": "790,102,124,42",
     "mode": "Single",
     "method": "Default",
     "keyword": "",
     "description": "Ocr-description"
+  },
+  {
+    "itemName": "f_list1_1",
+    "roiFront": "356,83,101,62",
+    "roiBack": "356,83,101,62",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "好友"
+  },
+  {
+    "itemName": "f_list1_2",
+    "roiFront": "473,88,100,54",
+    "roiBack": "473,88,100,54",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "f_list1_3",
+    "roiFront": "587,89,100,54",
+    "roiBack": "587,89,100,54",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
   }
 ]

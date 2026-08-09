@@ -328,7 +328,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
 
     @cached_property
     def friend_class(self) -> list[str]:
-        return ['好友', '最近', '跨区', '寮友', '蔡友', '路区', '察友', '区']
+        return ['好友', '最近', '跨区', '寮友']
 
     @staticmethod
     def _normalize_friend_name_text(text: str) -> str:
@@ -459,49 +459,62 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
                 if clicked:
                     no_click_timeout.reset()
 
-    @staticmethod
-    def _normalize_friend_class_name(friend_class: str) -> str:
-        """
-        归一化好友分类文字，消除 OCR 近形字干扰。
-        :param friend_class: OCR 识别到的分类文本
-        :return: 归一化后的分类文本
-        """
-        mapping = {'蔡友': '寮友', '路区': '跨区', '察友': '寮友', '区': '跨区'}
-        return mapping.get(friend_class, friend_class)
-
     def _read_friend_classes(self) -> list[str]:
         """
         识别当前可用的好友分类页签。
         :return: 分类列表，顺序与页签顺序一致
         """
+
         raw_list = [
-            self.O_F_LIST_1.ocr(self.device.image).replace(' ', '').replace('、', ''),
-            self.O_F_LIST_2.ocr(self.device.image).replace(' ', '').replace('、', ''),
-            self.O_F_LIST_3.ocr(self.device.image).replace(' ', '').replace('、', ''),
-            self.O_F_LIST_4.ocr(self.device.image).replace(' ', '').replace('、', '')
+            self.O_F_LIST_1.ocr(self.device.image),
+            self.O_F_LIST_2.ocr(self.device.image),
+            self.O_F_LIST_3.ocr(self.device.image),
+            self.O_F_LIST_4.ocr(self.device.image)
         ]
         friend_class = []
         for item in raw_list:
-            if item is not None and item != '' and item in self.friend_class:
-                friend_class.append(self._normalize_friend_class_name(item))
+            if item in ['好友', '最近', '跨区', '寮友']:
+                friend_class.append(item)
+        if len(friend_class) == 4:
+            logger.info(f'Friend class: {friend_class}')
+            return friend_class
+        raw_list = [
+            self.O_F_LIST1_1.ocr(self.device.image),
+            self.O_F_LIST1_2.ocr(self.device.image),
+            self.O_F_LIST1_3.ocr(self.device.image)
+        ]
+        friend_class = []
+        for item in raw_list:
+            if item in ['好友', '最近', '跨区', '寮友']:
+                friend_class.append(item)
         logger.info(f'Friend class: {friend_class}')
         return friend_class
 
-    def _switch_friend_class(self, index: int) -> None:
+    def _switch_friend_class(self, index: int, friend_class_size: int) -> None:
         """
         切换到指定索引的好友分类标签。
         :param index: 分类索引，0~3
+        :param friend_class_size: 好友分类数量
         :return:
         """
-        match index:
-            case 0:
-                self.ui_click(self.I_FLAG_1_OFF, self.I_FLAG_1_ON, interval=1.2)
-            case 1:
-                self.ui_click(self.I_FLAG_2_OFF, self.I_FLAG_2_ON, interval=1.2)
-            case 2:
-                self.ui_click(self.I_FLAG_3_OFF, self.I_FLAG_3_ON, interval=1.2)
-            case 3:
-                self.ui_click(self.I_FLAG_4_OFF, self.I_FLAG_4_ON, interval=1.2)
+        if friend_class_size == 4:
+            match index:
+                case 0:
+                    self.ui_click(self.I_FLAG_1_OFF, self.I_FLAG_1_ON, interval=1.2)
+                case 1:
+                    self.ui_click(self.I_FLAG_2_OFF, self.I_FLAG_2_ON, interval=1.2)
+                case 2:
+                    self.ui_click(self.I_FLAG_3_OFF, self.I_FLAG_3_ON, interval=1.2)
+                case 3:
+                    self.ui_click(self.I_FLAG_4_OFF, self.I_FLAG_4_ON, interval=1.2)
+        else :
+            match index:
+                case 0:
+                    self.ui_click(self.I_FLAG1_1_OFF, self.I_FLAG1_1_ON, interval=1.2)
+                case 1:
+                    self.ui_click(self.I_FLAG1_2_OFF, self.I_FLAG1_2_ON, interval=1.2)
+                case 2:
+                    self.ui_click(self.I_FLAG1_3_OFF, self.I_FLAG1_3_ON, interval=1.2)
 
     def _select_current_page_friends(self, friend_list: list[str], selected_set: set[str]) -> None:
         """
@@ -527,7 +540,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
             logger.warning('No recent friend')
             return False
         recent_index = friend_class.index('最近')
-        self._switch_friend_class(recent_index)
+        self._switch_friend_class(recent_index, len(friend_class))
         sleep(0.5)
         logger.info('Now find friend in ”最近“')
         self._select_current_page_friends(friend_list, selected_set)
@@ -544,7 +557,7 @@ class GeneralInvite(BaseTask, GeneralInviteAssets):
         for index in range(len(friend_class)):
             if len(selected_set) == len(friend_list):
                 break
-            self._switch_friend_class(index)
+            self._switch_friend_class(index, len(friend_class))
             sleep(0.5)
             logger.info(f'Now find friend in {friend_class[index]}')
             self._select_current_page_friends(friend_list, selected_set)
