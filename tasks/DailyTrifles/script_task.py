@@ -7,7 +7,7 @@ from time import sleep
 import difflib
 from datetime import time, datetime, timedelta
 from module.atom.image import RuleImage
-from ppocronnx.predict_system import BoxedResult
+from module.ocr.paddleocronnx import BoxedResult
 
 from tasks.Component.config_base import Time
 from tasks.DailyTrifles.page import page_store_gift_room, page_friends_luck, page_guild_wish

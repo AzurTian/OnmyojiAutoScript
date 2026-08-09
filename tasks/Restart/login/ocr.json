@@ -27,6 +27,15 @@
     "description": "点击屏幕跳过"
   },
   {
+    "itemName": "login_redroid_skip",
+    "roiFront": "1110,35,100,45",
+    "roiBack": "1135,40,70,35",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "跳过",
+    "description": "Redroid登录界面-跳过"
+  },
+  {
     "itemName": "login_specific_serve",
     "roiFront": "110,120,350,600",
     "roiBack": "110,120,350,600",

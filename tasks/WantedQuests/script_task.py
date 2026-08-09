@@ -604,7 +604,7 @@ class ScriptTask(WQExplore, SecretScriptTask, WantedQuestsAssets):
             h = rec_h
             return [x, y, w, h]
 
-        res_list = self.O_WQ_TEXT_ALL.detect_and_ocr(img)
+        res_list = self.O_WQ_TEXT_ALL.detect_and_ocr(img, model="medium")
         import re
         reg_time = re.compile(r'^D?([01]?[0-9]|2[0-3]):([0-5]?[0-9]):?([0-5]?[0-9])?$')
         reg_fengyin = re.compile(r'.*[封|野]印.*')

@@ -41,7 +41,27 @@ class ScriptTask(BaseTask):
         logger.hr('App start')
         self.device.app_start()
         self.device.wait_app_start_ready()
-        LoginService(config=self.config, device=self.device).app_handle_login()
+        login_service = LoginService(config=self.config, device=self.device)
+        if self.is_redroid():
+            login_service.prepare_redroid_login()
+        login_service.app_handle_login()
+
+    def is_redroid(self) -> bool:
+        """判断当前设备是否为 Redroid，仅对 Redroid 执行特殊登录预处理。"""
+        try:
+            properties = (
+                self.device.adb_getprop('ro.hardware'),
+                self.device.adb_getprop('ro.product.name'),
+                self.device.adb_getprop('ro.product.model'),
+                self.device.adb_getprop('ro.build.fingerprint'),
+            )
+        except Exception as e:
+            logger.warning(f'Unable to detect Redroid environment: {e}')
+            return False
+
+        is_redroid = any('redroid' in value.lower() for value in properties)
+        logger.info(f'Redroid environment: {is_redroid}')
+        return is_redroid
 
     def app_restart(self):
         logger.hr('App restart')

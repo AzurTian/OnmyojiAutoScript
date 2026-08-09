@@ -17,6 +17,40 @@ class LoginService(BaseTask, RestartAssets, GameUiAssets):
         self.character = self.config.restart.login_character_config.character
         self.O_LOGIN_SPECIFIC_SERVE.keyword = self.character
 
+    def prepare_redroid_login(self) -> bool:
+        """触发 Redroid 视频页的跳过按钮并点击。"""
+        logger.hr('Redroid login preparation')
+        self.device.sleep(3)
+        timeout_timer = Timer(30).start()
+        center_click_timer = Timer(0).start()
+        click_count = 0
+
+        while not timeout_timer.reached():
+            self.screenshot()
+            if self.appear(self.I_LOGIN_8):
+                logger.info('Redroid login preparation: login screen already appeared')
+                return True
+
+            if center_click_timer.reached():
+                self.device.click(x=640, y=360, control_name='REDROID_LOGIN_CENTER')
+                click_count += 1
+                logger.info(f'Redroid login preparation: clicked screen center (attempt {click_count})')
+                center_click_timer = Timer(3).start()
+                self.screenshot()
+                if self.appear(self.I_LOGIN_8):
+                    logger.info('Redroid login preparation: login screen appeared after center click')
+                    return True
+
+            if self.ocr_appear(self.O_LOGIN_REDROID_SKIP):
+                self.click(self.O_LOGIN_REDROID_SKIP)
+                logger.info('Redroid login preparation: detected 跳过, clicked skip button')
+                return True
+
+            self.device.sleep(0.5)
+
+        logger.warning('Redroid login preparation: skip button not detected')
+        return False
+
     def _app_handle_login(self) -> bool:
         """
         最终是在庭院界面
