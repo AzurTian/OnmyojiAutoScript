@@ -18,7 +18,7 @@ import zerorpc
 
 from module.exception import ScriptError
 from module.logger import logger
-from module.ocr.ppocr import TextSystem
+from module.ocr.paddleocronnx import TextSystem
 
 # OCR 服务始终通过全新解释器启动，避免继承父进程中已初始化的 RPC 运行时状态。
 _OCR_SERVER_CONTEXT = multiprocessing.get_context("spawn")
@@ -112,6 +112,7 @@ class OcrRuntime:
             "requests_succeeded": 0,
             "requests_failed": 0,
         }
+        self._preload_models()
         logger.info(f"OCR runtime initialized (workers={self._scheduler.worker_count})")
 
     def ping(self) -> bool:
@@ -127,9 +128,9 @@ class OcrRuntime:
             "loaded_worker_count": loaded_worker_count,
         }
 
-    def ocr_single_line(self, image_bytes: bytes):
+    def ocr_single_line(self, image_bytes: bytes, model: Optional[str] = None):
         image = self._decode_image(image_bytes)
-        return self._run_request(self._ocr_single_line, image)
+        return self._run_request(self._ocr_single_line, image, model=model)
 
     def detect_and_ocr(
         self,
@@ -138,6 +139,7 @@ class OcrRuntime:
         unclip_ratio: Optional[float] = None,
         box_thresh: Optional[float] = None,
         vertical: bool = False,
+        model: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         image = self._decode_image(image_bytes)
         return self._run_request(
@@ -147,6 +149,7 @@ class OcrRuntime:
             unclip_ratio=unclip_ratio,
             box_thresh=box_thresh,
             vertical=vertical,
+            model=model,
         )
 
     def shutdown(self) -> bool:
@@ -194,9 +197,17 @@ class OcrRuntime:
             logger.info(f"OCR worker model loaded: {worker_name}")
         return model
 
-    def _ocr_single_line(self, image: np.ndarray):
-        model = self._get_model()
-        result, score = model.ocr_single_line(image)
+    def _preload_models(self) -> None:
+        try:
+            engine = self._get_model()
+            engine._get_ocr("medium")
+            logger.info("OCR medium model preloaded")
+        except Exception as e:
+            logger.warning(f"Preload medium model failed: {e}")
+
+    def _ocr_single_line(self, image: np.ndarray, model: Optional[str] = None):
+        engine = self._get_model()
+        result, score = engine.ocr_single_line(image, model=model)
         return result, float(score)
 
     def _detect_and_ocr(
@@ -206,22 +217,25 @@ class OcrRuntime:
         unclip_ratio: Optional[float] = None,
         box_thresh: Optional[float] = None,
         vertical: bool = False,
+        model: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        model = self._get_model()
+        engine = self._get_model()
         if vertical:
             results = self._detect_and_ocr_vertical(
-                model,
+                engine,
                 image,
                 drop_score=drop_score,
                 unclip_ratio=unclip_ratio,
                 box_thresh=box_thresh,
+                model_size=model,
             )
         else:
-            results = model.detect_and_ocr(
+            results = engine.detect_and_ocr(
                 image,
                 drop_score=drop_score,
                 unclip_ratio=unclip_ratio,
                 box_thresh=box_thresh,
+                model=model,
             )
         return [
             {"box": item.box.tolist(), "ocr_text": item.ocr_text, "score": float(item.score)}
@@ -235,6 +249,7 @@ class OcrRuntime:
         drop_score: float = 0.5,
         unclip_ratio: Optional[float] = None,
         box_thresh: Optional[float] = None,
+        model_size: Optional[str] = None,
     ) -> list[Any]:
         text_recognizer = model.text_recognizer
 
@@ -249,6 +264,7 @@ class OcrRuntime:
                 drop_score=drop_score,
                 unclip_ratio=unclip_ratio,
                 box_thresh=box_thresh,
+                model=model_size,
             )
         finally:
             model.text_recognizer = text_recognizer
@@ -293,7 +309,7 @@ def ensure_ocr_server_started() -> bool:
     )
     _OCR_SERVER_PROCESS.start()
     logger.info(f"Start OCR server on {host}:{port}")
-    for _ in range(50):
+    for _ in range(600):
         if _is_port_in_use("127.0.0.1", port):
             return True
         time.sleep(0.1)
@@ -372,9 +388,9 @@ class ModelProxy:
     def get_server_info(self) -> dict[str, Any]:
         return self.client.get_server_info()
 
-    def ocr_single_line(self, image: np.ndarray):
+    def ocr_single_line(self, image: np.ndarray, model: Optional[str] = None):
         payload = pickle.dumps(image, protocol=4)
-        return self.client.ocr_single_line(payload)
+        return self.client.ocr_single_line(payload, model)
 
     def detect_and_ocr(
         self,
@@ -383,10 +399,11 @@ class ModelProxy:
         unclip_ratio: Optional[float] = None,
         box_thresh: Optional[float] = None,
         vertical: bool = False,
+        model: Optional[str] = None,
     ):
         payload = pickle.dumps(image, protocol=4)
-        results = self.client.detect_and_ocr(payload, drop_score, unclip_ratio, box_thresh, vertical)
-        from ppocronnx.predict_system import BoxedResult
+        results = self.client.detect_and_ocr(payload, drop_score, unclip_ratio, box_thresh, vertical, model)
+        from module.ocr.paddleocronnx import BoxedResult
         return [
             BoxedResult(np.array(item["box"]), None, item["ocr_text"], item["score"])
             for item in results
