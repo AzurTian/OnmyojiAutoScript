@@ -402,11 +402,9 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
         while 1:
             from tasks.RichMan.assets import RichManAssets
             self.screenshot()
-            if self.appear(RichManAssets.I_SIDE_CHECK_SPECIAL):
+            if self.appear(RichManAssets.I_SIDE_CHECK_SPECIAL) and self.appear(self.I_SPECIAL_SUSHI):
                 break
             if self.appear_then_click(RichManAssets.I_MALL_SUNDRY, interval=1):
-                continue
-            if self.appear_then_click(RichManAssets.I_SIDE_SURE_SPECIAL, interval=1):
                 continue
 
         def detect_buy_count(base_element) -> (int, int):
@@ -415,9 +413,9 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             MAX_COUNT = 9999
             roi = copy.deepcopy(base_element.roi_front)
             roi[0] = roi[0] + roi[2]
-            roi[1] = roi[1] + roi[3] - 30
-            roi[2] = 60
-            roi[3] = 30
+            roi[1] = roi[1] + roi[3] - 45
+            roi[2] = 75
+            roi[3] = 45
             self.O_STORE_SUSHI_PRICE.roi = roi
             _price = self.O_STORE_SUSHI_PRICE.detect_text(self.device.image)
             # 保守策略，避免OCR错误购买
@@ -438,18 +436,20 @@ class ScriptTask(GameUi, Summon, DailyTriflesAssets):
             # count, price = detect_buy_count(roi)
             # if count >= self.config.model.daily_trifles.trifles_config.buy_sushi_count:
             #     break
+            logger.info(f"购买次数为: {self.config.daily_trifles.trifles_config.buy_sushi_count} 次")
             if self.appear(self.I_STORE_COST_TYPE_JADE):
                 count, price = detect_buy_count(self.I_STORE_COST_TYPE_JADE)
                 if count >= self.config.daily_trifles.trifles_config.buy_sushi_count:
                     break
-                self.ui_click_until_disappear(self.I_STORE_COST_TYPE_JADE, interval=2)
-                logger.info(f"Buy Sushi With {price} Jade")
-                continue
+                if self.ui_get_reward(self.I_STORE_COST_TYPE_JADE, click_interval=2.5):
+                    logger.info(f"Buy Sushi With {price} Jade")
+                    continue
 
             if self.appear(self.I_SPECIAL_SUSHI):
                 # 此处确定当前购买体力所需勾玉数量的位置,用于后续识别
                 count, price = detect_buy_count(self.I_SPECIAL_SUSHI)
                 if count >= self.config.daily_trifles.trifles_config.buy_sushi_count:
+                    logger.info(f"已经购买 {count} 次, 退出购买")
                     break
                 self.ui_click(self.I_SPECIAL_SUSHI, stop=self.I_STORE_COST_TYPE_JADE, interval=2)
                 continue
