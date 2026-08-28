@@ -24,6 +24,7 @@ from module.logger import logger
 from tasks.ActivityShikigami.assets import ActivityShikigamiAssets
 from tasks.GameUi.action import ActionSequence, ConditionalAction
 from tasks.GameUi.assets import GameUiAssets
+from tasks.GameUi.chess_battle import ChessBattleNavigationMixin
 from tasks.GameUi.common import infer_tasks_category_from_parts, infer_tasks_category_from_path
 from tasks.GameUi.matcher import collect_rule_images
 from tasks.GameUi.page_definition import Page, Transition, sort_pages_by_priority
@@ -33,7 +34,7 @@ from tasks.SixRealms.assets import SixRealmsAssets
 from tasks.base_task import BaseTask
 
 
-class GameUi(BaseTask, GameUiAssets):
+class GameUi(ChessBattleNavigationMixin, BaseTask, GameUiAssets):
     """页面识别、导航与未知页恢复的统一入口。"""
 
     REPEATED_TRANSITION_FAILURE_THRESHOLD = 3
@@ -514,6 +515,32 @@ class GameUi(BaseTask, GameUiAssets):
             if self._execute_action(transition.action, interval=0.8, skip_first_screenshot=False):
                 action_done = True
                 break
+
+        # 町中入口图标可能因动画或皮肤变化无法通过模板识别。只有在
+        # 重新确认当前页仍为 town，且目标动作具有固定图标区域时，
+        # 才机械点击一次 roi_front 中心作为保底。
+        if (
+            not action_done
+            and source.key == "page_town"
+            and isinstance(transition.action, (RuleImage, RuleGif))
+            and self.confirm_page(source, skip_first_screenshot=False)
+        ):
+            x, y, width, height = transition.action.roi_front
+            click_x = x + width // 2
+            click_y = y + height // 2
+            logger.warning(
+                "Town target was not recognized; use one fixed-position "
+                f"fallback click: action={self._action_name(transition.action)}, "
+                f"position=({click_x}, {click_y})"
+            )
+            self.device.click(
+                x=click_x,
+                y=click_y,
+                control_name=(
+                    f"TOWN_FALLBACK_{self._action_name(transition.action)}"
+                ),
+            )
+            action_done = True
 
         if not action_done:
             self._run_hooks(source.on_leave_failure)

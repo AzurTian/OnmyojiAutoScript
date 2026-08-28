@@ -1,0 +1,83 @@
+[
+  {
+    "itemName": "check_chess_battle",
+    "imageName": "page_check_chess_battle.png",
+    "roiFront": "270,19,37,32",
+    "roiBack": "264,12,47,44",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局局内页面标志"
+  },
+  {
+    "itemName": "chess_exit",
+    "imageName": "page_chess_exit.png",
+    "roiFront": "12,14,48,38",
+    "roiBack": "12,14,48,38",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局主动退出"
+  },
+  {
+    "itemName": "chess_exit_confirm",
+    "imageName": "page_chess_exit_confirm.png",
+    "roiFront": "716,409,88,45",
+    "roiBack": "716,409,88,45",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局确认退出"
+  },
+  {
+    "itemName": "chess_exit_cancel",
+    "imageName": "page_chess_exit_cancel.png",
+    "roiFront": "478,409,88,45",
+    "roiBack": "478,409,88,45",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局退出确认弹窗"
+  },
+  {
+    "itemName": "chess_exit_to_lobby",
+    "imageName": "page_chess_exit_to_lobby.png",
+    "roiFront": "384,591,172,47",
+    "roiBack": "340,570,270,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局正常结算返回大厅"
+  },
+  {
+    "itemName": "chess_exit_to_lobby_2",
+    "imageName": "page_chess_exit_to_lobby_2.png",
+    "roiFront": "580,593,123,43",
+    "roiBack": "580,593,123,43",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局主动退出后返回大厅"
+  },
+  {
+    "itemName": "chess_share",
+    "imageName": "page_chess_share.png",
+    "roiFront": "1138,560,107,113",
+    "roiBack": "1138,560,107,113",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局分享页"
+  },
+  {
+    "itemName": "check_chess_rank",
+    "imageName": "page_check_chess_rank.png",
+    "roiFront": "14,75,79,38",
+    "roiBack": "14,75,79,38",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局排名页"
+  },
+  {
+    "itemName": "chess_rank_goto_lobby",
+    "imageName": "page_chess_rank_goto_lobby.png",
+    "roiFront": "66,646,133,42",
+    "roiBack": "66,646,133,42",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局排名页返回大厅"
+  }
+]

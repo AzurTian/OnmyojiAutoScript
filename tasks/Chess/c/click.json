@@ -1,0 +1,86 @@
+[
+  {
+    "itemName": "shikigami_5",
+    "roiFront": "350,61,167,140",
+    "roiBack": "350,61,167,140",
+    "description": "商店式神5"
+  },
+  {
+    "itemName": "shikigami_4",
+    "roiFront": "537,61,167,140",
+    "roiBack": "537,61,167,140",
+    "description": "商店式神4"
+  },
+  {
+    "itemName": "shikigami_3",
+    "roiFront": "724,61,167,140",
+    "roiBack": "724,61,167,140",
+    "description": "商店式神3"
+  },
+  {
+    "itemName": "shikigami_2",
+    "roiFront": "911,61,167,140",
+    "roiBack": "911,61,167,140",
+    "description": "商店式神2"
+  },
+  {
+    "itemName": "shikigami_1",
+    "roiFront": "1098,61,167,140",
+    "roiBack": "1098,61,167,140",
+    "description": "商店式神1"
+  },
+  {
+    "itemName": "shikigami_store",
+    "roiFront": "344,55,925,241",
+    "roiBack": "344,55,925,241",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_1",
+    "roiFront": "320,205,90,130",
+    "roiBack": "320,205,90,130",
+    "description": "左侧符咒选项卡面"
+  },
+  {
+    "itemName": "grigri_option_2",
+    "roiFront": "598,205,90,130",
+    "roiBack": "598,205,90,130",
+    "description": "中间符咒选项卡面"
+  },
+  {
+    "itemName": "grigri_option_3",
+    "roiFront": "875,205,90,130",
+    "roiBack": "875,205,90,130",
+    "description": "右侧符咒选项卡面"
+  },
+  {
+    "itemName": "grigri_refresh_1",
+    "roiFront": "300,600,122,40",
+    "roiBack": "300,600,122,40",
+    "description": "左侧符咒刷新"
+  },
+  {
+    "itemName": "grigri_refresh_2",
+    "roiFront": "587,596,122,40",
+    "roiBack": "587,596,122,40",
+    "description": "中间符咒刷新"
+  },
+  {
+    "itemName": "grigri_refresh_3",
+    "roiFront": "862,599,122,40",
+    "roiBack": "862,599,122,40",
+    "description": "右侧符咒刷新"
+  },
+  {
+    "itemName": "click_close_specifics_area",
+    "roiFront": "193,95,91,430",
+    "roiBack": "193,95,91,430",
+    "description": "关闭式神详情界面"
+  },
+  {
+    "itemName": "cancel_waiting",
+    "roiFront": "584,597,111,45",
+    "roiBack": "579,592,121,55",
+    "description": "取消匹配等待"
+  }
+]

@@ -38,6 +38,12 @@ class NamedQuickLoadoutConfig(QuickLoadoutConfig):
     """支持按任务关卡名称选择不同预设的一键配置。"""
 
     # 是否按任务提供的关卡名称OCR选择不同预设
-    custom_preset_enable: bool = Field(default=False)
+    custom_preset_enable: bool = Field(
+        default=False,
+        description='quick_loadout_custom_preset_enable_help',
+    )
     # 格式：关卡名:(预设组,预设); ALL匹配未特别指定的关卡
-    custom_preset: str = Field(default='ALL:(1,1);')
+    custom_preset: str = Field(
+        default='ALL:(1,1);',
+        description='quick_loadout_custom_preset_help',
+    )

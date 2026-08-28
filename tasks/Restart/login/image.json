@@ -160,5 +160,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "取消继续战斗"
+  },
+  {
+    "itemName": "return_chess_cancel",
+    "imageName": "login_return_chess_cancel.png",
+    "roiFront": "432,400,181,69",
+    "roiBack": "400,370,240,120",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "取消返回百鬼棋局，进入棋局结算流程"
   }
 ]

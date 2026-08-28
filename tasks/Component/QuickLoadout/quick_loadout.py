@@ -248,21 +248,53 @@ class QuickLoadout(BaseTask, SwitchSoulAssets):
         return False
 
     def _rewind_list(self, ocr: RuleOcr, swipe: RuleSwipe, max_swipes: int) -> None:
-        previous = None
+        previous_text = None
+        previous_visual = None
         stable_count = 0
-        for _ in range(max_swipes):
+        for attempt in range(max_swipes):
             self.screenshot()
             results = ocr.detect_and_ocr(self.device.image, logDisplay=False)
-            current = tuple(result.ocr_text for result in results)
-            if current and current == previous:
+            normalized_results = []
+            for result in results:
+                normalized = self._normalize_name(result.ocr_text)
+                if normalized:
+                    normalized_results.append(normalized)
+            current_text = tuple(sorted(normalized_results))
+
+            x, y, width, height = ocr.roi
+            current_visual = cv2.cvtColor(
+                self.device.image[y:y + height, x:x + width],
+                cv2.COLOR_RGB2GRAY,
+            )
+            current_visual = cv2.resize(current_visual, (64, 64))
+
+            text_stable = bool(
+                current_text
+                and previous_text is not None
+                and current_text == previous_text
+            )
+            visual_stable = bool(
+                previous_visual is not None
+                and cv2.absdiff(current_visual, previous_visual).mean() < 2.5
+            )
+            if text_stable or visual_stable:
                 stable_count += 1
                 if stable_count >= 2:
+                    logger.info(f'Quick loadout list reached top after {attempt} swipes')
                     return
             else:
                 stable_count = 0
-            previous = current
+
+            previous_text = current_text
+            previous_visual = current_visual
             self.swipe(swipe)
+            # Rewinding is an intentional bounded repeated action. Keep other
+            # click history intact while preventing the global loop guard from
+            # treating these swipes as an uncontrolled click loop.
+            self.device.click_record_remove(swipe.name)
             sleep(0.45)
+
+        logger.warning(f'Quick loadout rewind reached safety limit: {max_swipes}')
 
     def _find_name_y(self, ocr: RuleOcr, target: str, results=None):
         best_y = None

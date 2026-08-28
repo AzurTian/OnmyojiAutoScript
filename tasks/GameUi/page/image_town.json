@@ -133,5 +133,41 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "逢魔之时新页面标志"
+  },
+  {
+    "itemName": "town_goto_entertainment",
+    "imageName": "page_town_goto_entertainment.png",
+    "roiFront": "201,144,35,26",
+    "roiBack": "201,144,35,26",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "町中前往娱乐区域"
+  },
+  {
+    "itemName": "check_entertainment",
+    "imageName": "page_check_entertainment.png",
+    "roiFront": "151,18,102,40",
+    "roiBack": "151,18,102,40",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "娱乐区域页面标志"
+  },
+  {
+    "itemName": "entertainment_goto_chess",
+    "imageName": "page_entertainment_goto_chess.png",
+    "roiFront": "304,175,41,127",
+    "roiBack": "304,175,41,127",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "娱乐区域前往百鬼棋局"
+  },
+  {
+    "itemName": "check_chess",
+    "imageName": "page_check_chess.png",
+    "roiFront": "1159,592,66,70",
+    "roiBack": "1159,592,66,70",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "百鬼棋局大厅标志"
   }
 ]

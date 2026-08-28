@@ -1,0 +1,272 @@
+[
+  {
+    "itemName": "shikigami_gold_5",
+    "roiFront": "481,266,38,24",
+    "roiBack": "481,266,38,24",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称5"
+  },
+  {
+    "itemName": "shikigami_gold_4",
+    "roiFront": "668,266,38,24",
+    "roiBack": "668,266,38,24",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称4"
+  },
+  {
+    "itemName": "shikigami_gold_3",
+    "roiFront": "855,266,38,24",
+    "roiBack": "855,266,38,24",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称3"
+  },
+  {
+    "itemName": "shikigami_gold_2",
+    "roiFront": "1042,266,38,24",
+    "roiBack": "1042,266,38,24",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称2"
+  },
+  {
+    "itemName": "shikigami_gold_1",
+    "roiFront": "1229,266,38,24",
+    "roiBack": "1229,266,38,24",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "商店式神名称1"
+  },
+  {
+    "itemName": "level",
+    "roiFront": "128,678,53,34",
+    "roiBack": "128,678,53,34",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前等级"
+  },
+  {
+    "itemName": "round",
+    "roiFront": "469,0,67,30",
+    "roiBack": "469,0,67,30",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前回目"
+  },
+  {
+    "itemName": "gold",
+    "roiFront": "1198,640,43,32",
+    "roiBack": "1198,640,43,32",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前金币"
+  },
+  {
+    "itemName": "chess_mode",
+    "roiFront": "741,0,32,28",
+    "roiBack": "741,0,32,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "当前环节"
+  },
+  {
+    "itemName": "round_2",
+    "roiFront": "507,0,62,30",
+    "roiBack": "507,0,62,30",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "chess_mode_2",
+    "roiFront": "706,2,32,28",
+    "roiBack": "706,2,32,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "badge_area",
+    "roiFront": "181,650,945,46",
+    "roiBack": "181,650,945,46",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "coin",
+    "roiFront": "141,659,87,25",
+    "roiBack": "141,659,87,25",
+    "mode": "DigitCounter",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "now_time",
+    "roiFront": "768,0,32,28",
+    "roiBack": "768,0,32,28",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_1",
+    "roiFront": "1120,165,94,94",
+    "roiBack": "1120,165,94,94",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_2",
+    "roiFront": "933,165,94,94",
+    "roiBack": "933,165,94,94",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_3",
+    "roiFront": "746,165,94,94",
+    "roiBack": "746,165,94,94",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_4",
+    "roiFront": "559,165,94,94",
+    "roiBack": "559,165,94,94",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_skill_5",
+    "roiFront": "372,165,94,94",
+    "roiBack": "372,165,94,94",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "rank",
+    "roiFront": "443,193,417,204",
+    "roiBack": "443,193,417,204",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_specifics_name",
+    "roiFront": "997,101,193,36",
+    "roiBack": "997,101,193,36",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": "式神详情页名称"
+  },
+  {
+    "itemName": "shikigami_name_1",
+    "roiFront": "1097,261,117,33",
+    "roiBack": "1097,261,117,33",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_name_2",
+    "roiFront": "910,261,117,33",
+    "roiBack": "910,261,117,33",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_name_3",
+    "roiFront": "723,261,117,33",
+    "roiBack": "723,261,117,33",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_name_4",
+    "roiFront": "536,261,117,33",
+    "roiBack": "536,261,117,33",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "shikigami_name_5",
+    "roiFront": "349,261,117,33",
+    "roiBack": "349,261,117,33",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_name_1",
+    "roiFront": "269,370,191,45",
+    "roiBack": "269,370,191,45",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_name_2",
+    "roiFront": "548,370,191,45",
+    "roiBack": "548,370,191,45",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "grigri_option_name_3",
+    "roiFront": "825,370,191,45",
+    "roiBack": "825,370,191,45",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  },
+  {
+    "itemName": "free_refresh_count",
+    "roiFront": "1183,392,38,24",
+    "roiBack": "1183,392,38,24",
+    "mode": "Digit",
+    "method": "Default",
+    "keyword": "",
+    "description": ""
+  }
+]
