@@ -23,6 +23,8 @@ from tasks.GameUi.page_definition import Page
 from tasks.KekkaiUtilize.assets import KekkaiUtilizeAssets
 from tasks.Restart.assets import RestartAssets
 from tasks.RyouToppa.assets import RyouToppaAssets
+from tasks.AssistBattle.assets import AssistBattleAssets
+from module.logger import logger
 
 
 def random_click(
@@ -84,7 +86,20 @@ page_friends.add_enter_failure_hooks(conditional_action(condition=GameUiAssets.I
                                                         action=RestartAssets.C_LOGIN_SCROLL_CLOSE_AREA))
 page_friends.connect(page_main, GlobalGameAssets.I_UI_BACK_RED, key="page_friends->page_main")
 page_friends.add_leave_failure_hooks(GlobalGameAssets.I_UI_BACK_RED)
-page_main.connect(page_friends, GameUiAssets.I_MAIN_GOTO_FRIENDS, key="page_main->page_friends")
+page_main.connect(
+    page_friends, GameUiAssets.I_MAIN_GOTO_FRIENDS, key="page_main->page_friends"
+)
+# 协战界面
+page_assist_battle = Page(GameUiAssets.I_CHECK_ASSIT_BATTLE, category="global")
+page_assist_battle.connect(
+    page_main, GlobalGameAssets.I_UI_BACK_RED, key="page_assist_battle->page_main"
+)
+page_assist_battle.add_leave_failure_hooks(GlobalGameAssets.I_UI_BACK_RED)
+page_friends.connect(
+    page_assist_battle,
+    AssistBattleAssets.I_FRIENDS_GOTO_ASSIST_BATTLE,
+    key="page_friends->page_assist_battle",
+)
 
 page_daily = Page(GameUiAssets.I_CHECK_DAILY, category="global")
 page_daily.add_enter_failure_hooks(

@@ -1,0 +1,20 @@
+[
+  {
+    "itemName": "normal_assist_count",
+    "roiFront": "875,160,66,34",
+    "roiBack": "875,160,66,34",
+    "mode": "DigitCounter",
+    "method": "Default",
+    "keyword": "",
+    "description": "普通副本协战次数"
+  },
+  {
+    "itemName": "realmraid_assit_count",
+    "roiFront": "1078,203,49,37",
+    "roiBack": "1078,203,49,37",
+    "mode": "DigitCounter",
+    "method": "Default",
+    "keyword": "",
+    "description": "结界突破协战次数"
+  }
+]

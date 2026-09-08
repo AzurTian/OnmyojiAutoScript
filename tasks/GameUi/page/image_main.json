@@ -250,5 +250,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "阴阳寮前往神社"
+  },
+  {
+    "itemName": "check_assit_battle",
+    "imageName": "page_check_assit_battle.png",
+    "roiFront": "116,650,49,48",
+    "roiBack": "116,650,49,48",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "协战页面标志"
   }
 ]

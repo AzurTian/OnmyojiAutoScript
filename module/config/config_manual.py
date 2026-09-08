@@ -2,6 +2,7 @@
 # @author runhey
 # github https://github.com/runhey
 
+
 class ConfigManual:
     """
     module.device
@@ -19,7 +20,7 @@ class ConfigManual:
         > Pets > TalismanPass > Delegation > Hyakkiyakou
         > Secret > WeeklyTrifles > MysteryShop > Duel 
         > TrueOrochi > RichMan
-        > MetaDemon > FrogBoss > FloatParade > Quiz > KittyShop > DyeTrials > MemoryScrolls > GuguArtStudio
+        > MetaDemon > FrogBoss > FloatParade > Quiz > KittyShop > DyeTrials > MemoryScrolls > GuguArtStudio > AssistBattle
         """
 
     DEVICE_OVER_HTTP = False

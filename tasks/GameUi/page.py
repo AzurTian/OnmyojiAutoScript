@@ -6,10 +6,16 @@ from __future__ import annotations
 内部实现已经拆分到多个独立文件中。
 """
 
-from tasks.GameUi.action import ActionSequence, ConditionalAction, conditional_action, sequence
+from tasks.GameUi.action import (
+    ActionSequence,
+    ConditionalAction,
+    conditional_action,
+    sequence,
+)
 from tasks.GameUi.default_pages import (
     page_act_list,
     page_area_boss,
+    page_assist_battle,
     page_awake_zones,
     page_battle,
     page_battle_prepare,
@@ -51,9 +57,19 @@ from tasks.GameUi.default_pages import (
     random_click,
     page_battle_team,
     page_battle_team_exit,
-    page_pet
+    page_pet,
 )
-from tasks.GameUi.matcher import AllMatcher, AnyMatcher, AtomMatcher, Matcher, NotMatcher, all_of, any_of, ensure_matcher, not_
+from tasks.GameUi.matcher import (
+    AllMatcher,
+    AnyMatcher,
+    AtomMatcher,
+    Matcher,
+    NotMatcher,
+    all_of,
+    any_of,
+    ensure_matcher,
+    not_,
+)
 from tasks.GameUi.page_definition import Page, Transition
 from tasks.GameUi.registry import PageRegistry
 
@@ -75,6 +91,7 @@ __all__ = [
     "not_",
     "page_act_list",
     "page_area_boss",
+    "page_assist_battle",
     "page_awake_zones",
     "page_battle",
     "page_battle_prepare",
@@ -117,5 +134,5 @@ __all__ = [
     "sequence",
     "page_battle_team",
     "page_battle_team_exit",
-    "page_pet"
+    "page_pet",
 ]
