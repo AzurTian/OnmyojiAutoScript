@@ -20,8 +20,8 @@
   {
     "itemName": "evozone_lock",
     "imageName": "o_evozone_lock.png",
-    "roiFront": "703,656,24,32",
-    "roiBack": "683,646,63,64",
+    "roiFront": "663,654,25,22",
+    "roiBack": "634,646,138,41",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"
@@ -29,8 +29,8 @@
   {
     "itemName": "evozone_unlock",
     "imageName": "o_evozone_unlock.png",
-    "roiFront": "704,658,21,27",
-    "roiBack": "680,643,67,67",
+    "roiFront": "663,654,25,22",
+    "roiBack": "634,646,138,41",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"

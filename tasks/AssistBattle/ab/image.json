@@ -3,7 +3,7 @@
     "itemName": "friends_goto_assist_battle",
     "imageName": "ab_friends_goto_assist_battle.png",
     "roiFront": "1205,539,40,72",
-    "roiBack": "1205,539,40,72",
+    "roiBack": "1185,507,75,147",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "好友界面前往协战界面"

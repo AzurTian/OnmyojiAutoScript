@@ -12,7 +12,7 @@ class AssistBattleAssets:
 
 	# Image Rule Assets
 	# 好友界面前往协战界面 
-	I_FRIENDS_GOTO_ASSIST_BATTLE = RuleImage(roi_front=(1205,539,40,72), roi_back=(1205,539,40,72), threshold=0.8, method="Template matching", file="./tasks/AssistBattle/ab/ab_friends_goto_assist_battle.png")
+	I_FRIENDS_GOTO_ASSIST_BATTLE = RuleImage(roi_front=(1205,539,40,72), roi_back=(1185,507,75,147), threshold=0.8, method="Template matching", file="./tasks/AssistBattle/ab/ab_friends_goto_assist_battle.png")
 
 
 	# Ocr Rule Assets

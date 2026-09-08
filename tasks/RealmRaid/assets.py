@@ -28,23 +28,23 @@ class RealmRaidAssets:
 	# 右上角红色的关闭 
 	I_BACK_RED = RuleImage(roi_front=(1178,101,57,64), roi_back=(1178,101,57,64), threshold=0.7, method="Template matching", file="./tasks/RealmRaid/res/res_back_red.png")
 	# 没有锁的状态图标 
-	I_UNLOCK = RuleImage(roi_front=(818,579,38,42), roi_back=(818,579,38,42), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_unlock.png")
+	I_REALM_UNLOCK = RuleImage(roi_front=(818,579,38,42), roi_back=(818,579,38,42), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_realm_unlock.png")
 	# 以锁的状态图片 
-	I_LOCK = RuleImage(roi_front=(818,579,36,41), roi_back=(818,579,36,41), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_lock.png")
+	I_REALM_LOCK = RuleImage(roi_front=(818,579,36,41), roi_back=(818,579,36,41), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_realm_lock.png")
 	# 刷新按钮 
 	I_FRESH = RuleImage(roi_front=(957,564,182,66), roi_back=(957,564,182,66), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_fresh.png")
 	# 点击的式神录 
 	I_SHIKIGAMI = RuleImage(roi_front=(1206,608,54,51), roi_back=(1206,608,54,51), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_shikigami.png")
 	# 进攻 
-	I_FIRE = RuleImage(roi_front=(982,494,136,63), roi_back=(140,129,1024,584), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_fire.png")
+	I_REALM_FIRE = RuleImage(roi_front=(984,495,137,64), roi_back=(139,129,1026,583), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_realm_fire.png")
 	# 打完个后出现的领取奖励 
 	I_SOUL_RAID = RuleImage(roi_front=(577,502,100,100), roi_back=(577,502,100,100), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_soul_raid.png")
 	# 刷新确认/再战确认 
 	I_FRESH_ENSURE = RuleImage(roi_front=(672,403,173,59), roi_back=(672,403,173,59), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_fresh_ensure.png")
 	# 没有锁图片，适配呱太入侵 
-	I_UNLOCK_2 = RuleImage(roi_front=(1002,643,30,41), roi_back=(1002,643,30,41), threshold=0.9, method="Template matching", file="./tasks/RealmRaid/res/res_unlock_2.png")
+	I_REALM_UNLOCK_2 = RuleImage(roi_front=(1002,643,30,41), roi_back=(1002,643,30,41), threshold=0.9, method="Template matching", file="./tasks/RealmRaid/res/res_realm_unlock_2.png")
 	# 以锁图片，适配呱太 
-	I_LOCK_2 = RuleImage(roi_front=(1002,645,34,38), roi_back=(1002,645,34,38), threshold=0.9, method="Template matching", file="./tasks/RealmRaid/res/res_lock_2.png")
+	I_REALM_LOCK_2 = RuleImage(roi_front=(1000,644,32,36), roi_back=(1000,644,32,36), threshold=0.9, method="Template matching", file="./tasks/RealmRaid/res/res_realm_lock_2.png")
 	# description 
 	I_MEDAL_5_FROG = RuleImage(roi_front=(903,479,201,49), roi_back=(189,182,967,376), threshold=0.8, method="Template matching", file="./tasks/RealmRaid/res/res_medal_5_frog.png")
 	# 3徽章新图2号 

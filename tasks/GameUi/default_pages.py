@@ -89,6 +89,7 @@ page_friends.add_leave_failure_hooks(GlobalGameAssets.I_UI_BACK_RED)
 page_main.connect(
     page_friends, GameUiAssets.I_MAIN_GOTO_FRIENDS, key="page_main->page_friends"
 )
+
 # 协战界面
 page_assist_battle = Page(GameUiAssets.I_CHECK_ASSIT_BATTLE, category="global")
 page_assist_battle.connect(
