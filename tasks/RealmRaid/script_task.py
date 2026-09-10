@@ -535,7 +535,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RealmRaidAssets):
         失败界面再次挑战
         :return: 是否再战成功
         """
-        self.wait_until_appear(self.I_REALM_FIRE_AGAIN)
+        self.wait_until_appear(self.I_FIRE_AGAIN)
         while True:
             self.screenshot()
             if self.appear(self.I_EXIT):
@@ -545,7 +545,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RealmRaidAssets):
                 continue
             if self.appear_then_click(self.I_FRESH_ENSURE, interval=2):
                 continue
-            if self.appear_then_click(self.I_REALM_FIRE_AGAIN, interval=2):
+            if self.appear_then_click(self.I_FIRE_AGAIN, interval=2):
                 continue
         return False
 
