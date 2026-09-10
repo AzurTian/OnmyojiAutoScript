@@ -77,7 +77,7 @@ class ScriptTask(
             logger.info(message)
             push_content.append(message)
         # 推送协战完成结果
-        if self.conf.result_push_enable:
+        if self.conf.assist_battle_config.result_push_enable:
             self.config.notifier.push(
                 title='一键协战完成',
                 content='<{}><br>{}'.format(
@@ -91,9 +91,8 @@ class ScriptTask(
     def run_current_account(self):
         # 执行任务前先获取本账号协战剩余次数
         start_evozone, start_realmraid = self.get_assist_battle_count()
-        # fortest
-        # start_realmraid = 0
-        # start_evozone = 0
+        total_evozone = 15
+        total_realmraid = 3
 
         if self.conf.assist_battle_config.evozone_enable and start_evozone > 0:
             self.run_evozone(start_evozone)
@@ -106,10 +105,17 @@ class ScriptTask(
         evozone_done = start_evozone - end_evozone
         realmraid_done = start_realmraid - end_realmraid
 
+        evozone_final = total_evozone - end_evozone
+        realmraid_final = total_realmraid - end_realmraid
         logger.info(
             "本次协战完成：觉醒 %s 次，结界突破 %s 次",
             evozone_done,
             realmraid_done,
+        )
+        logger.info(
+            "最终协战完成：觉醒 %s 次，结界突破 %s 次",
+            evozone_final,
+            realmraid_final,
         )
         return evozone_done, realmraid_done
 
@@ -130,6 +136,7 @@ class ScriptTask(
         self.config.evo_zone.evo_zone_config.layer = Layer.FIVE
         self.config.evo_zone.evo_zone_config.kirin_type = KirinType.LIGHTNINGKIRIN
         self.config.evo_zone.general_battle_config.lock_team_enable = True
+        self.current_count = 0
         self.limit_count = count
         self.limit_time = timedelta(hours=10)
         self.run_alone()
