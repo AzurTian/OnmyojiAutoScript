@@ -26,11 +26,11 @@ class AssistBattleConfig(BaseModel):
         default=False,
         description='默认5层打满每日15次',
     )
-    realmraid_enable: bool = Field(default=True, description='默认开启')
+    realmraid_enable: bool = Field(default=True, description='默认开启，默认锁定阵容')
     realmraid_easy_enable: bool = Field(
-        default=True, description='稳定优先，关闭则是从高到低'
+        default=True,
+        description='默认开启，低勋优先失败刷新，关闭后自动读取个人突破的配置',
     )
-    three_refresh: bool = Field(default=True, description='是否进攻三次就刷新')
     switch_soul_enable: bool = Field(
         default=False, description='直接套用个人突破内配置，请确保其正确配置'
     )

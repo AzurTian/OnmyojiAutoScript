@@ -35,13 +35,17 @@ class ScriptTask(
         results = []
         if not accounts:
             logger.info('No AssistBattle account configured; run on current account')
-            evozone_done, realmraid_done = self.run_current_account()
+            evozone_done, realmraid_done, evozone_final, realmraid_final = (
+                self.run_current_account()
+            )
             results.append(
                 {
                     'character': account.character,
                     'svr': account.svr,
-                    'evozone': evozone_done,
-                    'realmraid': realmraid_done,
+                    'evozone_done': evozone_done,
+                    'realmraid_done': realmraid_done,
+                    'evozone_final': evozone_final,
+                    'realmraid_final': realmraid_final,
                 }
             )
         else:
@@ -56,23 +60,37 @@ class ScriptTask(
                         account.svr,
                     )
                     continue
-                evozone_done, realmraid_done = self.run_current_account()
+                evozone_done, realmraid_done, evozone_final, realmraid_final = (
+                    self.run_current_account()
+                )
                 results.append(
                     {
                         'character': account.character,
                         'svr': account.svr,
-                        'evozone': evozone_done,
-                        'realmraid': realmraid_done,
+                        'evozone_done': evozone_done,
+                        'realmraid_done': realmraid_done,
+                        'evozone_final': evozone_final,
+                        'realmraid_final': realmraid_final,
                     }
                 )
         # 输出协战结果
         logger.hr('AssistBattle Result', 2)
         push_content = []
+        push_content.append(f"本次执行任务：")
         for result in results:
             message = (
                 f"{result['character']}-{result['svr']}: "
-                f"觉醒 {result['evozone']}/15，"
-                f"结界突破 {result['realmraid']}/3"
+                f"觉醒副本 {result['evozone_done']}/15，"
+                f"结界突破 {result['realmraid_done']}/3"
+            )
+            logger.info(message)
+            push_content.append(message)
+        push_content.append(f"今日协战任务：")
+        for result in results:
+            message = (
+                f"{result['character']}-{result['svr']}: "
+                f"觉醒副本 {result['evozone_final']}/15，"
+                f"结界突破 {result['realmraid_final']}/3"
             )
             logger.info(message)
             push_content.append(message)
@@ -117,7 +135,7 @@ class ScriptTask(
             evozone_final,
             realmraid_final,
         )
-        return evozone_done, realmraid_done
+        return evozone_done, realmraid_done, evozone_final, realmraid_final
 
     def get_assist_battle_count(self):
         """获取当前账号剩余的协战次数。"""
@@ -148,8 +166,9 @@ class ScriptTask(
         con = self.config.realm_raid
 
         con.raid_config.number_attack = count
-        con.raid_config.exit_four = False
-        con.raid_config.order_attack = '0 > 1 > 2 > 3 > 4 > 5'
+        if self.conf.assist_battle_config.realmraid_easy_enable:
+            con.raid_config.exit_four = False
+            con.raid_config.order_attack = '0 > 1 > 2 > 3 > 4 > 5'
         con.general_battle_config.lock_team_enable = True
         con.switch_soul_config.enable = False
         if self.conf.assist_battle_config.switch_soul_enable:
