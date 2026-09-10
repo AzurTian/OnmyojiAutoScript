@@ -101,8 +101,8 @@
   {
     "itemName": "sa_check_select_svr_1",
     "imageName": "res_sa_check_select_svr_1.png",
-    "roiFront": "213,133,181,60",
-    "roiBack": "210,128,185,68",
+    "roiFront": "223,137,127,48",
+    "roiBack": "194,127,181,68",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "判断是否在 选择服务器 界面的标志物 角色的服务器图标还未显示时"
@@ -110,10 +110,19 @@
   {
     "itemName": "sa_check_select_svr_2",
     "imageName": "res_sa_check_select_svr_2.png",
-    "roiFront": "209,131,184,64",
-    "roiBack": "207,127,187,70",
+    "roiFront": "223,137,127,48",
+    "roiBack": "194,127,181,68",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "判断是否在 选择服务器 界面的标志物 角色的服务器图标已经显示时"
+  },
+  {
+    "itemName": "sa_login_form_cancel_svr_select",
+    "imageName": "res_sa_login_form_cancel_svr_select.png",
+    "roiFront": "1083,94,39,36",
+    "roiBack": "1083,94,39,36",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "关闭服务器选择界面"
   }
 ]

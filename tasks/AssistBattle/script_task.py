@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from module.logger import logger
 from module.exception import TaskEnd
+from tasks.Component.SwitchAccount.switch_account import SwitchAccount
 from tasks.EvoZone.config import Layer, KirinType
 from tasks.EvoZone.script_task import ScriptTask as EvoZoneScriptTask
 from tasks.RealmRaid.script_task import ScriptTask as RealmRaidScriptTask
@@ -29,6 +30,28 @@ class ScriptTask(
 
     def run(self):
         self.conf = self.config.model.assist_battle
+        accounts = [account for account in self.conf.account_list if account.is_valid()]
+        if not accounts:
+            logger.info('No AssistBattle account configured; run on current account')
+            self.run_current_account()
+        else:
+            for account in accounts:
+                logger.hr(
+                    'Run AssistBattle for %s-%s' % (account.character, account.svr), 2
+                )
+                if not SwitchAccount(self.config, self.device, account).switchAccount():
+                    logger.warning(
+                        'Switch to %s-%s failed; skip it',
+                        account.character,
+                        account.svr,
+                    )
+                    continue
+                self.run_current_account()
+        self.set_next_run(task='AssistBattle', success=True, finish=True)
+        raise TaskEnd('AssistBattle')
+
+    def run_current_account(self):
+        """执行当前已登录账号的协战。"""
         self.goto_page(page_assist_battle)
         self.screenshot()
         _, evozone_res, _ = self.O_NORMAL_ASSIST_COUNT.ocr(self.device.image)
@@ -39,7 +62,8 @@ class ScriptTask(
             realmraid_res,
         )
         # test
-        # realmraid_res = 1
+        realmraid_res = 0
+        evozone_res = 0
 
         if self.conf.assist_battle_config.evozone_enable and evozone_res > 0:
             self.run_evozone(evozone_res)
@@ -47,8 +71,6 @@ class ScriptTask(
         if self.conf.assist_battle_config.realmraid_enable and realmraid_res > 0:
             self.run_realmraid(realmraid_res)
             self.goto_page(page_main)
-        self.set_next_run(task='AssistBattle', success=True, finish=True)
-        raise TaskEnd('AssistBattle')
 
     def run_evozone(self, count: int):
         """运行觉醒协战"""

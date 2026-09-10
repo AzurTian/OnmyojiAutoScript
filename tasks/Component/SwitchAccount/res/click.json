@@ -36,12 +36,6 @@
     "description": "登录界面-选择服务器-底部账号信息展开后的区域"
   },
   {
-    "itemName": "sa_login_form_cancel_svr_select",
-    "roiFront": "50,70,60,360",
-    "roiBack": "50,70,60,360",
-    "description": "登录界面-选择服务器-点击关闭选择服务器界面的空白区域"
-  },
-  {
     "itemName": "sa_login_form_user_center_close_btn",
     "roiFront": "1055,120,20,20",
     "roiBack": "1055,120,20,20",

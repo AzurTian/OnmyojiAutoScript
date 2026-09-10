@@ -3,7 +3,7 @@
     "itemName": "sa_login_form_svr_name",
     "roiFront": "545,510,140,40",
     "roiBack": "545,510,140,40",
-    "mode": "SINGLE",
+    "mode": "Single",
     "method": "Default",
     "keyword": "",
     "description": "登录页面服务器名称"
@@ -12,7 +12,7 @@
     "itemName": "sa_select_svr_svr_list",
     "roiFront": "205,540,815,25",
     "roiBack": "205,540,815,25",
-    "mode": "FULL",
+    "mode": "Full",
     "method": "Default",
     "keyword": "",
     "description": "选择服务器界面 底部角色所属服务器名 列表"
@@ -30,7 +30,7 @@
     "itemName": "sa_account_account_list",
     "roiFront": "460,280,440,330",
     "roiBack": "460,280,440,330",
-    "mode": "FULL",
+    "mode": "Full",
     "method": "Default",
     "keyword": "",
     "description": "选择账号界面 账号列表"
@@ -39,7 +39,7 @@
     "itemName": "sa_account_account_selected",
     "roiFront": "460,280,370,50",
     "roiBack": "460,280,370,50",
-    "mode": "SINGLE",
+    "mode": "Single",
     "method": "Default",
     "keyword": "",
     "description": "选择账号界面 已选择的账号"
@@ -48,15 +48,15 @@
     "itemName": "sa_login_form_user_center_account",
     "roiFront": "290,185,290,50",
     "roiBack": "290,185,290,50",
-    "mode": "SINGLE",
+    "mode": "Single",
     "method": "Default",
     "keyword": "",
     "description": "登录界面 用户中心(区别于游戏内用户中心) 账户名"
   },
   {
     "itemName": "sa_check_select_svr",
-    "roiFront": "252,145,97,32",
-    "roiBack": "248,141,102,38",
+    "roiFront": "234,148,101,31",
+    "roiBack": "234,148,101,31",
     "mode": "Single",
     "method": "Default",
     "keyword": "已有角色",
