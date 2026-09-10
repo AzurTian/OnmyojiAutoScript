@@ -253,9 +253,20 @@
   "min_run_interval_help": "防风控：两次蹭卡运行之间的最小间隔，避免蹭卡过于频繁被服务端标记。设为 0（默认）保持原逻辑（按结界卡剩余时间安排下次）。格式：天 时:分:秒。",
   "costume_main_17": "狐栖归处",
   "costume_shikigami_12": "拾光之窗",
-  "AssistBattle": "一键协战",
   "lazy_mode": "怠惰模式",
   "lazy_mode_help": "开启后每次任务按权重随机进入怠惰模式；命中时不比较奖励数值，优先选择当前可见的五星及以上目标卡，否则选择首个符合策略的四星卡。",
   "lazy_mode_weight": "怠惰模式权重",
-  "lazy_mode_weight_help": "取值范围0-1，默认1；0表示永不触发，1表示每次触发。"
+  "lazy_mode_weight_help": "取值范围0-1，默认1；0表示永不触发，1表示每次触发。",
+  "AssistBattle": "一键协战",
+  "assist_battle_config": "协战配置",
+  "account_count": "协战账号数量",
+  "evozone_enable": "启用觉醒副本",
+  "realmraid_enable": "启用结界突破",
+  "realmraid_easy_enable": "结界突破低勋优先",
+  "three_refresh": "三次刷新",
+  "switch_soul_enable": "启用结界突破换御魂",
+  "result_push_enable": "启用完成推送",
+  "kekkaiutilize_enable": "启用结界寄养",
+  "account_list": "账号列表",
+  "account_list_description": "脚本会自动识别每个账号的剩余协战次数，理论上只需要手动上阵一次协战式神后续就可以自动执行任务,协战式神建议使用高速火灵输出。3个账号开启觉醒加结界突破可以打满，不开结界突破则需要四个账号"
 }

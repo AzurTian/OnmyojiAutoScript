@@ -2,6 +2,7 @@
 # @author runhey
 # github https://github.com/runhey
 from datetime import timedelta
+from time import sleep
 
 from module.logger import logger
 from module.exception import TaskEnd
@@ -31,9 +32,18 @@ class ScriptTask(
     def run(self):
         self.conf = self.config.model.assist_battle
         accounts = [account for account in self.conf.account_list if account.is_valid()]
+        results = []
         if not accounts:
             logger.info('No AssistBattle account configured; run on current account')
-            self.run_current_account()
+            evozone_done, realmraid_done = self.run_current_account()
+            results.append(
+                {
+                    'character': account.character,
+                    'svr': account.svr,
+                    'evozone': evozone_done,
+                    'realmraid': realmraid_done,
+                }
+            )
         else:
             for account in accounts:
                 logger.hr(
@@ -46,31 +56,73 @@ class ScriptTask(
                         account.svr,
                     )
                     continue
-                self.run_current_account()
+                evozone_done, realmraid_done = self.run_current_account()
+                results.append(
+                    {
+                        'character': account.character,
+                        'svr': account.svr,
+                        'evozone': evozone_done,
+                        'realmraid': realmraid_done,
+                    }
+                )
+        # 输出协战结果
+        logger.hr('AssistBattle Result', 2)
+        push_content = []
+        for result in results:
+            message = (
+                f"{result['character']}-{result['svr']}: "
+                f"觉醒 {result['evozone']}/15，"
+                f"结界突破 {result['realmraid']}/3"
+            )
+            logger.info(message)
+            push_content.append(message)
+        # 推送协战完成结果
+        if self.conf.result_push_enable:
+            self.config.notifier.push(
+                title='一键协战完成',
+                content='<{}><br>{}'.format(
+                    self.config.config_name,
+                    '<br>'.join(push_content),
+                ),
+            )
         self.set_next_run(task='AssistBattle', success=True, finish=True)
         raise TaskEnd('AssistBattle')
 
     def run_current_account(self):
-        """执行当前已登录账号的协战。"""
+        # 执行任务前先获取本账号协战剩余次数
+        start_evozone, start_realmraid = self.get_assist_battle_count()
+        # fortest
+        # start_realmraid = 0
+        # start_evozone = 0
+
+        if self.conf.assist_battle_config.evozone_enable and start_evozone > 0:
+            self.run_evozone(start_evozone)
+            self.goto_page(page_main)
+        if self.conf.assist_battle_config.realmraid_enable and start_realmraid > 0:
+            self.run_realmraid(start_realmraid)
+            self.goto_page(page_main)
+
+        end_evozone, end_realmraid = self.get_assist_battle_count()
+        evozone_done = start_evozone - end_evozone
+        realmraid_done = start_realmraid - end_realmraid
+
+        logger.info(
+            "本次协战完成：觉醒 %s 次，结界突破 %s 次",
+            evozone_done,
+            realmraid_done,
+        )
+        return evozone_done, realmraid_done
+
+    def get_assist_battle_count(self):
+        """获取当前账号剩余的协战次数。"""
         self.goto_page(page_assist_battle)
+        # 切换界面可能卡顿等个动画
+        sleep(0.5)
         self.screenshot()
         _, evozone_res, _ = self.O_NORMAL_ASSIST_COUNT.ocr(self.device.image)
         _, realmraid_res, _ = self.O_REALMRAID_ASSIT_COUNT.ocr(self.device.image)
-        logger.info(
-            "协战次数：觉醒副本剩余 %s 次，结界突破剩余 %s 次",
-            evozone_res,
-            realmraid_res,
-        )
-        # test
-        realmraid_res = 0
-        evozone_res = 0
 
-        if self.conf.assist_battle_config.evozone_enable and evozone_res > 0:
-            self.run_evozone(evozone_res)
-            self.goto_page(page_main)
-        if self.conf.assist_battle_config.realmraid_enable and realmraid_res > 0:
-            self.run_realmraid(realmraid_res)
-            self.goto_page(page_main)
+        return evozone_res, realmraid_res
 
     def run_evozone(self, count: int):
         """运行觉醒协战"""
@@ -92,6 +144,7 @@ class ScriptTask(
         con.raid_config.exit_four = False
         con.raid_config.order_attack = '0 > 1 > 2 > 3 > 4 > 5'
         con.general_battle_config.lock_team_enable = True
+        con.switch_soul_config.enable = False
         if self.conf.assist_battle_config.switch_soul_enable:
             con.switch_soul_config.enable = True
         self.run_realmraid_core(con)
