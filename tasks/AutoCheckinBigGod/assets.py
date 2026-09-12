@@ -18,14 +18,16 @@ class AutoCheckinBigGodAssets:
 	# 确认是否处于圈子界面 
 	I_CIRCLE_CHECK = RuleImage(roi_front=(44,1221,53,51), roi_back=(0,1067,273,213), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_circle_check.png")
 	# 圈子界面进入福利中心 
-	I_WELFARE = RuleImage(roi_front=(26,152,45,27), roi_back=(0,0,249,243), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_welfare.png")
-	# 福利中心一键领取奖励按钮 
-	I_CLAIM = RuleImage(roi_front=(555,297,102,29), roi_back=(0,0,720,556), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_claim.png")
+	I_WELFARE = RuleImage(roi_front=(87,185,45,27), roi_back=(0,0,249,243), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_welfare.png")
+	# 福利中心浮窗领取领取奖励按钮（兼是否有浮窗检测按钮） 
+	I_CLAIM = RuleImage(roi_front=(595,539,60,33), roi_back=(0,0,720,1280), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_claim.png")
 	# 重新登录按钮，刚启动app可能会因为在其他设备登录过显示重新登录按钮 
 	I_LOGIN_AGAIN = RuleImage(roi_front=(527,694,53,30), roi_back=(0,335,720,556), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_login_again.png")
-	# 出现该按钮则领取完成 
-	I_CLAIM_S = RuleImage(roi_front=(348,405,53,29), roi_back=(0,193,720,919), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_claim_s.png")
+	# 确认是否处于福利中心界面 
+	I_CLAIM_S = RuleImage(roi_front=(348,51,60,39), roi_back=(0,0,719,262), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_claim_s.png")
 	# 取消更新按钮 
 	I_X = RuleImage(roi_front=(352,912,19,48), roi_back=(0,375,720,768), threshold=0.75, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_x.png")
+	# 福利中心打开礼物浮窗按钮 
+	I_GIFT = RuleImage(roi_front=(582,126,39,41), roi_back=(0,0,719,262), threshold=0.8, method="Template matching", file="./tasks/AutoCheckinBigGod/res/res_gift.png")
 
 

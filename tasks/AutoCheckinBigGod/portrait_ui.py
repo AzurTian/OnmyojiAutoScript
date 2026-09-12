@@ -45,6 +45,12 @@ class PortraitUIMixin(BaseTask):
         logger.info(f'点击 {name} @ ({x},{y})')
         self._adb_shell(['input', 'tap', str(x), str(y)])
 
+    def _swipe(self, x1, y1, x2, y2, duration=400):
+        """竖屏滑动：adb input swipe 直传原始坐标，与 control_method 无关。
+        duration 为按下到抬起的时间(ms)，调大可减少松手后的惯性滚动。"""
+        logger.info(f'滑动 ({x1},{y1}) -> ({x2},{y2}) ({duration}ms)')
+        self._adb_shell(['input', 'swipe', str(x1), str(y1), str(x2), str(y2), str(duration)])
+
     def _screenshot_safe(self):
         """竖屏截图：优先配置方法（self.screenshot），失败回退 OAS 自带 adb 截图。"""
         try:

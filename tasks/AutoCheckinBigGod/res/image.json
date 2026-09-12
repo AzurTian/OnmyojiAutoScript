@@ -29,7 +29,7 @@
   {
     "itemName": "welfare",
     "imageName": "res_welfare.png",
-    "roiFront": "26,152,45,27",
+    "roiFront": "87,185,45,27",
     "roiBack": "0,0,249,243",
     "method": "Template matching",
     "threshold": 0.8,
@@ -38,11 +38,11 @@
   {
     "itemName": "claim",
     "imageName": "res_claim.png",
-    "roiFront": "555,297,102,29",
-    "roiBack": "0,0,720,556",
+    "roiFront": "595,539,60,33",
+    "roiBack": "0,0,720,1280",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "福利中心一键领取奖励按钮"
+    "description": "福利中心浮窗领取领取奖励按钮（兼是否有浮窗检测按钮）"
   },
   {
     "itemName": "login_again",
@@ -56,11 +56,11 @@
   {
     "itemName": "claim_s",
     "imageName": "res_claim_s.png",
-    "roiFront": "348,405,53,29",
-    "roiBack": "0,193,720,919",
+    "roiFront": "348,51,60,39",
+    "roiBack": "0,0,719,262",
     "method": "Template matching",
     "threshold": 0.8,
-    "description": "出现该按钮则领取完成"
+    "description": "确认是否处于福利中心界面"
   },
   {
     "itemName": "x",
@@ -70,5 +70,14 @@
     "method": "Template matching",
     "threshold": 0.75,
     "description": "取消更新按钮"
+  },
+  {
+    "itemName": "gift",
+    "imageName": "res_gift.png",
+    "roiFront": "582,126,39,41",
+    "roiBack": "0,0,719,262",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "福利中心打开礼物浮窗按钮"
   }
 ]
