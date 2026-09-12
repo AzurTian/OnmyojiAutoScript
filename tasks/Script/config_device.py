@@ -31,6 +31,9 @@ class ScreenshotMethod(str, Enum):
     SCRCPY = 'scrcpy'
     WINDOW_BACKGROUND = 'window_background'
     NEMU_IPC = 'nemu_ipc'
+    MAC_BGR = 'MacBGR'
+    RGBA = 'RGBA'
+    MAC_SCK = 'MacSCK'
 
 
 class ControlMethod(str, Enum):
@@ -38,6 +41,7 @@ class ControlMethod(str, Enum):
     UIAUTOMATOR2 = 'uiautomator2'
     MINITOUCH = 'minitouch'
     WINDOW_MESSAGE = 'window_message'
+    MAC_PLAYTOOLS = 'MacPlayTools'
 
 
 class EmulatorInfoType(str, Enum):

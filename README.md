@@ -102,6 +102,28 @@ OAS 在其基础上进行了如下优化：
 - [安装教程](https://runhey.github.io/OnmyojiAutoScript-website/docs/user-manual/installation): 保姆式安装手册,多翻翻有惊喜
 - [开发文档](https://runhey.github.io/OnmyojiAutoScript-website/docs/development/preamble): 虽然迭代很多、年久失修，但入门开发必读，具体以源码为准
 
+## macOS PlayCover / MaaTools
+
+### 中文
+
+macOS 用户可以通过 [PlayCover](https://github.com/PlayCover/PlayCover) 运行 iOS 版游戏，并使用 MaaTools 连接 OAS。环境准备可参考 [MAA macOS 手册](https://docs.maa.plus/zh-cn/manual/device/macos.html)。
+
+1. 从 [OASX Flutter 源码](https://github.com/runhey/OASX) 编译并运行本地 app。
+2. 按 [`requirements-macos-playcover.txt`](requirements-macos-playcover.txt) 清单手动安装依赖。
+3. 在 PlayCover 中将游戏设置为 `1280x720`。
+4. 在 OASX 中选择 `PlayCover` / `MacPlayTools`，截图方式选择 `MacBGR`、`RGBA` 或 `MacSCK`；serial 示例为 `localhost:1718`。
+5. `ADB` 与 `minitouch` 仍然保留，可继续用于原有的 Android/模拟器配置。
+
+### English
+
+On macOS, run the iOS game with [PlayCover](https://github.com/PlayCover/PlayCover) and connect OAS through MaaTools. See the [MAA macOS guide](https://docs.maa.plus/zh-cn/manual/device/macos.html) for environment setup.
+
+1. Build and run a local app from the [OASX Flutter source](https://github.com/runhey/OASX).
+2. Manually install the dependencies listed in [`requirements-macos-playcover.txt`](requirements-macos-playcover.txt).
+3. Set the game in PlayCover to `1280x720`.
+4. In OASX, choose `PlayCover` / `MacPlayTools`, then select `MacBGR`, `RGBA`, or `MacSCK` as the screenshot method; example serial: `localhost:1718`.
+5. `ADB` and `minitouch` remain available for existing Android/emulator configurations.
+
 ## 鸣谢 Acknowledgements
 
 感谢所有参与到开发/测试中的朋友们

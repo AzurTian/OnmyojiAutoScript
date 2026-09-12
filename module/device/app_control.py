@@ -17,6 +17,8 @@ class AppControl(Adb, Uiautomator2):
 
         这用于区分“应用被切到后台”和“应用已经被真正杀掉”两种情况。
         """
+        if getattr(self, 'is_playcover', False):
+            return True
         if not package_name:
             package_name = self.package
 
@@ -31,6 +33,8 @@ class AppControl(Adb, Uiautomator2):
         return bool(result)
 
     def app_is_running(self) -> bool:
+        if getattr(self, 'is_playcover', False):
+            return True
         method = self.config.script.device.control_method
         # if self.is_wsa:
         #     package = self.app_current_wsa()
@@ -44,6 +48,8 @@ class AppControl(Adb, Uiautomator2):
         return package == self.package
 
     def app_start(self):
+        if getattr(self, 'is_playcover', False):
+            return
         method = self.config.script.device.screenshot_method
         logger.info(f'App start: {self.package}')
         # if self.config.Emulator_Serial == 'wsa-0':
@@ -54,6 +60,8 @@ class AppControl(Adb, Uiautomator2):
             self.app_start_adb()
 
     def app_stop(self):
+        if getattr(self, 'is_playcover', False):
+            return
         method = self.config.script.device.screenshot_method
         logger.info(f'App stop: {self.package}')
         if method in AppControl._app_u2_family:
@@ -66,6 +74,9 @@ class AppControl(Adb, Uiautomator2):
         Returns:
             etree._Element: Select elements with `self.hierarchy.xpath('//*[@text="Hermit"]')` for example.
         """
+        if getattr(self, 'is_playcover', False):
+            self.hierarchy = etree.Element('hierarchy')
+            return self.hierarchy
         method = self.config.script.device.screenshot_method
         if method in AppControl._app_u2_family:
             self.hierarchy = self.dump_hierarchy_uiautomator2()
