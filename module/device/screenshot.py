@@ -50,6 +50,9 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
             'DroidCast': self.screenshot_droidcast,
             'DroidCast_raw': self.screenshot_droidcast_raw,
             'scrcpy': self.screenshot_scrcpy,
+            'MacBGR': self.screenshot_playcover,
+            'RGBA': self.screenshot_playcover,
+            'MacSCK': self.screenshot_playcover,
         }
         if IS_WINDOWS:
             methods.update({
@@ -57,6 +60,15 @@ class Screenshot(Adb, DroidCast, Scrcpy, Window, NemuIpc):
                 'nemu_ipc': self.screenshot_nemu_ipc,
             })
         return methods
+
+    def screenshot_playcover(self):
+        image = self.playcover_client.screenshot()
+        width, height = image_size(image)
+        if (width, height) != (1280, 720):
+            raise RequestHumanTakeover(
+                f'PlayCover screenshot is {width}x{height}; OAS requires 1280x720'
+            )
+        return image
 
     def screenshot(self):
         """
